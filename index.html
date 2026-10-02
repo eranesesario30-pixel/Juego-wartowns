@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prueba de conexión a Nakama</title>
+<script src="https://cdn.jsdelivr.net/npm/@heroiclabs/nakama-js@2/dist/nakama-js.umd.js"></script>
+<style>
+  body{font-family:system-ui,sans-serif;background:#1a1a2e;color:#eee;padding:20px;max-width:480px;margin:0 auto;}
+  h1{font-size:18px;}
+  label{display:block;margin-top:10px;font-size:13px;color:#aaa;}
+  input{width:100%;box-sizing:border-box;padding:8px;margin-top:4px;border-radius:6px;border:1px solid #444;background:#222;color:#fff;}
+  button{width:100%;margin-top:16px;padding:12px;font-size:15px;font-weight:bold;border:none;border-radius:8px;background:#4CAF50;color:#fff;cursor:pointer;}
+  button:disabled{background:#555;}
+  #log{margin-top:16px;background:#111;border-radius:8px;padding:12px;font-family:monospace;font-size:12px;white-space:pre-wrap;word-break:break-word;min-height:120px;max-height:400px;overflow-y:auto;}
+  .ok{color:#4CAF50;}
+  .err{color:#ff6b6b;}
+  .info{color:#8ab4f8;}
+</style>
+</head>
+<body>
+
+<h1>🎲 Prueba de conexión a Nakama</h1>
+
+<label>Host (IP o dominio, sin http/https)</label>
+<input id="host" value="167.86.103.26">
+
+<label>Puerto</label>
+<input id="port" value="7350">
+
+<label>¿Usar HTTPS/SSL?</label>
+<select id="ssl" style="width:100%;padding:8px;margin-top:4px;border-radius:6px;border:1px solid #444;background:#222;color:#fff;">
+  <option value="false" selected>No (http:// — conexión directa al puerto de Nakama)</option>
+  <option value="true">Sí (https:// — por ejemplo si pasa por Caddy)</option>
+</select>
+
+<label>Server Key</label>
+<input id="serverkey" value="defaultkey">
+
+<button id="btn" onclick="probarConexion()">Probar conexión</button>
+
+<div id="log">Esperando...</div>
+
+<script>
+function log(msg, cls){
+  const el = document.getElementById('log');
+  const line = document.createElement('div');
+  if(cls) line.className = cls;
+  line.textContent = msg;
+  el.appendChild(line);
+  el.scrollTop = el.scrollHeight;
+}
+
+async function probarConexion(){
+  const btn = document.getElementById('btn');
+  const logEl = document.getElementById('log');
+  logEl.innerHTML = '';
+  btn.disabled = true;
+  btn.textContent = 'Probando...';
+
+  const host = document.getElementById('host').value.trim();
+  const port = document.getElementById('port').value.trim();
+  const useSSL = document.getElementById('ssl').value === 'true';
+  const serverkey = document.getElementById('serverkey').value.trim();
+
+  log(`Host: ${host}`, 'info');
+  log(`Puerto: ${port}`, 'info');
+  log(`SSL: ${useSSL}`, 'info');
+  log(`Server Key: ${serverkey}`, 'info');
+  log('---');
+
+  try{
+    if(typeof nakamajs === 'undefined'){
+      throw new Error('El SDK de Nakama (nakama-js) no cargó. Revisá tu conexión a internet o si el CDN está bloqueado.');
+    }
+    log('✅ SDK de Nakama cargado correctamente.', 'ok');
+
+    const client = new nakamajs.Client(serverkey, host, port, useSSL);
+    log('Cliente creado. Intentando autenticar como invitado...', 'info');
+
+    // Id de dispositivo: se guarda en este navegador para reconocerte la
+    // próxima vez (así no se crea una cuenta nueva cada vez que probás).
+    let deviceId = localStorage.getItem('nakamaTestDeviceId');
+    if(!deviceId){
+      deviceId = (crypto.randomUUID ? crypto.randomUUID() : (Date.now()+'-'+Math.random().toString(36).slice(2)));
+      localStorage.setItem('nakamaTestDeviceId', deviceId);
+    }
+    log(`Device ID: ${deviceId}`, 'info');
+
+    const session = await client.authenticateDevice(deviceId, true);
+    log('✅ ¡CONECTADO! Autenticación exitosa.', 'ok');
+    log(`user_id: ${session.user_id}`, 'ok');
+    log(`username: ${session.username}`, 'ok');
+    log(`token expira: ${new Date(session.expires_at*1000).toLocaleString()}`, 'ok');
+
+    // Probar también el socket en tiempo real
+    log('---');
+    log('Probando conexión del socket en tiempo real...', 'info');
+    const socket = client.createSocket(useSSL, false);
+    await socket.connect(session, true);
+    log('✅ Socket en tiempo real conectado también.', 'ok');
+    socket.disconnect();
+
+  } catch(err){
+    log('❌ ERROR: ' + (err && err.message ? err.message : JSON.stringify(err)), 'err');
+    if(err && err.statusText) log('Detalle: ' + err.statusText, 'err');
+    console.error(err);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Probar conexión';
+  }
+}
+</script>
+
+</body>
+</html>
