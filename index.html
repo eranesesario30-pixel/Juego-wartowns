@@ -11,8 +11,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
 <title>Parche</title>
-<link rel="icon" href="/_blob/81cc6d23cecd72dd116e58b7b4ebefe6">
-<link rel="apple-touch-icon" href="/_blob/81cc6d23cecd72dd116e58b7b4ebefe6">
+<link rel="icon" href="./assets/81cc6d23cecd72dd116e58b7b4ebefe6.jpg">
+<link rel="apple-touch-icon" href="./assets/81cc6d23cecd72dd116e58b7b4ebefe6.jpg">
 <style>html,body{margin:0;background:#2e0619;}</style>
 <script>
 // Reloj de seguridad: arranca ANTES de los scripts pesados de Three.js
@@ -21,9 +21,11 @@
 // ese caso el navegador no llega ni a ejecutar código de más abajo hasta
 // que esos terminen, así que este aviso no puede depender de eso.
 window.__gameStarted = false;
+let __startupTimeoutBox = null;
 setTimeout(()=>{
   if(!window.__gameStarted){
     const box = document.createElement('div');
+    __startupTimeoutBox = box;
     box.style.cssText = 'position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:rgba(18,10,36,.96);z-index:2147483647;color:#fff;font-family:sans-serif;text-align:center;padding:20px;';
     box.innerHTML = '<div style="font-size:15px;">La conexión está tardando más de lo normal para cargar el juego.</div><button style="padding:12px 24px;border-radius:10px;border:none;background:#FBC72C;color:#2a1a00;font-weight:800;font-size:15px;">Reintentar</button>';
     box.querySelector('button').onclick = ()=> location.reload();
@@ -615,12 +617,12 @@ window.__threeReadyPromise = (async ()=>{
   .bet-chip.locked{opacity:.35;cursor:default;}
   /* Fichas de apuesta: degradado oscuro ENCIMA de la ilustración para que el
      monto se lea. El color del final es el respaldo si la imagen no carga. */
-  .bet-chip.c0{background:linear-gradient(rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%), url('/_blob/579cd2881d11bf99eb3031de9a90794d') center/cover no-repeat, #C4453D;} /* roja */
-  .bet-chip.c1{background:linear-gradient(rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%), url('/_blob/d06b51bfbcf365c0dab3a873e8744902') center/cover no-repeat, #5b3fa8;} /* violeta */
-  .bet-chip.c2{background:linear-gradient(rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%), url('/_blob/5bed73d142787dd3cb7052d8e28617cd') center/cover no-repeat, #2E7FB0;} /* azul */
-  .bet-chip.c3{background:linear-gradient(rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%), url('/_blob/9e956e9d53bf307de9f49827dee179d0') center/cover no-repeat, #14C56A;} /* verde */
+  .bet-chip.c0{background:linear-gradient(rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%), url('./assets/579cd2881d11bf99eb3031de9a90794d.webp') center/cover no-repeat, #C4453D;} /* roja */
+  .bet-chip.c1{background:linear-gradient(rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%), url('./assets/d06b51bfbcf365c0dab3a873e8744902.webp') center/cover no-repeat, #5b3fa8;} /* violeta */
+  .bet-chip.c2{background:linear-gradient(rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%), url('./assets/5bed73d142787dd3cb7052d8e28617cd.webp') center/cover no-repeat, #2E7FB0;} /* azul */
+  .bet-chip.c3{background:linear-gradient(rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%), url('./assets/9e956e9d53bf307de9f49827dee179d0.webp') center/cover no-repeat, #14C56A;} /* verde */
   .bet-chip.c4{background:linear-gradient(160deg,#6FFFB4,#14C56A);} /* dorada ← falta la imagen */
-  .bet-chip.c5{background:linear-gradient(rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%), url('/_blob/c1f84d4677d10e42e1fe4baa6bc1e728') center/cover no-repeat, #B0105E;} /* rosa */
+  .bet-chip.c5{background:linear-gradient(rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%), url('./assets/c1f84d4677d10e42e1fe4baa6bc1e728.webp') center/cover no-repeat, #B0105E;} /* rosa */
   #boardChoiceScreen{
     display:flex;flex-direction:column;align-items:center;
     min-height:100vh;padding:10px;
@@ -666,10 +668,10 @@ window.__threeReadyPromise = (async ()=>{
   .mm-card:nth-child(3){background:linear-gradient(160deg,#8b6be0,#5b3fa8);}
   /* Tarjetas de "Elige el tablero": ilustración de cada modo con el degradado
      oscuro encima. Clásico sigue con su color hasta que llegue su imagen. */
-  .mm-card[onclick="chooseBoardKind('sized100')"]{background:linear-gradient(rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%), url('/_blob/e70ac668f115e00ada41aa9ddc79e9f0') center/cover no-repeat, #1b3a66;} /* Fuego y Hielo */
-  .mm-card[onclick="chooseBoardKind('sized125')"]{background:linear-gradient(rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%), url('/_blob/c01db0d4362a48eca8ecef8312274d22') center/cover no-repeat, #1b2233;} /* Guerra de Hierro */
-  .mm-card[onclick="chooseBoardKind('sized150')"]{background:linear-gradient(rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%), url('/_blob/d6e6ab6c11e56bfd84b79e911560023a') center/cover no-repeat, #2a0d4a;} /* Neón Extremo */
-  .mm-card[onclick="chooseBoardKind('rapido')"]{background:linear-gradient(rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%), url('/_blob/dfcb9b077cc3d62cf077e5cba0e583b0') center/cover no-repeat, #4a3208;} /* Modo Rápido — misma imagen que tenía la tarjeta cuando vivía en el lobby */
+  .mm-card[onclick="chooseBoardKind('sized100')"]{background:linear-gradient(rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%), url('./assets/e70ac668f115e00ada41aa9ddc79e9f0.webp') center/cover no-repeat, #1b3a66;} /* Fuego y Hielo */
+  .mm-card[onclick="chooseBoardKind('sized125')"]{background:linear-gradient(rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%), url('./assets/c01db0d4362a48eca8ecef8312274d22.webp') center/cover no-repeat, #1b2233;} /* Guerra de Hierro */
+  .mm-card[onclick="chooseBoardKind('sized150')"]{background:linear-gradient(rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%), url('./assets/d6e6ab6c11e56bfd84b79e911560023a.webp') center/cover no-repeat, #2a0d4a;} /* Neón Extremo */
+  .mm-card[onclick="chooseBoardKind('rapido')"]{background:linear-gradient(rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%), url('./assets/dfcb9b077cc3d62cf077e5cba0e583b0.webp') center/cover no-repeat, #4a3208;} /* Modo Rápido — misma imagen que tenía la tarjeta cuando vivía en el lobby */
   .mm-card:active{transform:rotateX(7deg) translateZ(5px) translateY(4px);}
   .mm-icon{font-size:44px;flex-shrink:0;filter:drop-shadow(0 3px 3px rgba(0,0,0,.4)) drop-shadow(0 -1px 0 rgba(255,255,255,.3));}
   .mm-name{font-family:'Archivo Black',sans-serif;font-size:19px;color:#fff;text-shadow:0 2px 2px rgba(0,0,0,.35);line-height:1.3;}
@@ -691,7 +693,7 @@ window.__threeReadyPromise = (async ()=>{
       radial-gradient(circle at 8% 96%, rgba(0,0,0,.5), transparent 32%),
       radial-gradient(circle at 92% 96%, rgba(0,0,0,.5), transparent 32%),
       radial-gradient(rgba(255,255,255,.05) 1px, transparent 1.4px) 0 0/16px 16px,
-      #2a0614 url('/_blob/e7834e8e3503e56041de4312550b1f5c') center top / cover no-repeat;
+      #2a0614 url('./assets/e7834e8e3503e56041de4312550b1f5c.webp') center top / cover no-repeat;
   }
   #lobbyScene3D{position:absolute;inset:0;z-index:-1;pointer-events:none;}
   #lobbyScene3D canvas{display:block;width:100%;height:100%;}
@@ -871,7 +873,7 @@ window.__threeReadyPromise = (async ()=>{
     position:relative;min-height:100vh;
     display:flex;flex-direction:column;align-items:center;justify-content:center;
     padding:26px 20px;overflow:hidden;
-    background-image: url('/_blob/612b6768771c13e882035736bdfe70ac');
+    background-image: url('./assets/612b6768771c13e882035736bdfe70ac.jpg');
     background-size:cover;background-position:center center;background-repeat:no-repeat;
   }
   #loginScene3D{
@@ -1052,7 +1054,7 @@ window.__threeReadyPromise = (async ()=>{
     position:fixed;inset:0;z-index:200;
     background:
       linear-gradient(rgba(10,6,20,.55), rgba(10,6,20,.8)),
-      url('/_blob/91aa6dd192348f160f4d52cd06b2463f') center top/cover no-repeat;
+      url('./assets/91aa6dd192348f160f4d52cd06b2463f.jpg') center top/cover no-repeat;
     display:flex;align-items:center;justify-content:center;
     padding:16px;
   }
@@ -1093,7 +1095,7 @@ window.__threeReadyPromise = (async ()=>{
     position:fixed;inset:0;z-index:200;
     background:
       linear-gradient(rgba(10,6,20,.55), rgba(10,6,20,.8)),
-      url('/_blob/91aa6dd192348f160f4d52cd06b2463f') center top/cover no-repeat;
+      url('./assets/91aa6dd192348f160f4d52cd06b2463f.jpg') center top/cover no-repeat;
     display:flex;align-items:center;justify-content:center;
     padding:16px;
   }
@@ -1957,11 +1959,11 @@ window.__threeReadyPromise = (async ()=>{
   /* Fondo ilustrado de cada tarjeta de modo: el degradado oscuro va ENCIMA
      de la imagen para que el título y la descripción se lean bien.
      El color del final es el respaldo si la imagen no carga. */
-  .mode-card.m-1v1{background:linear-gradient(rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%), url('/_blob/131e5c8ee3639875f1a8f124be30d5aa') center/cover no-repeat, #C4453D;}
-  .mode-card.m-ffa{background:linear-gradient(rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%), url('/_blob/91016c52ee389af2428f77e8c61942d3') center/cover no-repeat, #5b3fa8;}
-  .mode-card.m-2v2{background:linear-gradient(rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%), url('/_blob/22614fc07ae3ec3818ee3fd98edbab9d') center/cover no-repeat, #2E7FB0;}
-  .mode-card.secondary{background:linear-gradient(rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%), url('/_blob/dfcb9b077cc3d62cf077e5cba0e583b0') center/cover no-repeat, #E89A1E;}
-  .mode-card[onclick="openTeamUpScreen()"]{background:linear-gradient(rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%), url('/_blob/b0d6c002338664ae3613581659beae9d') center/cover no-repeat, #C4453D;}
+  .mode-card.m-1v1{background:linear-gradient(rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%), url('./assets/131e5c8ee3639875f1a8f124be30d5aa.webp') center/cover no-repeat, #C4453D;}
+  .mode-card.m-ffa{background:linear-gradient(rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%), url('./assets/91016c52ee389af2428f77e8c61942d3.webp') center/cover no-repeat, #5b3fa8;}
+  .mode-card.m-2v2{background:linear-gradient(rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%), url('./assets/22614fc07ae3ec3818ee3fd98edbab9d.webp') center/cover no-repeat, #2E7FB0;}
+  .mode-card.secondary{background:linear-gradient(rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%), url('./assets/dfcb9b077cc3d62cf077e5cba0e583b0.webp') center/cover no-repeat, #E89A1E;}
+  .mode-card[onclick="openTeamUpScreen()"]{background:linear-gradient(rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%), url('./assets/b0d6c002338664ae3613581659beae9d.webp') center/cover no-repeat, #C4453D;}
   .mode-icon-badge{
     width:48px;height:48px;
     display:flex;align-items:center;justify-content:center;
@@ -2340,7 +2342,7 @@ window.__threeReadyPromise = (async ()=>{
     position:relative;padding:5px;border-radius:4px;
     border-style:solid;border-color:transparent;
     border-width:clamp(26px, 9.5vw, 46px);
-    border-image:url('/_blob/03465104d7ecf47126adb11b46e5729a') 162 fill / clamp(26px, 9.5vw, 46px) / 0 stretch;
+    border-image:url('./assets/03465104d7ecf47126adb11b46e5729a.jpg') 162 fill / clamp(26px, 9.5vw, 46px) / 0 stretch;
     background:#3b1e13;
     box-shadow:0 8px 18px rgba(0,0,0,.55);
   }
@@ -2350,15 +2352,15 @@ window.__threeReadyPromise = (async ()=>{
      corte es dónde termina el marco dentro de cada imagen de 1024 px.
      Para cambiar un tablero, edita solo su ruta /_blob/. */
   #boardOuter[data-mode="mode2"]{ /* Modo 2 · 100 casillas — hielo y lava */
-    border-image:url('/_blob/2a47cb0fe29652769fb7f004101760aa') 124 fill / clamp(26px, 9.5vw, 46px) / 0 stretch;
+    border-image:url('./assets/2a47cb0fe29652769fb7f004101760aa.webp') 124 fill / clamp(26px, 9.5vw, 46px) / 0 stretch;
     background:#0d1a2b;
   }
   #boardOuter[data-mode="mode3"]{ /* Modo 3 · 125 — piedra y hierro */
-    border-image:url('/_blob/b90c72020821264182f8de75832755c6') 195 fill / clamp(26px, 9.5vw, 46px) / 0 stretch;
+    border-image:url('./assets/b90c72020821264182f8de75832755c6.webp') 195 fill / clamp(26px, 9.5vw, 46px) / 0 stretch;
     background:#15181d;
   }
   #boardOuter[data-mode="mode4"]{ /* Modo 4 · 150 Extremo — neón */
-    border-image:url('/_blob/204316530c6fb42472f62821a7f7504d') 97 fill / clamp(26px, 9.5vw, 46px) / 0 stretch;
+    border-image:url('./assets/204316530c6fb42472f62821a7f7504d.webp') 97 fill / clamp(26px, 9.5vw, 46px) / 0 stretch;
     background:#0a0e1c;
   }
   .corner-deco{
@@ -2953,9 +2955,9 @@ window.__threeReadyPromise = (async ()=>{
       <div class="offer-top-shine"></div>
 
       <div class="offer-title-row">
-        <img class="offer-title-gem l" data-game-img="diamond" src="/_blob/7d4f59250a985aefbbfa38aad3c4e678" alt="" aria-hidden="true" draggable="false">
+        <img class="offer-title-gem l" data-game-img="diamond" src="./assets/7d4f59250a985aefbbfa38aad3c4e678.webp" alt="" aria-hidden="true" draggable="false">
         <div class="offer-title">🎁 PAQUETE DE<br>BIENVENIDA</div>
-        <img class="offer-title-gem r" data-game-img="diamond" src="/_blob/7d4f59250a985aefbbfa38aad3c4e678" alt="" aria-hidden="true" draggable="false">
+        <img class="offer-title-gem r" data-game-img="diamond" src="./assets/7d4f59250a985aefbbfa38aad3c4e678.webp" alt="" aria-hidden="true" draggable="false">
       </div>
 
       <div class="offer-chest-stage">
@@ -2969,18 +2971,18 @@ window.__threeReadyPromise = (async ()=>{
         <img id="offerAmphoraImg" class="offer-chest-svg amphora-img" alt="Ánfora" draggable="false" style="object-fit:contain;">
         <svg class="offer-chest-svg" viewBox="0 0 140 130" style="position:absolute;top:0;left:0;pointer-events:none;">
           <!-- diamantes decorativos sobre el ánfora (imagen nueva, mismas posiciones que antes) -->
-          <image href="/_blob/7d4f59250a985aefbbfa38aad3c4e678" x="19" y="41.5" width="18" height="18"/>
-          <image href="/_blob/7d4f59250a985aefbbfa38aad3c4e678" x="95" y="39.5" width="18" height="18"/>
+          <image href="./assets/7d4f59250a985aefbbfa38aad3c4e678.webp" x="19" y="41.5" width="18" height="18"/>
+          <image href="./assets/7d4f59250a985aefbbfa38aad3c4e678.webp" x="95" y="39.5" width="18" height="18"/>
         </svg>
       </div>
 
       <div class="offer-showcase">
         <div class="offer-amt-callout">
-          <img class="currency-img" data-game-img="coin" src="/_blob/f75a2cff4ff15cf9365595fe2d97d8df" alt="Oro" width="38" height="38" draggable="false" style="width:38px;height:38px;vertical-align:-3px;">
+          <img class="currency-img" data-game-img="coin" src="./assets/f75a2cff4ff15cf9365595fe2d97d8df.webp" alt="Oro" width="38" height="38" draggable="false" style="width:38px;height:38px;vertical-align:-3px;">
           <b>5M</b>
         </div>
         <div class="offer-amt-callout">
-          <img class="currency-img" data-game-img="diamond" src="/_blob/7d4f59250a985aefbbfa38aad3c4e678" alt="Diamantes" width="38" height="38" draggable="false" style="width:38px;height:38px;vertical-align:-3px;">
+          <img class="currency-img" data-game-img="diamond" src="./assets/7d4f59250a985aefbbfa38aad3c4e678.webp" alt="Diamantes" width="38" height="38" draggable="false" style="width:38px;height:38px;vertical-align:-3px;">
           <b>500</b>
         </div>
       </div>
@@ -3184,8 +3186,8 @@ window.__threeReadyPromise = (async ()=>{
         <div class="profile-id" id="profileId">ID: —</div>
 
         <div class="profile-stats">
-          <div class="profile-stat"><span class="ps-icon"><img class="currency-img" data-game-img="coin" src="/_blob/f75a2cff4ff15cf9365595fe2d97d8df" alt="Oro" width="16" height="16" draggable="false" style="width:16px;height:16px;vertical-align:-3px;"></span><span class="ps-label">Oro ganado</span><span class="ps-value" id="statGoldEarned">0</span></div>
-          <div class="profile-stat"><span class="ps-icon"><img class="currency-img" data-game-img="diamond" src="/_blob/7d4f59250a985aefbbfa38aad3c4e678" alt="Diamantes" width="16" height="16" draggable="false" style="width:16px;height:16px;vertical-align:-3px;"></span><span class="ps-label">Diamantes</span><span class="ps-value" id="statDiamonds">200</span></div>
+          <div class="profile-stat"><span class="ps-icon"><img class="currency-img" data-game-img="coin" src="./assets/f75a2cff4ff15cf9365595fe2d97d8df.webp" alt="Oro" width="16" height="16" draggable="false" style="width:16px;height:16px;vertical-align:-3px;"></span><span class="ps-label">Oro ganado</span><span class="ps-value" id="statGoldEarned">0</span></div>
+          <div class="profile-stat"><span class="ps-icon"><img class="currency-img" data-game-img="diamond" src="./assets/7d4f59250a985aefbbfa38aad3c4e678.webp" alt="Diamantes" width="16" height="16" draggable="false" style="width:16px;height:16px;vertical-align:-3px;"></span><span class="ps-label">Diamantes</span><span class="ps-value" id="statDiamonds">200</span></div>
           <div class="profile-stat"><span class="ps-icon">🎮</span><span class="ps-label">Partidas jugadas</span><span class="ps-value" id="statPlayed">0</span></div>
           <div class="profile-stat"><span class="ps-icon">🏆</span><span class="ps-label">Partidas ganadas</span><span class="ps-value" id="statWon">0</span></div>
           <div class="profile-stat"><span class="ps-icon">💔</span><span class="ps-label">Partidas perdidas</span><span class="ps-value" id="statLost">0</span></div>
@@ -3228,13 +3230,13 @@ window.__threeReadyPromise = (async ()=>{
       <div class="store-card">
         <button class="profile-close" onclick="closeStore()">✕</button>
         <div class="store-title-row">
-          <img class="offer-title-gem" data-game-img="diamond" src="/_blob/7d4f59250a985aefbbfa38aad3c4e678" alt="" aria-hidden="true" draggable="false">
+          <img class="offer-title-gem" data-game-img="diamond" src="./assets/7d4f59250a985aefbbfa38aad3c4e678.webp" alt="" aria-hidden="true" draggable="false">
           <div class="store-title-gold">🛒 TIENDA</div>
-          <img class="offer-title-gem" data-game-img="diamond" src="/_blob/7d4f59250a985aefbbfa38aad3c4e678" alt="" aria-hidden="true" draggable="false">
+          <img class="offer-title-gem" data-game-img="diamond" src="./assets/7d4f59250a985aefbbfa38aad3c4e678.webp" alt="" aria-hidden="true" draggable="false">
         </div>
         <div class="store-balance">
-          <div class="econ-chip" title="Oro"><img class="currency-img" data-game-img="coin" src="/_blob/f75a2cff4ff15cf9365595fe2d97d8df" alt="Oro" width="16" height="16" draggable="false" style="width:16px;height:16px;vertical-align:-3px;"> <span id="storeGold">0</span></div>
-          <div class="econ-chip"><img class="currency-img" data-game-img="diamond" src="/_blob/7d4f59250a985aefbbfa38aad3c4e678" alt="Diamantes" width="16" height="16" draggable="false" style="width:16px;height:16px;vertical-align:-3px;"> <span id="storeDiamonds">200</span></div>
+          <div class="econ-chip" title="Oro"><img class="currency-img" data-game-img="coin" src="./assets/f75a2cff4ff15cf9365595fe2d97d8df.webp" alt="Oro" width="16" height="16" draggable="false" style="width:16px;height:16px;vertical-align:-3px;"> <span id="storeGold">0</span></div>
+          <div class="econ-chip"><img class="currency-img" data-game-img="diamond" src="./assets/7d4f59250a985aefbbfa38aad3c4e678.webp" alt="Diamantes" width="16" height="16" draggable="false" style="width:16px;height:16px;vertical-align:-3px;"> <span id="storeDiamonds">200</span></div>
         </div>
 
         <div class="store-flash-banner" onclick="buyGold(100000,'4.99')">
@@ -3398,9 +3400,9 @@ window.__threeReadyPromise = (async ()=>{
         <div class="offer-corner-flourish br"><svg viewBox="0 0 30 30"><path d="M2 20 Q2 2 20 2" fill="none" stroke="url(#chestBandG)" stroke-width="2.2" stroke-linecap="round"/><circle cx="2" cy="20" r="2" fill="url(#chestBandG)"/><circle cx="20" cy="2" r="2" fill="url(#chestBandG)"/><circle cx="2" cy="2" r="2.6" fill="url(#chestBandG)"/></svg></div>
         <div class="offer-top-shine"></div>
         <div class="store-title-row">
-          <img class="offer-title-gem" data-game-img="diamond" src="/_blob/7d4f59250a985aefbbfa38aad3c4e678" alt="" aria-hidden="true" draggable="false">
+          <img class="offer-title-gem" data-game-img="diamond" src="./assets/7d4f59250a985aefbbfa38aad3c4e678.webp" alt="" aria-hidden="true" draggable="false">
           <div class="store-title-gold">👥 AMIGOS</div>
-          <img class="offer-title-gem" data-game-img="diamond" src="/_blob/7d4f59250a985aefbbfa38aad3c4e678" alt="" aria-hidden="true" draggable="false">
+          <img class="offer-title-gem" data-game-img="diamond" src="./assets/7d4f59250a985aefbbfa38aad3c4e678.webp" alt="" aria-hidden="true" draggable="false">
         </div>
 
         <div class="friends-tabs">
@@ -3459,9 +3461,9 @@ window.__threeReadyPromise = (async ()=>{
         <div class="offer-corner-flourish br"><svg viewBox="0 0 30 30"><path d="M2 20 Q2 2 20 2" fill="none" stroke="url(#chestBandG)" stroke-width="2.2" stroke-linecap="round"/><circle cx="2" cy="20" r="2" fill="url(#chestBandG)"/><circle cx="20" cy="2" r="2" fill="url(#chestBandG)"/><circle cx="2" cy="2" r="2.6" fill="url(#chestBandG)"/></svg></div>
         <div class="offer-top-shine"></div>
         <div class="store-title-row">
-          <img class="offer-title-gem" data-game-img="diamond" src="/_blob/7d4f59250a985aefbbfa38aad3c4e678" alt="" aria-hidden="true" draggable="false">
+          <img class="offer-title-gem" data-game-img="diamond" src="./assets/7d4f59250a985aefbbfa38aad3c4e678.webp" alt="" aria-hidden="true" draggable="false">
           <div class="store-title-gold">🎉 EVENTOS</div>
-          <img class="offer-title-gem" data-game-img="diamond" src="/_blob/7d4f59250a985aefbbfa38aad3c4e678" alt="" aria-hidden="true" draggable="false">
+          <img class="offer-title-gem" data-game-img="diamond" src="./assets/7d4f59250a985aefbbfa38aad3c4e678.webp" alt="" aria-hidden="true" draggable="false">
         </div>
 
         <div class="store-section-title">Desafíos de hoy</div>
@@ -3657,31 +3659,31 @@ window.__threeReadyPromise = (async ()=>{
     </div>
     <div class="mode-menu-grid" id="boardChoiceCarousel">
       <div class="mm-card" onclick="chooseBoardKind('classic')">
-        <div class="mm-icon"><img class="icon-img" src="/_blob/e0c6009146498d470896b350a4df005c" alt="🏆" draggable="false" data-fb="🏆" onerror="this.outerHTML=this.dataset.fb"></div>
+        <div class="mm-icon"><img class="icon-img" src="./assets/e0c6009146498d470896b350a4df005c.webp" alt="🏆" draggable="false" data-fb="🏆" onerror="this.outerHTML=this.dataset.fb"></div>
         <div class="mm-name">Clásico</div>
         <div class="mm-desc">84 casillas, el tablero original</div>
         <div class="card-cta">JUGAR</div>
       </div>
       <div class="mm-card" onclick="chooseBoardKind('sized100')">
-        <div class="mm-icon"><img class="icon-img" src="/_blob/8ed0ecad4d84bea86c3a4733e26a0921" alt="💯" draggable="false" data-fb="💯" onerror="this.outerHTML=this.dataset.fb"></div>
+        <div class="mm-icon"><img class="icon-img" src="./assets/8ed0ecad4d84bea86c3a4733e26a0921.webp" alt="💯" draggable="false" data-fb="💯" onerror="this.outerHTML=this.dataset.fb"></div>
         <div class="mm-name">Fuego y Hielo</div>
         <div class="mm-desc">100 casillas, tablero extendido</div>
         <div class="card-cta">JUGAR</div>
       </div>
       <div class="mm-card" onclick="chooseBoardKind('sized125')">
-        <div class="mm-icon"><img class="icon-img" src="/_blob/3166d502342e53c72c76864239013873" alt="🏔️" draggable="false" data-fb="🏔️" onerror="this.outerHTML=this.dataset.fb"></div>
+        <div class="mm-icon"><img class="icon-img" src="./assets/3166d502342e53c72c76864239013873.webp" alt="🏔️" draggable="false" data-fb="🏔️" onerror="this.outerHTML=this.dataset.fb"></div>
         <div class="mm-name">Guerra de Hierro</div>
         <div class="mm-desc">125 casillas, tablero más largo</div>
         <div class="card-cta">JUGAR</div>
       </div>
       <div class="mm-card" onclick="chooseBoardKind('sized150')">
-        <div class="mm-icon"><img class="icon-img" src="/_blob/f7abb05fa533d318890e45ca9b9c87a0" alt="🗻" draggable="false" data-fb="🗻" onerror="this.outerHTML=this.dataset.fb"></div>
+        <div class="mm-icon"><img class="icon-img" src="./assets/f7abb05fa533d318890e45ca9b9c87a0.webp" alt="🗻" draggable="false" data-fb="🗻" onerror="this.outerHTML=this.dataset.fb"></div>
         <div class="mm-name">Neón Extremo</div>
         <div class="mm-desc">108 casillas, tablero gigante</div>
         <div class="card-cta">JUGAR</div>
       </div>
       <div class="mm-card" onclick="chooseBoardKind('rapido')">
-        <div class="mm-icon"><img class="icon-img" src="/_blob/ea6bafc6d2957bff627ffa46c295da19" alt="⚡" draggable="false" data-fb="⚡" onerror="this.outerHTML=this.dataset.fb"></div>
+        <div class="mm-icon"><img class="icon-img" src="./assets/ea6bafc6d2957bff627ffa46c295da19.webp" alt="⚡" draggable="false" data-fb="⚡" onerror="this.outerHTML=this.dataset.fb"></div>
         <div class="mm-name">Modo Rápido</div>
         <div class="mm-desc">84 casillas, fichas al doble de velocidad</div>
         <div class="card-cta">JUGAR</div>
@@ -3751,7 +3753,7 @@ window.__threeReadyPromise = (async ()=>{
   <header>
     <button id="gameMenuBtn" onclick="toggleGameMenu()" title="Menú">☰</button>
     <div class="game-diamond-corner">
-      <div class="hud-item" id="hudDiamondItem" title="Usa diamantes para volver a tirar tus dados."><img class="currency-img" data-game-img="diamond" src="/_blob/7d4f59250a985aefbbfa38aad3c4e678" alt="Diamantes" width="16" height="16" draggable="false" style="width:16px;height:16px;vertical-align:-3px;"> <span id="hudDiamonds">200</span></div>
+      <div class="hud-item" id="hudDiamondItem" title="Usa diamantes para volver a tirar tus dados."><img class="currency-img" data-game-img="diamond" src="./assets/7d4f59250a985aefbbfa38aad3c4e678.webp" alt="Diamantes" width="16" height="16" draggable="false" style="width:16px;height:16px;vertical-align:-3px;"> <span id="hudDiamonds">200</span></div>
       <div class="next-change-cost" id="nextChangeCostLabel"></div>
     </div>
   </header>
@@ -4874,15 +4876,15 @@ const BET_TIERS = [500, 2000, 5000, 10000, 50000, 250000, 1000000, 5000000, 1500
 // 52% del ancho de la imagen cuadrada, por eso se veían "en el medio" con
 // bandas blancas a los costados en vez de tapar toda la ficha).
 const BET_TIER_IMAGES = [
-  '/_blob/59b0bfeabc5d75fcf0c68769a47cefc1', //   500 · verde
-  '/_blob/d2becefbd31e5339aa5ccbb3161f4545', //  2000 · azul
-  '/_blob/8e6c1c0aa5e61cd95895042fd3107952', //  5000 · dorada
-  '/_blob/d98535b11a0b77f6885f38f67657a1f8', //   10K · turquesa
-  '/_blob/76f554ee0c6d86024dcfdaf9d5b670cd', //   50K · roja
-  '/_blob/5d94f9c1c34516e6e33880d30b422fd2', //  250K · amarilla
-  '/_blob/634e621164ec6cc3b7bfcd131ddf86a6', //    1M · ámbar
-  '/_blob/23d6eabf94e5c7ef96d6852722420076', //    5M · naranja
-  '/_blob/44ce1c9a791e402ec8b8da429ae7550f', //   15M · rosa
+  './assets/59b0bfeabc5d75fcf0c68769a47cefc1.jpg', //   500 · verde
+  './assets/d2becefbd31e5339aa5ccbb3161f4545.jpg', //  2000 · azul
+  './assets/8e6c1c0aa5e61cd95895042fd3107952.jpg', //  5000 · dorada
+  './assets/d98535b11a0b77f6885f38f67657a1f8.jpg', //   10K · turquesa
+  './assets/76f554ee0c6d86024dcfdaf9d5b670cd.jpg', //   50K · roja
+  './assets/5d94f9c1c34516e6e33880d30b422fd2.jpg', //  250K · amarilla
+  './assets/634e621164ec6cc3b7bfcd131ddf86a6.jpg', //    1M · ámbar
+  './assets/23d6eabf94e5c7ef96d6852722420076.jpg', //    5M · naranja
+  './assets/44ce1c9a791e402ec8b8da429ae7550f.jpg', //   15M · rosa
   null                                        //   30M · falta la imagen
 ];
 // Formato corto para que los números no ocupen toda la ficha:
@@ -4968,7 +4970,7 @@ const COLORS = ["red","blue","yellow","green"];
 const NAMES = {red:"Rojo",blue:"Azul",yellow:"Amarillo",green:"Verde"};
 const FRAME_CORNER_B64 = 'data:model/gltf-binary;base64,Z2xURgIAAACkJgAARAQAAEpTT057ImFzc2V0IjogeyJ2ZXJzaW9uIjogIjIuMCIsICJnZW5lcmF0b3IiOiAiUGFyY2hlIGZyYW1lIHBpZWNlIn0sICJzY2VuZSI6IDAsICJzY2VuZXMiOiBbeyJub2RlcyI6IFswXX1dLCAibm9kZXMiOiBbeyJtZXNoIjogMCwgIm5hbWUiOiAiZnJhbWVfY29ybmVyIn1dLCAibWVzaGVzIjogW3sibmFtZSI6ICJmcmFtZV9jb3JuZXIiLCAicHJpbWl0aXZlcyI6IFt7ImF0dHJpYnV0ZXMiOiB7IlBPU0lUSU9OIjogMCwgIk5PUk1BTCI6IDF9LCAiaW5kaWNlcyI6IDIsICJtYXRlcmlhbCI6IDAsICJtb2RlIjogNH1dfV0sICJtYXRlcmlhbHMiOiBbeyJuYW1lIjogIndvb2RfZ29sZCIsICJwYnJNZXRhbGxpY1JvdWdobmVzcyI6IHsiYmFzZUNvbG9yRmFjdG9yIjogWzAuNzUsIDAuNTUsIDAuMjIsIDEuMF0sICJtZXRhbGxpY0ZhY3RvciI6IDAuMTUsICJyb3VnaG5lc3NGYWN0b3IiOiAwLjV9LCAiZG91YmxlU2lkZWQiOiB0cnVlfV0sICJidWZmZXJzIjogW3siYnl0ZUxlbmd0aCI6IDg3NzJ9XSwgImJ1ZmZlclZpZXdzIjogW3siYnVmZmVyIjogMCwgImJ5dGVPZmZzZXQiOiAwLCAiYnl0ZUxlbmd0aCI6IDI0NDgsICJ0YXJnZXQiOiAzNDk2Mn0sIHsiYnVmZmVyIjogMCwgImJ5dGVPZmZzZXQiOiAyNDQ4LCAiYnl0ZUxlbmd0aCI6IDI0NDgsICJ0YXJnZXQiOiAzNDk2Mn0sIHsiYnVmZmVyIjogMCwgImJ5dGVPZmZzZXQiOiA0ODk2LCAiYnl0ZUxlbmd0aCI6IDM4NzYsICJ0YXJnZXQiOiAzNDk2M31dLCAiYWNjZXNzb3JzIjogW3siYnVmZmVyVmlldyI6IDAsICJjb21wb25lbnRUeXBlIjogNTEyNiwgImNvdW50IjogMjA0LCAidHlwZSI6ICJWRUMzIiwgIm1pbiI6IFswLjYzNjAwNzc4NTc5NzExOTEsIDAuNjA0Njk2NTcxODI2OTM0OCwgLTAuMTY2MzQwNDI1NjEwNTQyM10sICJtYXgiOiBbMS4wLCAwLjk5OTk5OTg4MDc5MDcxMDQsIDAuMTcwMjU0NDU0MDE2Njg1NDldfSwgeyJidWZmZXJWaWV3IjogMSwgImNvbXBvbmVudFR5cGUiOiA1MTI2LCAiY291bnQiOiAyMDQsICJ0eXBlIjogIlZFQzMifSwgeyJidWZmZXJWaWV3IjogMiwgImNvbXBvbmVudFR5cGUiOiA1MTI1LCAiY291bnQiOiA5NjksICJ0eXBlIjogIlNDQUxBUiJ9XX1EIgAAQklOAAD/fT9lzRo/PlQoPe7dOz/+/n0/NFQoPYD/fj9+/34/PlQoPfz2bT9o0iQ/R2xYPXz3bj9q1y4/SGxYPfz3bz9s2jQ/SGxYPfz3bz/t3Dk/SGxYPXz3bj9u3z4/SGxYPfz2bT/v4UM/R2xYPXv1aj/w40c/R2xYPXv1aj9x5Uo/R2xYPXv1aj/y5k0/R2xYPfv1az9z6FA/R2xYPfLjRz959Wo/QmxYPfPkST959Wo/QmxYPXTmTD959Wo/Q2xYPfTnTz/59Ws/Q2xYPXHhQj/69m0/QWxYPe/ePT96924/QWxYPevWLT/6928/PmxYPW3aND/6928/P2xYPW7cOD/6928/QGxYPXHgQD/v4EE/SXx4PevVKz9w4kQ/Rnx4PXv2bD/69m0/T3x4PfnwYT9o0yY/KUKEPXLiRD/s2TM/J0KEPXbrVj/061c/KEKEPW3bNj/38GE/JkKEPXv2bD/n0CE/OF68Pfz2bT/p0yc/OF68PXz3bj9q1y4/OF68PXv1aj9y504/OF68PfTmTT959Wo/NV68PWjRIj96924/Ml68PerTJz/6928/M168PevWLT96+HA/M168PXv1aj9n0CA/O2LEPfv1az/p0yc/O2LEPXv1aj/y508/O2LEPW3aND/59Gk/N2LEPfTnTz959Wo/OWLEPW7dOj/59Ws/N2LEPfv1az/59Ws/O2LEPXv1aj959mw/O2LEPfv0aT9y5kw/PGbMPfv0aT/y5k0/PGbMPfPlSz/59Gk/OmbMPXTmTD/59Gk/OmbMPfz2bT/q1i0/PmrUPXz3bj/s2jU/PmrUPevWLT96924/OWrUPW3aND/6928/OmrUPXr0aD/p0yc/P27cPfrzZz9x5Uo/P27cPfrzZz/x5Us/P27cPXrzZj/y5k0/P27cPfPkST/482c/PW7cPXPlSj/482c/PW7cPXTmTD/482c/PW7cPerTJz/59Gk/O27cPXv1aj/q1i0/QnLkPfz3bz/t3Dk/QnLkPXrzZj9y504/QXLkPXTnTj9482Y/QHLkPWvWLD959Wo/PXLkPe7cOT/6928/PnLkPfv0aT9q1iw/Q3bsPXz3bj9u3z4/RHbsPfv0aT/w40c/Q3bsPfLjRz/59Gk/QXbsPerTJz959Wo/P3bsPWvWLD959Wo/P3bsPe/ePT96924/QHbsPXz3bj/s2TM/Rnr0PXv2bD9v4UI/Rnr0PXHhQj959mw/Q3r0Pe3ZMz96924/Qnr0PXv1aj/s2TM/SH78PXrzZj/482c/R378PWzZMj959mw/RH78PXz3bj/t2zc/JUECPnnxYj9x5Uo/JUECPnPlSj938WI/JEECPm3aND/59Ws/I0ECPu7bNz96924/I0ECPvv0aT9p1Cg/JkMGPvv0aT/r1y8/JkMGPvv1az9t3Dg/JkMGPvnwYT/y5k0/JkMGPnTmTD/38GE/JUMGPmrUKD959Wo/JEMGPuvVKz959Wo/JEMGPuzXLz959Wo/JEMGPvv0aT9q1iw/JkUKPnr0aD/s2TM/JkUKPvz2bT/t3Ts/JkUKPmzZMj949Gg/JEUKPu7bNz/59Ws/JEUKPm7dOj96924/JUUKPvrzZz9s2zY/J0cOPvryZT/t3Dk/J0cOPnv1aj9u3jw/J0cOPnv2bD/u3z8/J0cOPvnwYT9x5Eg/J0cOPvLjRz/38GE/JkcOPm7cOD/48mU/JUcOPu3aNT/482c/JUcOPu7dOz959Wo/JkcOPm/fPj/69m0/JkcOPvnxYz9u3jw/KEkSPnr0aD/u3z8/KEkSPnr0aD/v4UM/KEkSPu7dOz/38WM/J0kSPvHgQT959Wo/J0kSPnLjRj/t3Ts/KEsWPnLjRj9u3jw/KEsWPnTnTj/u3j0/KEsWPvjuXT9u3z4/KUsWPm/fPj/u3z8/KEsWPnbrVj/u3z8/KUsWPnnyZD9v4UI/KUsWPnnyZD/w4kU/KUsWPm7dOj/w40c/KEsWPu7dOz/w40c/KEsWPm/ePD/y508/KEsWPm/fPj/061c/KEsWPu/ePT/27l0/KEsWPnHhQj928GA/KEsWPvLiRT/48mU/KEsWPnHgQD9482Y/KEsWPnr0aD/p0yc/Kk0aPvjvXz9p1So/Kk0aPnjvXj/q1Ss/Kk0aPnr0aD/q1Ss/Kk0aPvjuXT/q1i0/Kk0aPvftWz9q1y4/Kk0aPnfsWD/r1y8/Kk0aPvrzZz/r1y8/Kk0aPnbrVj9r2DA/Kk0aPvTnTz/r2DE/KU0aPvXpUz/r2DE/KU0aPvTmTT/u3z8/KU0aPnHgQD/v4EE/KU0aPvjvXz9w4kQ/Kk0aPvjvXz9w40Y/Kk0aPu/fPz9y504/KU0aPmzYMD/y508/KE0aPmzYMD/z6VM/KE0aPuzXLz9061Y/KE0aPmvXLj/17Fk/KE0aPuvWLT927lw/KE0aPmvWLD92714/KE0aPuvVKz/2718/KE0aPurUKT928GA/KE0aPvLiRT928GA/KU0aPnnxYj/38WM/Kk0aPmrUKD/59Gk/KE0aPuvVKz/59Gk/KE0aPuzXLz/59Gk/KE0aPvLiRT9w40Y/Kk8ePnrzZj/p0yc/LFEiPnrzZj/q1Ss/LFEiPnrzZj9q1y4/LFEiPuzYMT9482Y/KlEiPmrUKD/482c/KlEiPuvVKz/482c/KlEiPmvXLj/482c/KlEiPvnxYz/p1Ck/LVMmPnnxYj9q1iw/LVMmPvnwYT9q1y4/LVMmPnjwYD9r2DA/LVMmPnnyZD/r2DE/LVMmPvnxYz/s2TM/LVMmPvPkST9s2jQ/LFMmPvTnTz9s2jQ/LFMmPnnxYj9s2zY/LVMmPvPkST/t2zc/LFMmPu3ZMz/x5Ek/K1MmPu7bNz/x5Ek/K1MmPm3aND9z6FA/K1MmPuzXLz928GA/K1MmPuvWLT938WI/K1MmPu3aNT938WI/K1MmPmvWLD/38WM/K1MmPurUKT938mQ/K1MmPu3ZMz938mQ/K1MmPvjuXT/r2DE/LlUqPvftWz/s2TM/LlUqPnbqVD9s2jQ/LVUqPnfsWD9s2jQ/LlUqPvjvXz9t3Dg/LlUqPvTnTz/t3Dk/LVUqPu7cOT9z6FA/LVUqPu3ZMz/06lU/LFUqPu3ZMz917Fg/LFUqPmzZMj/17Vs/LFUqPuzYMT92714/LFUqPm7cOD928GA/LFUqPnbrVj9t3To/L1cuPvftWz9t3To/L1cuPm7dOj9061Y/LlcuPu7cOT/17Vs/LlcuPgAAgD/+/38/JVUqvjbpdj/lBR68rSCHPqxDa7yxSnY/6HeLPqKeNj/QrPU+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nAAAADcAAABSAAAAaAAAADcAAABoAAAANgAAAGgAAABSAAAAWQAAADYAAABoAAAAkQAAAJEAAABoAAAAWQAAAJEAAABZAAAAnAAAAJEAAACcAAAAmwAAAJEAAACbAAAAoAAAAJEAAACgAAAAjgAAAKAAAACbAAAAfgAAAH4AAACbAAAAgAAAAI4AAACgAAAAjwAAAI4AAACPAAAAdAAAAI8AAACgAAAAkgAAAJIAAACgAAAAfgAAAHQAAACPAAAAdwAAAI8AAACSAAAAfAAAAI8AAAB8AAAAdwAAAHsAAAB8AAAAkgAAAHsAAACSAAAAfQAAAH0AAACSAAAAfgAAAHsAAAB9AAAAwQAAAHsAAADBAAAAswAAAH0AAAB+AAAAyQAAAH0AAADJAAAAwQAAALMAAADBAAAAsgAAALIAAADBAAAAtAAAALQAAADBAAAAyQAAALQAAADJAAAAwgAAALQAAADCAAAAkwAAAMIAAADJAAAAygAAAJQAAADCAAAAwwAAAMMAAADCAAAAygAAAMoAAADJAAAAfwAAAH8AAADJAAAAfgAAAH8AAAB+AAAAgAAAAH8AAACAAAAAcQAAAH8AAABxAAAAygAAAJQAAADDAAAAlQAAAMYAAADDAAAAygAAAMYAAADKAAAAcQAAAMMAAADGAAAAxAAAAMMAAADEAAAAlQAAAMYAAABxAAAAtwAAAMQAAADGAAAAxQAAAMUAAADGAAAAtwAAAJUAAADEAAAAlgAAAJYAAADEAAAAxQAAAJYAAADFAAAAlwAAAJcAAADFAAAAmAAAALUAAACZAAAAmAAAALUAAACYAAAAxQAAALUAAADFAAAAtwAAAJkAAAC1AAAAtgAAAJkAAAC2AAAAmgAAALUAAAC3AAAAugAAALUAAAC6AAAAtgAAALoAAAC3AAAAawAAAJoAAAC2AAAAuAAAALkAAAC4AAAApgAAAKYAAAC4AAAApwAAAKcAAAC4AAAAtgAAAKYAAACnAAAAnwAAAKcAAAC2AAAApAAAAKcAAACkAAAAnwAAAKQAAAC2AAAAugAAAJ8AAACkAAAAYQAAAGEAAACkAAAAugAAAGEAAAC6AAAAawAAAGoAAABrAAAAtwAAAGsAAABqAAAAYgAAAGoAAAC3AAAAcQAAAGIAAABqAAAAbAAAAGwAAABqAAAAcQAAAA==';
 const FRAME_EDGE_B64 = 'data:model/gltf-binary;base64,Z2xURgIAAADQDQAAPAQAAEpTT057ImFzc2V0IjogeyJ2ZXJzaW9uIjogIjIuMCIsICJnZW5lcmF0b3IiOiAiUGFyY2hlIGZyYW1lIHBpZWNlIn0sICJzY2VuZSI6IDAsICJzY2VuZXMiOiBbeyJub2RlcyI6IFswXX1dLCAibm9kZXMiOiBbeyJtZXNoIjogMCwgIm5hbWUiOiAiZnJhbWVfZWRnZSJ9XSwgIm1lc2hlcyI6IFt7Im5hbWUiOiAiZnJhbWVfZWRnZSIsICJwcmltaXRpdmVzIjogW3siYXR0cmlidXRlcyI6IHsiUE9TSVRJT04iOiAwLCAiTk9STUFMIjogMX0sICJpbmRpY2VzIjogMiwgIm1hdGVyaWFsIjogMCwgIm1vZGUiOiA0fV19XSwgIm1hdGVyaWFscyI6IFt7Im5hbWUiOiAid29vZF9nb2xkIiwgInBick1ldGFsbGljUm91Z2huZXNzIjogeyJiYXNlQ29sb3JGYWN0b3IiOiBbMC43NSwgMC41NSwgMC4yMiwgMS4wXSwgIm1ldGFsbGljRmFjdG9yIjogMC4xNSwgInJvdWdobmVzc0ZhY3RvciI6IDAuNX0sICJkb3VibGVTaWRlZCI6IHRydWV9XSwgImJ1ZmZlcnMiOiBbeyJieXRlTGVuZ3RoIjogMjQyNH1dLCAiYnVmZmVyVmlld3MiOiBbeyJidWZmZXIiOiAwLCAiYnl0ZU9mZnNldCI6IDAsICJieXRlTGVuZ3RoIjogNzY4LCAidGFyZ2V0IjogMzQ5NjJ9LCB7ImJ1ZmZlciI6IDAsICJieXRlT2Zmc2V0IjogNzY4LCAiYnl0ZUxlbmd0aCI6IDc2OCwgInRhcmdldCI6IDM0OTYyfSwgeyJidWZmZXIiOiAwLCAiYnl0ZU9mZnNldCI6IDE1MzYsICJieXRlTGVuZ3RoIjogODg4LCAidGFyZ2V0IjogMzQ5NjN9XSwgImFjY2Vzc29ycyI6IFt7ImJ1ZmZlclZpZXciOiAwLCAiY29tcG9uZW50VHlwZSI6IDUxMjYsICJjb3VudCI6IDY0LCAidHlwZSI6ICJWRUMzIiwgIm1pbiI6IFstMS4wLCAwLjY4Mjk3NDQ1Nzc0MDc4MzcsIC0wLjE3MDI1NDQ1NDAxNjY4NTQ5XSwgIm1heCI6IFswLjkw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';
-const PAWN_MODEL_B64_URL = '/_blob/2041f20ca57c45b588e6ff3d15b24f66';
+const PAWN_MODEL_B64_URL = './assets/2041f20ca57c45b588e6ff3d15b24f66.txt';
 let _PAWN_MODEL_B64_dataUri = null;
 async function get_PAWN_MODEL_B64_dataUri(){
   if(_PAWN_MODEL_B64_dataUri) return _PAWN_MODEL_B64_dataUri;
@@ -4977,7 +4979,7 @@ async function get_PAWN_MODEL_B64_dataUri(){
   _PAWN_MODEL_B64_dataUri = 'data:model/gltf-binary;base64,' + b64;
   return _PAWN_MODEL_B64_dataUri;
 }
-const AMPHORA_MODEL_B64_URL = '/_blob/bfa93ac0a8a9ebe5b7dda89714b89d61';
+const AMPHORA_MODEL_B64_URL = './assets/bfa93ac0a8a9ebe5b7dda89714b89d61.txt';
 let _AMPHORA_MODEL_B64_dataUri = null;
 async function get_AMPHORA_MODEL_B64_dataUri(){
   if(_AMPHORA_MODEL_B64_dataUri) return _AMPHORA_MODEL_B64_dataUri;
@@ -4986,7 +4988,7 @@ async function get_AMPHORA_MODEL_B64_dataUri(){
   _AMPHORA_MODEL_B64_dataUri = 'data:model/gltf-binary;base64,' + b64;
   return _AMPHORA_MODEL_B64_dataUri;
 }
-const COIN_MODEL_B64_URL = '/_blob/b448b7d31e3d53ad5a0f914a1d7e664f';
+const COIN_MODEL_B64_URL = './assets/b448b7d31e3d53ad5a0f914a1d7e664f.txt';
 let _COIN_MODEL_B64_dataUri = null;
 async function get_COIN_MODEL_B64_dataUri(){
   if(_COIN_MODEL_B64_dataUri) return _COIN_MODEL_B64_dataUri;
@@ -5016,8 +5018,8 @@ function packIconHTML(kind, tier, fallbackBlobId, fallbackAlt, size){
 }
 
 const GAME_IMAGES = {
-  coin:    '/_blob/f75a2cff4ff15cf9365595fe2d97d8df', // moneda-oro.webp
-  diamond: '/_blob/7d4f59250a985aefbbfa38aad3c4e678', // diamante.webp
+  coin:    './assets/f75a2cff4ff15cf9365595fe2d97d8df.webp', // moneda-oro.webp
+  diamond: './assets/7d4f59250a985aefbbfa38aad3c4e678.webp', // diamante.webp
 };
 // Moneda para textos/botones armados por código (mismo nombre de siempre).
 // Va DESPUÉS de GAME_IMAGES a propósito: si estuviera antes, el juego no arrancaría.
@@ -5025,10 +5027,10 @@ const GOLD_COIN_ICON = `<img class="currency-img" src="${GAME_IMAGES.coin}" alt=
 // Marcos de perfil (anillo con el centro transparente). Si un marco no tiene
 // imagen (null), se sigue dibujando con el CSS de siempre.
 const FRAME_IMAGES = {
-  classic: '/_blob/474b4de5c123e4f033d42bf9b60936b3', // marco-clasico.webp
-  bronze:  '/_blob/b3dd64a838b34a6ace0f0731c85453ac', // marco-bronce.webp
-  gold:    '/_blob/c67c6999a9bad66c9a2ee8d9947f4410', // marco-oro.webp
-  neon:    '/_blob/42b4ea06e628c4509f36d8acc0aa1c21', // marco-neon.webp
+  classic: './assets/474b4de5c123e4f033d42bf9b60936b3.webp', // marco-clasico.webp
+  bronze:  './assets/b3dd64a838b34a6ace0f0731c85453ac.webp', // marco-bronce.webp
+  gold:    './assets/c67c6999a9bad66c9a2ee8d9947f4410.webp', // marco-oro.webp
+  neon:    './assets/42b4ea06e628c4509f36d8acc0aa1c21.webp', // marco-neon.webp
 };
 // Pone las rutas en la página: los <img data-game-img="..."> fijos del HTML
 // y las variables CSS --frame-img-<id> que usan los marcos.
@@ -5050,14 +5052,14 @@ else applyGameImages();
 // Referencias simples (/_blob/<id>), nunca base64. Si una entrada es null,
 // o la imagen no carga, se muestra el emoji de respaldo de siempre.
 const ICON_IMAGES = {
-  avatarMe:     '/_blob/e1eaa019f9277388e06be5f53a6ef654', // avatar-jugador.webp
-  avatarBot:    '/_blob/56f5405c328dfa63408cfb6974af92b7', // avatar-bot.webp
-  leagueBronce: '/_blob/627aa21b48a2baaa87bb512f5410612f', // liga-bronce.webp
-  leaguePlata:  '/_blob/132c96c9f69d7cfe2e8793cf3fc25d2d', // liga-plata.webp
-  leagueOro:    '/_blob/81795873cf6a91e98d4dd9b7ae809a09', // liga-oro.webp
+  avatarMe:     './assets/e1eaa019f9277388e06be5f53a6ef654.webp', // avatar-jugador.webp
+  avatarBot:    './assets/56f5405c328dfa63408cfb6974af92b7.webp', // avatar-bot.webp
+  leagueBronce: './assets/627aa21b48a2baaa87bb512f5410612f.webp', // liga-bronce.webp
+  leaguePlata:  './assets/132c96c9f69d7cfe2e8793cf3fc25d2d.webp', // liga-plata.webp
+  leagueOro:    './assets/81795873cf6a91e98d4dd9b7ae809a09.webp', // liga-oro.webp
   leagueElite:  null,                                      // ← sin imagen (💎)
-  endWin:       '/_blob/b86aa6b526673eeaff40eb9307791994', // victoria.webp
-  endLose:      '/_blob/89dfb3a15dcc9e4df6771ffc58550c70', // derrota.webp
+  endWin:       './assets/b86aa6b526673eeaff40eb9307791994.webp', // victoria.webp
+  endLose:      './assets/89dfb3a15dcc9e4df6771ffc58550c70.webp', // derrota.webp
 };
 // Devuelve un <img> si hay ruta; si no, el emoji. Si la imagen falla al
 // cargar, se reemplaza sola por el emoji para no dejar un hueco roto.
@@ -5071,11 +5073,11 @@ function iconImgHTML(key, fallback, extraClass){
 
 // Íconos de los modos de juego (menú de tableros y tutoriales).
 const MODE_ICON_IMAGES = {
-  classic:  '/_blob/e0c6009146498d470896b350a4df005c', // modo-clasico.webp
-  sized100: '/_blob/8ed0ecad4d84bea86c3a4733e26a0921', // modo-100.webp
-  sized125: '/_blob/3166d502342e53c72c76864239013873', // modo-125.webp
-  sized150: '/_blob/f7abb05fa533d318890e45ca9b9c87a0', // modo-150.webp
-  rapido:   '/_blob/ea6bafc6d2957bff627ffa46c295da19', // modo-rapido.webp
+  classic:  './assets/e0c6009146498d470896b350a4df005c.webp', // modo-clasico.webp
+  sized100: './assets/8ed0ecad4d84bea86c3a4733e26a0921.webp', // modo-100.webp
+  sized125: './assets/3166d502342e53c72c76864239013873.webp', // modo-125.webp
+  sized150: './assets/f7abb05fa533d318890e45ca9b9c87a0.webp', // modo-150.webp
+  rapido:   './assets/ea6bafc6d2957bff627ffa46c295da19.webp', // modo-rapido.webp
 };
 
 // Íconos generales de la interfaz: cada vez que uno de estos emojis aparece
@@ -5086,13 +5088,13 @@ const UI_EMOJI_IMAGES = {
   '💎': GAME_IMAGES.diamond,                    // diamante nuevo (en toda la página)
   '🪙': GAME_IMAGES.coin,                       // moneda nueva (en toda la página)
   '🎁': null,                                      // ← falta (regalo)
-  '💬': '/_blob/fa49bca0c87d9c93dfa670259b6cdc81', // ui-chat.webp
-  '💰': '/_blob/d9fc1d685cb5e9c8786ecc01bf302a22', // ui-bolsa.webp
-  '🎉': '/_blob/95ddf65e4c50f70d820f31aeb95d7d97', // ui-eventos.webp
-  '🎫': '/_blob/c33c38c41e59fc31f6592cd1a9884dac', // ui-ticket.webp
-  '🧩': '/_blob/b3fafb6326d65a5c19299d4d19cba6e0', // ui-fragmento.webp
-  '🎤': '/_blob/8e71cc653cec4ea6b4aafa60c0648663', // ui-microfono.webp
-  '📷': '/_blob/a627c74187c20045b32b4664e17461e9', // ui-camara.webp
+  '💬': './assets/fa49bca0c87d9c93dfa670259b6cdc81.webp', // ui-chat.webp
+  '💰': './assets/d9fc1d685cb5e9c8786ecc01bf302a22.webp', // ui-bolsa.webp
+  '🎉': './assets/95ddf65e4c50f70d820f31aeb95d7d97.webp', // ui-eventos.webp
+  '🎫': './assets/c33c38c41e59fc31f6592cd1a9884dac.webp', // ui-ticket.webp
+  '🧩': './assets/b3fafb6326d65a5c19299d4d19cba6e0.webp', // ui-fragmento.webp
+  '🎤': './assets/8e71cc653cec4ea6b4aafa60c0648663.webp', // ui-microfono.webp
+  '📷': './assets/a627c74187c20045b32b4664e17461e9.webp', // ui-camara.webp
 };
 (function setupUiEmojiImages(){
   const active = Object.keys(UI_EMOJI_IMAGES).filter(e=>UI_EMOJI_IMAGES[e]);
@@ -5498,7 +5500,7 @@ function beep(freq, dur=0.08, type='sine', vol=0.15){
 
 // Un golpecito seco de ruido filtrado — la pieza base para armar el
 // traqueteo de dados reales (mucho más natural que un pitido).
-const DICE_ROLL_AUDIO_B64_URL = '/_blob/6b502f28cbdfda9565f7cb0b21da6123';
+const DICE_ROLL_AUDIO_B64_URL = './assets/6b502f28cbdfda9565f7cb0b21da6123.txt';
 let _DICE_ROLL_AUDIO_B64_dataUri = null;
 async function get_DICE_ROLL_AUDIO_B64_dataUri(){
   if(_DICE_ROLL_AUDIO_B64_dataUri) return _DICE_ROLL_AUDIO_B64_dataUri;
@@ -5923,29 +5925,29 @@ const CELL_TYPE_STYLE = {
 // Imágenes de las casillas especiales. Referencias simples (/_blob/<id>);
 // null = se sigue dibujando el emoji de CELL_TYPE_STYLE (icon) como siempre.
 const CELL_ICON_IMAGES = {
-  salida:       '/_blob/a814884b4be522ab0ec65c403d904970', // casilla-salida.webp
-  meta:         '/_blob/67dd4737333152cd6a7a5b002bf431e7', // casilla-meta.webp
-  lance:        '/_blob/3959cd53f299179c053af168c902cf9a', // casilla-lance.webp
-  sube:         '/_blob/88b8b16e4e5f4dacae94dad01af99d4e', // casilla-sube.webp
-  turno:        '/_blob/f748de801008cb01b693c2006c2a552b', // casilla-turno.webp
-  baja:         '/_blob/d1bf81e522f447a3160dea0795d49576', // casilla-baja.webp
-  vuelva:       '/_blob/3b18a0374f7749e36b53c38aad74113c', // casilla-vuelva.webp
-  congelado:    '/_blob/4949407fa919ee8ba7738223e4b2a6e2', // casilla-congelado.webp
+  salida:       './assets/a814884b4be522ab0ec65c403d904970.webp', // casilla-salida.webp
+  meta:         './assets/67dd4737333152cd6a7a5b002bf431e7.webp', // casilla-meta.webp
+  lance:        './assets/3959cd53f299179c053af168c902cf9a.webp', // casilla-lance.webp
+  sube:         './assets/88b8b16e4e5f4dacae94dad01af99d4e.webp', // casilla-sube.webp
+  turno:        './assets/f748de801008cb01b693c2006c2a552b.webp', // casilla-turno.webp
+  baja:         './assets/d1bf81e522f447a3160dea0795d49576.webp', // casilla-baja.webp
+  vuelva:       './assets/3b18a0374f7749e36b53c38aad74113c.webp', // casilla-vuelva.webp
+  congelado:    './assets/4949407fa919ee8ba7738223e4b2a6e2.webp', // casilla-congelado.webp
   lava:         null,                                      // ← falta (🔥)
-  empujon:      '/_blob/fc14e4a1849c46c30032c779ac7748ea', // casilla-empujon.webp
-  intercambio:  '/_blob/19a3446acbc1f149e58f500662fb5924', // casilla-intercambio.webp
-  escudo:       '/_blob/2ddf3cd61cdc069f91a101b4ee5bba1e', // casilla-escudo.webp
-  portal:       '/_blob/97964895ca789a1bdcc40c49037b7950', // casilla-portal.webp
-  doble:        '/_blob/d0c240fabc10e5b77b3cf0fe11df673e', // casilla-doble.webp
-  roba:         '/_blob/cbd65ad91af4834a91ca6f585559c86d', // casilla-roba.webp
-  captura:      '/_blob/42110267c5e0987d788dacc2529a6d16', // casilla-captura.webp
-  empujon3:     '/_blob/c3c2099bde4a9092e7d22e8b355f894a', // casilla-empujon3.webp
-  bloqueo:      '/_blob/0e7ee3a433b86b9fbbc6caad0b15da5d', // casilla-bloqueo.webp
-  intercambio3: '/_blob/f041e5bdd953410aca3fef902bedd946', // casilla-intercambio3.webp
+  empujon:      './assets/fc14e4a1849c46c30032c779ac7748ea.webp', // casilla-empujon.webp
+  intercambio:  './assets/19a3446acbc1f149e58f500662fb5924.webp', // casilla-intercambio.webp
+  escudo:       './assets/2ddf3cd61cdc069f91a101b4ee5bba1e.webp', // casilla-escudo.webp
+  portal:       './assets/97964895ca789a1bdcc40c49037b7950.webp', // casilla-portal.webp
+  doble:        './assets/d0c240fabc10e5b77b3cf0fe11df673e.webp', // casilla-doble.webp
+  roba:         './assets/cbd65ad91af4834a91ca6f585559c86d.webp', // casilla-roba.webp
+  captura:      './assets/42110267c5e0987d788dacc2529a6d16.webp', // casilla-captura.webp
+  empujon3:     './assets/c3c2099bde4a9092e7d22e8b355f894a.webp', // casilla-empujon3.webp
+  bloqueo:      './assets/0e7ee3a433b86b9fbbc6caad0b15da5d.webp', // casilla-bloqueo.webp
+  intercambio3: './assets/f041e5bdd953410aca3fef902bedd946.webp', // casilla-intercambio3.webp
   retroceso:    null,                                      // ← falta (⬇️)
-  embargo:      '/_blob/5ae85b20540397930c87f7ed488fae39', // casilla-embargo.webp
-  rebote:       '/_blob/9d5f6d3b0e9ff2a8039662f1afe9829d', // casilla-rebote.webp
-  electro:      '/_blob/1ee436e56ae1f6ee8d5365ebff7e8495', // casilla-electro.webp
+  embargo:      './assets/5ae85b20540397930c87f7ed488fae39.webp', // casilla-embargo.webp
+  rebote:       './assets/9d5f6d3b0e9ff2a8039662f1afe9829d.webp', // casilla-rebote.webp
+  electro:      './assets/1ee436e56ae1f6ee8d5365ebff7e8495.webp', // casilla-electro.webp
 };
 // Se cargan una sola vez y se comparten entre todas las casillas.
 const cellIconCache = {};
@@ -8051,11 +8053,11 @@ const CHEST_TYPES = {
 // Para cambiar o agregar una variante, solo edita la ruta de ese nivel.
 // Rutas simples (/_blob/<id> o cualquier URL/ruta). Si un nivel no tiene
 // imagen, usa AMPHORA_IMAGE_DEFAULT.
-const AMPHORA_IMAGE_DEFAULT = '/_blob/26f5ac0f558873e7ae054312f84ca805'; // anfora-bronce.webp (fondo transparente)
+const AMPHORA_IMAGE_DEFAULT = './assets/26f5ac0f558873e7ae054312f84ca805.webp'; // anfora-bronce.webp (fondo transparente)
 const AMPHORA_IMAGES = {
   bronce: AMPHORA_IMAGE_DEFAULT,
-  plata:  '/_blob/48f310105d52c5d0e7a2c4304c75ebf3', // anfora-plata.webp
-  oro:    '/_blob/85d27661723d0b45aee5b5522bf8c64f', // anfora-oro.webp
+  plata:  './assets/48f310105d52c5d0e7a2c4304c75ebf3.webp', // anfora-plata.webp
+  oro:    './assets/85d27661723d0b45aee5b5522bf8c64f.webp', // anfora-oro.webp
 };
 // Devuelve la ruta de la imagen según el nivel ('bronce' | 'plata' | 'oro').
 function amphoraImageSrc(tierKey){
@@ -9372,6 +9374,10 @@ async function chooseSkin(animalId){
 /* ---------- Init ---------- */
 window.__threeReadyPromise.then((ok)=>{
   window.__gameStarted = true;
+  if(__startupTimeoutBox){
+    __startupTimeoutBox.remove();
+    __startupTimeoutBox = null;
+  }
   checkDailyReward();
   loadProfile();
   if(ok){
