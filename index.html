@@ -3868,7 +3868,7 @@ let socketIsConnected = false;
 // Identificador de esta build — cambia cada vez que se publica una
 // versión nueva, para confirmar en el panel si el celular está mostrando
 // el archivo de verdad más reciente o uno viejo que quedó en caché.
-const BUILD_VERSION = '1007-1730';
+const BUILD_VERSION = '1007-1830';
 document.addEventListener('DOMContentLoaded', ()=>{
   const el = document.getElementById('buildVersionLabel');
   if(el) el.textContent = BUILD_VERSION;
@@ -9507,6 +9507,13 @@ function withTimeout(promise, ms, label){
 async function createTeamUpTableFinal(){
   const sock = await ensureConnected();
   if(!sock){ lobbyToast('No se pudo conectar al servidor. Revisa tu internet.'); return; }
+  // Si por algún motivo ya había un ticket pendiente (reintento, doble
+  // toque, etc.), lo cancelamos primero — nunca dos tickets activos del
+  // mismo celular a la vez.
+  if(multiplayerTicket){
+    try{ await gameSocket.removeMatchmaker(multiplayerTicket); }catch(e){}
+    multiplayerTicket = null;
+  }
   try{
     teamUpCode = genShortCode();
     multiplayerIsHost = true;
@@ -9521,7 +9528,11 @@ async function createTeamUpTableFinal(){
     multiplayerActive = true;
     showMultiplayerGate();
   }catch(err){
-    lobbyToast('No se pudo crear la mesa: ' + (err && err.message ? err.message : err));
+    // Mostramos el error COMPLETO que manda Nakama (no solo "Error adding
+    // to matchmaker" genérico) para poder diagnosticar la causa real.
+    const detalle = err ? (err.message || JSON.stringify(err)) : 'sin detalle';
+    mpLog('✗ addMatchmaker (anfitrión) falló: ' + detalle);
+    lobbyToast('No se pudo crear la mesa: ' + detalle);
   }
 }
 
@@ -9533,17 +9544,35 @@ async function joinTeamUpCode(){
   try{
     const sock = await withTimeout(ensureConnected(), 8000, 'Conectar al servidor');
     if(!sock){ lobbyToast('No se pudo conectar al servidor. Revisa tu internet.'); return; }
+    // Si por algún motivo ya había un ticket pendiente (reintento, doble
+    // toque, etc.), lo cancelamos primero — nunca dos tickets activos del
+    // mismo celular a la vez.
+    if(multiplayerTicket){
+      try{ await gameSocket.removeMatchmaker(multiplayerTicket); }catch(e){}
+      multiplayerTicket = null;
+    }
     teamUpCode = code;
     multiplayerIsHost = false;
     lobbyToast('Buscando la mesa…');
-    mpLog('→ buscando mesa ' + code + ' (emparejador)');
+    mpLog('→ buscando mesa ' + code + ' (emparejador, 2-4)');
     // No sabemos todavía cuántos jugadores pide esa mesa — probamos con un
-    // rango amplio (2 a 4); Nakama solo empareja cuando el total real
-    // encaja con lo que el anfitrión pidió, así que esto no mezcla mesas.
-    const res = await withTimeout(gameSocket.addMatchmaker('+properties.code:' + code, 2, 4, { code }), 8000, 'Buscar la mesa');
+    // rango amplio (2 a 4) primero. Si el servidor lo rechaza (algunos
+    // Nakama limitan maxCount), reintentamos con el rango exacto de un
+    // 1 contra 1 (2 a 2), que es el caso más común.
+    let res;
+    try{
+      res = await withTimeout(gameSocket.addMatchmaker('+properties.code:' + code, 2, 4, { code }), 8000, 'Buscar la mesa');
+    }catch(errAmplio){
+      mpLog('✗ addMatchmaker (2-4) falló: ' + (errAmplio && errAmplio.message ? errAmplio.message : errAmplio) + ' — reintentando 2-2');
+      res = await withTimeout(gameSocket.addMatchmaker('+properties.code:' + code, 2, 2, { code }), 8000, 'Buscar la mesa');
+    }
     multiplayerTicket = res.ticket;
   }catch(err){
-    lobbyToast('No se pudo unir a esa mesa: ' + (err && err.message ? err.message : err));
+    // Mostramos el error COMPLETO que manda Nakama (no solo "Error adding
+    // to matchmaker" genérico) para poder diagnosticar la causa real.
+    const detalle = err ? (err.message || JSON.stringify(err)) : 'sin detalle';
+    mpLog('✗ addMatchmaker (invitado) falló: ' + detalle);
+    lobbyToast('No se pudo unir a esa mesa: ' + detalle);
   }
 }
 
