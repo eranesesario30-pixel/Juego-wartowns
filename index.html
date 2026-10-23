@@ -4777,7 +4777,6 @@ body.dice-shaking .dice-cube-wrap, body.dice-shaking .dice-sprite{ animation:dic
     </div>
   </div>
 
-  <button id="gameAdBtn" class="game-ad-fab" onclick="watchAdForDiamondsInGame()" title="Ver un video y ganar 15 diamantes (uno por partida)">🎬<span class="game-ad-fab-label">+15</span></button>
 
   <div id="gameTopStrip">
     <div class="welcome-offer-strip" id="gameWelcomeStrip" style="display:none;">
@@ -5076,7 +5075,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running'){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1193';
+const BUILD_VERSION = '1194';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
