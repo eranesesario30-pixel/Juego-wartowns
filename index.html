@@ -3857,6 +3857,12 @@ body.dice-shaking .dice-cube-wrap, body.dice-shaking .dice-sprite{ animation:dic
 .celeb-pop{padding:0 4%;box-sizing:border-box;}
 .celeb-text{white-space:normal !important;text-align:center;max-width:94%;overflow-wrap:anywhere;line-height:1.05;font-size:clamp(20px,7.4vw,38px) !important;-webkit-text-stroke:clamp(4px,1.4vw,7px) #0a1430 !important;}
 .celeb-pop.win .celeb-text{font-size:clamp(26px,9.4vw,50px) !important;}
+
+  .mm-new{position:absolute;top:10px;right:-6px;z-index:3;padding:4px 10px;border-radius:10px;font:900 11px/1 'Archivo Black',system-ui,sans-serif;letter-spacing:.5px;color:#3a2600;background:linear-gradient(160deg,#ffe27a,#f2b21c);border:2px solid #fff6de;box-shadow:0 2px 4px rgba(0,0,0,.5);transform:rotate(6deg) translateZ(30px);animation:mmNewPulse 1.4s ease-in-out infinite;pointer-events:none;}
+  @keyframes mmNewPulse{0%,100%{transform:rotate(6deg) translateZ(30px) scale(1)}50%{transform:rotate(6deg) translateZ(30px) scale(1.12)}}
+  #modeMoreHint{position:fixed;right:6px;top:48%;z-index:80;align-items:center;gap:4px;padding:8px 10px;border-radius:14px;background:rgba(10,24,56,.88);border:2px solid #ffe27a;color:#ffe27a;font:900 12px/1.1 'Archivo Black',system-ui,sans-serif;box-shadow:0 3px 10px rgba(0,0,0,.6);pointer-events:none;animation:mmHintBounce 1s ease-in-out infinite;max-width:92px;text-align:center;}
+  #modeMoreHint .mmh-a{font-size:22px;}
+  @keyframes mmHintBounce{0%,100%{transform:translateX(0)}50%{transform:translateX(8px)}}
 </style>
 </head>
 <body>
@@ -4695,6 +4701,7 @@ body.dice-shaking .dice-cube-wrap, body.dice-shaking .dice-sprite{ animation:dic
       </div>
     </div>
     <div class="carousel-dots" id="boardChoiceCarouselDots"></div>
+    <div id="modeMoreHint" style="display:none;"><span class="mmh-t">¡Hay más modos!</span><span class="mmh-a">➜</span></div>
   </div>
 
   <div id="betScreen" style="display:none;">
@@ -5075,7 +5082,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running'){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1195';
+const BUILD_VERSION = '1196';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -7123,6 +7130,7 @@ function formatBetAmount(n){
 
 function chooseBoardKind(kind){
   pendingBetKind = kind;
+  try{ modeMarkTried(kind); }catch(e){}
   document.getElementById('boardChoiceScreen').style.display = 'none';
   openBetScreen();
 }
@@ -16170,6 +16178,26 @@ window.addEventListener('offline', ()=>showOfflineScreen());
 window.addEventListener('online', ()=>{ _netReallyOnline().then(ok=>{ if(ok) hideOfflineScreen(); }); });
 window.addEventListener('load', ()=>setTimeout(checkOnlineNow, 800));
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) checkOnlineNow(); });
+
+/* Pistas para descubrir los otros modos: etiqueta ¡NUEVO! en los modos sin jugar + flecha "¡Hay más modos!" */
+function modeTried(){ try{ return JSON.parse(localStorage.getItem('parcheModesTried')||'{}')||{}; }catch(e){ return {}; } }
+function modeMarkTried(kind){ try{ const t=modeTried(); t[kind]=1; localStorage.setItem('parcheModesTried',JSON.stringify(t)); }catch(e){} }
+function refreshModeHints(){
+  try{
+    const car=document.getElementById('boardChoiceCarousel'), hint=document.getElementById('modeMoreHint'); if(!car) return;
+    const tried=modeTried();
+    car.querySelectorAll('.mm-card').forEach(card=>{
+      const m=(card.getAttribute('onclick')||'').match(/chooseBoardKind\('(\w+)'\)/); if(!m) return;
+      const k=m[1]; let b=card.querySelector('.mm-new');
+      if(k!=='classic' && !tried[k]){ if(!b){ b=document.createElement('div'); b.className='mm-new'; b.textContent='¡NUEVO!'; card.appendChild(b); } }
+      else if(b) b.remove();
+    });
+    const anyOther=['sized100','sized125','sized150','rapido'].some(k=>tried[k]);
+    const upd=()=>{ if(hint) hint.style.display = (!anyOther && car.scrollLeft<40) ? 'flex' : 'none'; };
+    upd(); if(!car._mmhBound){ car._mmhBound=true; car.addEventListener('scroll',upd,{passive:true}); }
+  }catch(e){}
+}
+(function(){ const o=window.openBoardChoice; if(typeof o==='function'){ window.openBoardChoice=function(){ const r=o.apply(this,arguments); setTimeout(refreshModeHints,50); return r; }; } })();
 </script>
 </body>
 </html>
