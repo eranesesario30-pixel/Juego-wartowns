@@ -5076,7 +5076,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running'){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1185';
+const BUILD_VERSION = '1186';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -16017,6 +16017,51 @@ function victoryShow(color){
   const _c2 = window.celebrateCell;
   window.celebrateCell = function(type, color){ if(type==='meta') victoryShow(color); return _c2.apply(this, arguments); };
 })();
+
+/* ===== ACTUALIZACIÓN OBLIGATORIA / AVISO (v1186) =====
+   Solo en la app de Android. Lee version.json de la web de Parche:
+   - minVersion: si tu versión es menor, no puedes jugar hasta actualizar (pantalla bloqueada).
+   - latestVersion: si tu versión es menor pero >= minVersion, sale un aviso con "Más tarde". */
+const UPDATE_JSON_URL = 'https://eranesesario30-pixel.github.io/Juego-wartowns/version.json';
+const STORE_PKG = 'com.andymarte.parche';
+let _updShownSoft = false;
+function _isNativeApp(){ try{ return !!(window.Capacitor && (Capacitor.isNativePlatform ? Capacitor.isNativePlatform() : (Capacitor.getPlatform && Capacitor.getPlatform()!=='web'))); }catch(e){ return false; } }
+function openStoreForUpdate(){
+  const web = 'https://play.google.com/store/apps/details?id='+STORE_PKG;
+  try{ window.location.href = 'market://details?id='+STORE_PKG; }catch(e){}
+  setTimeout(()=>{ try{ window.open(web,'_system'); }catch(e){ window.location.href = web; } }, 900);
+}
+function showUpdateScreen(hard){
+  if(document.getElementById('updateOverlay')) return;
+  const o = document.createElement('div'); o.id='updateOverlay';
+  o.style.cssText = 'position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;background:'+(hard?'radial-gradient(circle at 50% 35%,#1d3a78,#0b1233 70%)':'rgba(5,10,30,.78)')+';';
+  o.innerHTML = '<div style="max-width:340px;width:100%;text-align:center;color:#fff;font-family:\'Archivo Black\',system-ui,sans-serif;background:linear-gradient(170deg,#27406f,#0d1a35);border:3px solid #f0c64a;border-radius:22px;padding:26px 20px;box-shadow:0 10px 30px rgba(0,0,0,.6);">'
+    +'<div style="font-size:44px;line-height:1">⬆️</div>'
+    +'<div style="font-size:22px;margin:10px 0 8px;color:#ffe27a">Hay una actualización</div>'
+    +'<div style="font:500 15px/1.45 system-ui,sans-serif;color:#e9f0ff;margin-bottom:18px">'+(hard?'Para seguir jugando necesitas instalar la última versión de Parche desde la tienda.':'Hay una versión nueva de Parche con mejoras. ¡Actualiza cuando quieras!')+'</div>'
+    +'<button id="updBtn" style="width:100%;padding:14px;border:0;border-radius:14px;font:inherit;font-size:17px;color:#0a1430;background:linear-gradient(180deg,#fff0b8,#ffcc4c 55%,#e09a14);box-shadow:0 4px 0 #8a5a06;cursor:pointer">Actualizar</button>'
+    +(hard?'':'<button id="updLater" style="width:100%;margin-top:10px;padding:10px;border:0;background:none;color:#a8c6ff;font:600 14px system-ui,sans-serif;cursor:pointer">Más tarde</button>')
+    +'</div>';
+  document.body.appendChild(o);
+  const b=document.getElementById('updBtn'); if(b) b.onclick = openStoreForUpdate;
+  const l=document.getElementById('updLater'); if(l) l.onclick = ()=>{ o.remove(); };
+  if(hard){ try{ stopAllGameAudio(); }catch(e){} }
+}
+async function checkAppUpdate(){
+  try{
+    if(!_isNativeApp()) return;
+    if(/[?&]pagina=/.test(location.search)) return;
+    const ctl = new AbortController(); const to = setTimeout(()=>ctl.abort(), 6000);
+    const r = await fetch(UPDATE_JSON_URL+'?t='+Date.now(), {cache:'no-store', signal:ctl.signal}); clearTimeout(to);
+    if(!r.ok) return;
+    const j = await r.json();
+    const cur = parseInt(BUILD_VERSION,10);
+    if(j && j.minVersion && cur < parseInt(j.minVersion,10)){ showUpdateScreen(true); return; }
+    if(j && j.latestVersion && cur < parseInt(j.latestVersion,10) && !_updShownSoft){ _updShownSoft = true; showUpdateScreen(false); }
+  }catch(e){}
+}
+window.addEventListener('load', ()=>setTimeout(checkAppUpdate, 1200));
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) checkAppUpdate(); });
 </script>
 </body>
 </html>
