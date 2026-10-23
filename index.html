@@ -4424,7 +4424,7 @@ body.dice-shaking .dice-cube-wrap, body.dice-shaking .dice-sprite{ animation:dic
               <div class="fr2-search"><input id="friendSearchInput" placeholder="Buscar por nombre" oninput="renderFriendsList()"><span>🔍</span></div>
               <div class="fr2-invite-lbl">Invitar a amigos</div>
               <button class="fr2-sq wa" onclick="shareViaWhatsApp()">💬</button>
-              <button class="fr2-sq fb" onclick="shareViaWhatsApp()">f</button>
+              <button class="fr2-sq fb" onclick="shareViaFacebook()">f</button>
             </div>
             <div class="fr2-myid"><span>Tu ID: <b id="myIdLabel"></b></span><button onclick="copyMyId()">📋 Copiar ID y enlace</button></div>
             <div class="fr2-add">
@@ -5076,7 +5076,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running'){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1191';
+const BUILD_VERSION = '1192';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -13801,6 +13801,8 @@ function closeFriends(){
 
 function gameLink(withFriend){
   let base = location.href.split('?')[0].split('#')[0];
+  // En la app de Android la dirección es interna (localhost): para invitar se usa el enlace público de Parche
+  try{ if(typeof _isNativeApp==='function' && _isNativeApp()) base = 'https://eranesesario30-pixel.github.io/Juego-wartowns/'; }catch(e){}
   return withFriend && profileStats.playerId ? base + '?amigo=' + encodeURIComponent(profileStats.playerId) : base;
 }
 async function shareOut(text, url){
@@ -13810,6 +13812,22 @@ async function shareOut(text, url){
   const full = text + ' ' + url;
   try{ await navigator.clipboard.writeText(full); lobbyToast('Enlace copiado. Pégalo en WhatsApp, Facebook o donde quieras.'); }
   catch(e){ lobbyToast('Copia este enlace: ' + url, 8000); }
+}
+/* Facebook: en el celular abre Messenger con el enlace listo para elegir amigos y enviar; si no se puede, abre el compartir de Facebook. */
+function shareViaFacebook(){
+  const url = gameLink(true);
+  const web = 'https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url);
+  const mobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if(!mobile){ try{ window.open(web, '_blank'); }catch(e){ shareOut('¡Juega Parche conmigo! 🎲', url); } return; }
+  let left = false;
+  const onHide = ()=>{ if(document.hidden) left = true; };
+  document.addEventListener('visibilitychange', onHide);
+  try{ window.location.href = 'fb-messenger://share/?link=' + encodeURIComponent(url); }catch(e){}
+  setTimeout(()=>{
+    document.removeEventListener('visibilitychange', onHide);
+    if(left) return; // Messenger se abrió
+    try{ window.open(web, '_system'); }catch(e){ shareOut('¡Juega Parche conmigo! 🎲', url); }
+  }, 1300);
 }
 function shareViaWhatsApp(){
   shareOut('¡Juega Parche conmigo! 🎲 Entra con mi enlace y quedamos como amigos.', gameLink(true));
