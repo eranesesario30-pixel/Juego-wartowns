@@ -5076,7 +5076,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running'){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1189';
+const BUILD_VERSION = '1190';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -10383,7 +10383,7 @@ async function executeMove(idx){
         if(cell.type==='intercambio3'){
           target2 = rivals[Math.floor(Math.random()*rivals.length)];
         } else {
-          target2 = rivals.slice().sort((a,b)=>Math.abs(a.position-p.position)-Math.abs(b.position-p.position))[0];
+          target2 = rivals.filter(x=>cell.type!=='captura' || x.position<META_INDEX-8).sort((a,b)=>Math.abs(a.position-p.position)-Math.abs(b.position-p.position))[0];
         }
         if(target2){
           let attacker = p, victim = target2, wasRebounded = false;
@@ -10479,7 +10479,7 @@ async function executeMove(idx){
   }
   if(!winner){
     try{
-      const victim = players.find(x=>x.active && x!==p && x.position===p.position && x.position>=5 && !(p.team && x.team===p.team));
+      const victim = players.find(x=>x.active && x!==p && x.position===p.position && x.position>=5 && x.position<META_INDEX-8 && !(p.team && x.team===p.team));
       if(victim){
         await wait(200);
         const _vPos = victim.position;
@@ -11447,9 +11447,9 @@ const TUTORIALS = {
     steps: [
       '¡El tablero original! Lleva tu ficha única desde la Salida hasta la Meta, 84 casillas de recorrido.',
       'Trampas 🔒↓↩: "Pierde turno" te congela un turno, "Baja" te manda a una casilla anterior, y "Vuelva" te regresa directo a la Salida.',
-      'Ventajas 🔄↑: "Lance" te guarda una carta para tirar de nuevo cuando quieras, y "Sube" te da un salto extra hacia adelante.',
-      'Captura: si caes exactamente en la casilla de un rival (pasada la casilla 5) lo mandas de vuelta (al campamento ⛺ anterior, que hay uno cada 20 casillas, o a la Salida si aún no pasó ninguno) y avanzas de 3 a 8 casillas de premio — y a ti te puede pasar lo mismo.',
-      'Dobles 🎲🎲 = tiras otra vez (¡tres seguidos te mandan a la Salida!). Cartas 🃏: guarda una (Escudo, Impulso, Rebote u Otra tirada) y úsala en tu turno desde tu ficha. A mitad de partida aparece un cofre 💰: ¡el que lo toca gana el premio!',
+      'Ventajas 🔄↑: "Lance" te deja tirar de nuevo sin perder tu tiro pendiente, y "Sube" te da un salto extra hacia adelante.',
+      'Captura: si caes exactamente en la casilla de un rival (pasada la casilla 5) lo mandas de vuelta (al campamento ⛺ anterior, que hay uno cada 20 casillas, o a la Salida si aún no pasó ninguno) y avanzas de 3 a 8 casillas de premio — y a ti te puede pasar lo mismo. Ojo: al jugador al que le faltan 8 casillas o menos para ganar no se le puede comer.',
+      'Dobles 🎲🎲 = tiras otra vez (¡tres seguidos te mandan a la Salida!). A mitad de partida aparece un cofre 💰: ¡el que lo toca gana el premio!',
     ],
   },
   'sized100': {
@@ -11460,9 +11460,9 @@ const TUTORIALS = {
     steps: [
       'Tablero extendido con mecánicas nuevas: muchas trampas de fuego y poderes místicos repartidos en el camino.',
       'Trampas 🧊🔥👊🔀: Congelado te hace perder tu próximo turno, Lava te retrocede, Empujón Atrás te resta tu última tirada, e Intercambio te cambia de lugar con el último jugador.',
-      'Poderes 🛡️🌀✨👑: Escudo te protege de la próxima trampa e Impulso x2 duplica tu siguiente movimiento (los dos se guardan como carta), Portal te impulsa muy lejos, y Roba Posición te intercambia con el jugador que va más adelante.',
-      'Captura: si caes exactamente en la casilla de un rival (pasada la casilla 5) lo mandas de vuelta (al campamento ⛺ anterior, que hay uno cada 20 casillas, o a la Salida si aún no pasó ninguno) y avanzas de 3 a 8 casillas de premio — y a ti te puede pasar lo mismo.',
-      'Dobles 🎲🎲 = tiras otra vez (¡tres seguidos te mandan a la Salida!). Cartas 🃏: guarda una (Escudo, Impulso, Rebote u Otra tirada) y úsala en tu turno desde tu ficha. A mitad de partida aparece un cofre 💰: ¡el que lo toca gana el premio!',
+      'Poderes 🛡️🌀✨👑: Escudo te protege de la próxima trampa, Portal te impulsa muy lejos, Impulso x2 duplica tu siguiente movimiento, y Roba Posición te intercambia con el jugador que va más adelante.',
+      'Captura: si caes exactamente en la casilla de un rival (pasada la casilla 5) lo mandas de vuelta (al campamento ⛺ anterior, que hay uno cada 20 casillas, o a la Salida si aún no pasó ninguno) y avanzas de 3 a 8 casillas de premio — y a ti te puede pasar lo mismo. Ojo: al jugador al que le faltan 8 casillas o menos para ganar no se le puede comer.',
+      'Dobles 🎲🎲 = tiras otra vez (¡tres seguidos te mandan a la Salida!). A mitad de partida aparece un cofre 💰: ¡el que lo toca gana el premio!',
     ],
   },
   'sized125': {
@@ -11473,9 +11473,9 @@ const TUTORIALS = {
     steps: [
       'Aquí sí hay contacto directo entre jugadores: ataques y defensas repartidos por todo el camino.',
       'Ataque 🎯💥🧱🔁: Captura manda al rival más cercano a la Salida, Empujón lo hace retroceder, Bloqueo pone un muro que detiene a quien pase, e Intercambio Forzado te cambia de lugar con un rival al azar.',
-      'Defensa ⬇️🚫🪞: Retroceso Fuerte te hace perder terreno, Embargo anula tu próxima habilidad de ataque, y Escudo Rebote (se guarda como carta) devuelve la próxima captura o empujón que recibas directo al atacante.',
-      'Captura: si caes exactamente en la casilla de un rival (pasada la casilla 5) lo mandas de vuelta (al campamento ⛺ anterior, que hay uno cada 20 casillas, o a la Salida si aún no pasó ninguno) y avanzas de 3 a 8 casillas de premio — y a ti te puede pasar lo mismo.',
-      'Dobles 🎲🎲 = tiras otra vez (¡tres seguidos te mandan a la Salida!). Cartas 🃏: guarda una (Escudo, Impulso, Rebote u Otra tirada) y úsala en tu turno desde tu ficha. A mitad de partida aparece un cofre 💰: ¡el que lo toca gana el premio!',
+      'Defensa ⬇️🚫🪞: Retroceso Fuerte te hace perder terreno, Embargo anula tu próxima habilidad de ataque, y Escudo Rebote devuelve la próxima captura o empujón que recibas directo al atacante.',
+      'Captura: si caes exactamente en la casilla de un rival (pasada la casilla 5) lo mandas de vuelta (al campamento ⛺ anterior, que hay uno cada 20 casillas, o a la Salida si aún no pasó ninguno) y avanzas de 3 a 8 casillas de premio — y a ti te puede pasar lo mismo. Ojo: al jugador al que le faltan 8 casillas o menos para ganar no se le puede comer.',
+      'Dobles 🎲🎲 = tiras otra vez (¡tres seguidos te mandan a la Salida!). A mitad de partida aparece un cofre 💰: ¡el que lo toca gana el premio!',
     ],
   },
   'sized150': {
@@ -11485,8 +11485,8 @@ const TUTORIALS = {
     color: '#ffcd4d',
     steps: [
       '¡Ritmo directo y sin zonas seguras! El tablero más largo, pensado para el combate frontal.',
-      'Captura: si caes exactamente en la casilla de un rival (pasada la casilla 5) lo mandas de vuelta (al campamento ⛺ anterior, que hay uno cada 20 casillas, o a la Salida si aún no pasó ninguno) y avanzas de 3 a 8 casillas de premio — y a ti te puede pasar lo mismo.',
-      'Dobles 🎲🎲 = tiras otra vez (¡tres seguidos te mandan a la Salida!). Cartas 🃏: guarda una (Escudo, Impulso, Rebote u Otra tirada) y úsala en tu turno desde tu ficha. A mitad de partida aparece un cofre 💰: ¡el que lo toca gana el premio!',
+      'Captura: si caes exactamente en la casilla de un rival (pasada la casilla 5) lo mandas de vuelta (al campamento ⛺ anterior, que hay uno cada 20 casillas, o a la Salida si aún no pasó ninguno) y avanzas de 3 a 8 casillas de premio — y a ti te puede pasar lo mismo. Ojo: al jugador al que le faltan 8 casillas o menos para ganar no se le puede comer.',
+      'Dobles 🎲🎲 = tiras otra vez (¡tres seguidos te mandan a la Salida!). A mitad de partida aparece un cofre 💰: ¡el que lo toca gana el premio!',
       'Dos trampas: ⚡ Electrocución te hace retroceder entre 10 y 20 casillas, y ⏪ Reversa te hace retroceder 8 casillas justo al caer. Hay 28 repartidas por el camino.',
     ],
   },
@@ -11499,8 +11499,8 @@ const TUTORIALS = {
       'El mismo tablero Clásico de 84 casillas, con las mismas trampas y ventajas — pero a un ritmo mucho más veloz.',
       '⏱️ Tenés solo 10 segundos por turno para tirar (en vez de los habituales), así que pensá rápido.',
       '🐇 Las fichas se mueven al doble de velocidad por el tablero — las partidas se resuelven bastante más rápido de principio a fin.',
-      'Captura: si caes exactamente en la casilla de un rival (pasada la casilla 5) lo mandas de vuelta (al campamento ⛺ anterior, que hay uno cada 20 casillas, o a la Salida si aún no pasó ninguno) y avanzas de 3 a 8 casillas de premio — y a ti te puede pasar lo mismo.',
-      'Dobles 🎲🎲 = tiras otra vez (¡tres seguidos te mandan a la Salida!). Cartas 🃏: guarda una (Escudo, Impulso, Rebote u Otra tirada) y úsala en tu turno desde tu ficha. A mitad de partida aparece un cofre 💰: ¡el que lo toca gana el premio!',
+      'Captura: si caes exactamente en la casilla de un rival (pasada la casilla 5) lo mandas de vuelta (al campamento ⛺ anterior, que hay uno cada 20 casillas, o a la Salida si aún no pasó ninguno) y avanzas de 3 a 8 casillas de premio — y a ti te puede pasar lo mismo. Ojo: al jugador al que le faltan 8 casillas o menos para ganar no se le puede comer.',
+      'Dobles 🎲🎲 = tiras otra vez (¡tres seguidos te mandan a la Salida!). A mitad de partida aparece un cofre 💰: ¡el que lo toca gana el premio!',
     ],
   },
 };
@@ -15716,6 +15716,7 @@ const CARD_DEF = {
 };
 function giveCard(p, type){
   try{
+    return false; // las cartas guardadas se quitaron: todo se aplica al momento
     if(!p || p.isBot || p.color!==MY_COLOR || p.card || !CARD_DEF[type]) return false;
     p.card = type; updateCardSlot(); return true;
   }catch(e){ return false; }
@@ -15785,7 +15786,6 @@ function showReactBar(kind){
 /* ---- Desafíos nuevos con progreso en vivo y puntito en Eventos ---- */
 CHALLENGE_POOL.push(
   {id:'treasure1', title:'Encuentra 1 tesoro',               target:1, track:'treasureToday', reward:{diamonds:30}, rewardLabel:'+30 💎'},
-  {id:'cards2',    title:'Usa 2 cartas de poder',            target:2, track:'cardsToday',    reward:{gold:3000},   rewardLabel:'+3,000 🪙'},
   {id:'streak1',   title:'Come 2 fichas seguidas (racha)',   target:1, track:'streaksToday',  reward:{diamonds:40}, rewardLabel:'+40 💎'}
 );
 function bumpMission(track){
