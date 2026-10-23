@@ -5037,8 +5037,8 @@ function gameTourSteps(mode){
         big:[[ (typeof isRapidoSpeed!=='undefined'&&isRapidoSpeed)?'10 s':'18 s','por turno'],['⏩','tira rápido y gana tiempo']]},
       {sel:'#boardOuter', title:'El tablero', text:'Las casillas de colores tienen efectos. Fíjate bien en ellas:',
         chips:[{img:ci('sube'),e:'⬆️',t:'Sube'},{img:ci('baja'),e:'⬇️',t:'Baja'},{img:ci('turno'),e:'🔁',t:'Otro turno'},{img:ci('lance'),e:'🎲',t:'Lance'},{img:ci('vuelva'),e:'↩️',t:'Vuelve'}]},
-      {sel:'#boardOuter', title:'¡Mata fichas rivales!', text:'Si tu ficha cae <b>exacto</b> sobre la de un rival, lo mandas de vuelta a la <b>Salida</b>. Elige bien con qué dado te mueves: ¡depende de cuál uses!',
-        big:[['💥','cae exacto y lo eliminas'],['+4 a 12','casillas de premio por matar']]},
+      {sel:'#boardOuter', title:'¡Mata fichas rivales!', text:'Si tu ficha cae <b>exacto</b> sobre la de un rival, lo mandas de vuelta al <b>campamento ⛺</b> anterior (o a la Salida). Elige bien con qué dado te mueves: ¡depende de cuál uses!',
+        big:[['💥','cae exacto y lo eliminas'],['+3 a 8','casillas de premio por matar']]},
       {sel:'#micBtn', title:'Habla con todos', text:'Activa el micrófono para hablar con los otros jugadores, o usa el chat y los emojis.'},
       {sel:'#gameMenuBtn', title:'Menú', text:'Aquí puedes ver las reglas del modo otra vez, pausar o salir de la partida.'}
     );
@@ -5076,7 +5076,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running'){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1188';
+const BUILD_VERSION = '1189';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -10399,8 +10399,9 @@ async function executeMove(idx){
               victim.position = Math.max(0, victim.position-4); updateTokenPosition(victim); updateActiveCellGlow();
               effectMsg += ` 🎯 Captura rebotada: ${NAMES[victim.color]} retrocede 4 casillas.`;
             } else {
-              victim.position = 0; updateTokenPosition(victim); updateActiveCellGlow();
-              effectMsg += ` 🎯 Captura: ${NAMES[victim.color]} regresa a la Salida.`;
+              const _cr = campRespawn(victim.position);
+              victim.position = _cr; updateTokenPosition(victim); updateActiveCellGlow();
+              effectMsg += ` 🎯 Captura: ${NAMES[victim.color]} regresa ${campText(_cr)}.`;
             }
             sfxPenalty(); vibrate(35);
             matchStats.capturesTotal++;
@@ -10484,18 +10485,19 @@ async function executeMove(idx){
         const _vPos = victim.position;
         // ¿La víctima iba de líder? (nadie activo más adelante que ella)
         const _wasLeader = _vPos >= META_INDEX*0.15 && !players.some(x=>x.active && x!==victim && x!==p && x.position>_vPos);
-        victim.position = 0; updateTokenPosition(victim); updateActiveCellGlow();
+        const _cr2 = campRespawn(_vPos);
+        victim.position = _cr2; updateTokenPosition(victim); updateActiveCellGlow();
         victim._capStreak = 0;
-        effectMsg += ` 💥 ¡Eliminó a ${NAMES[victim.color]}, que vuelve a la Salida!`;
+        effectMsg += ` 💥 ¡Eliminó a ${NAMES[victim.color]}, que vuelve ${campText(_cr2)}!`;
         sfxCapture(); vibrate([30,20,30]); try{ onCaptureEvent(p, victim); }catch(e){}
         // Premio por comer (A: según lo lejos que llegó la víctima, B: racha, C: derribar al líder)
-        const _bA = Math.max(4, Math.min(12, Math.round(4 + (_vPos/META_INDEX)*8)));
+        const _bA = Math.max(3, Math.min(6, Math.round(3 + (_vPos/META_INDEX)*3)));
         const _myT = p._myTurns||0;
         p._capStreak = (p._lastCapT!==undefined && _myT - p._lastCapT <= 1) ? (p._capStreak||1)+1 : 1;
         p._lastCapT = _myT;
-        const _bB = Math.min(6, 3*(p._capStreak-1));
-        const _bC = _wasLeader ? 3 : 0;
-        const _bonus = Math.min(15, _bA + _bB + _bC);
+        const _bB = Math.min(3, 2*(p._capStreak-1));
+        const _bC = _wasLeader ? 2 : 0;
+        const _bonus = Math.min(8, _bA + _bB + _bC);
         try{ if(p.color===MY_COLOR && p._capStreak===2) bumpMission('streaksToday'); }catch(e){}
         const _cartels = [];
         if(_wasLeader) _cartels.push(['lider', p.color]);
@@ -11446,7 +11448,7 @@ const TUTORIALS = {
       '¡El tablero original! Lleva tu ficha única desde la Salida hasta la Meta, 84 casillas de recorrido.',
       'Trampas 🔒↓↩: "Pierde turno" te congela un turno, "Baja" te manda a una casilla anterior, y "Vuelva" te regresa directo a la Salida.',
       'Ventajas 🔄↑: "Lance" te guarda una carta para tirar de nuevo cuando quieras, y "Sube" te da un salto extra hacia adelante.',
-      'Captura: si caes exactamente en la casilla de un rival (pasada la casilla 5) lo mandas a la Salida y avanzas de 4 a 12 casillas de premio (más si comes seguido) — y a ti te puede pasar lo mismo.',
+      'Captura: si caes exactamente en la casilla de un rival (pasada la casilla 5) lo mandas de vuelta (al campamento ⛺ anterior, que hay uno cada 20 casillas, o a la Salida si aún no pasó ninguno) y avanzas de 3 a 8 casillas de premio — y a ti te puede pasar lo mismo.',
       'Dobles 🎲🎲 = tiras otra vez (¡tres seguidos te mandan a la Salida!). Cartas 🃏: guarda una (Escudo, Impulso, Rebote u Otra tirada) y úsala en tu turno desde tu ficha. A mitad de partida aparece un cofre 💰: ¡el que lo toca gana el premio!',
     ],
   },
@@ -11459,7 +11461,7 @@ const TUTORIALS = {
       'Tablero extendido con mecánicas nuevas: muchas trampas de fuego y poderes místicos repartidos en el camino.',
       'Trampas 🧊🔥👊🔀: Congelado te hace perder tu próximo turno, Lava te retrocede, Empujón Atrás te resta tu última tirada, e Intercambio te cambia de lugar con el último jugador.',
       'Poderes 🛡️🌀✨👑: Escudo te protege de la próxima trampa e Impulso x2 duplica tu siguiente movimiento (los dos se guardan como carta), Portal te impulsa muy lejos, y Roba Posición te intercambia con el jugador que va más adelante.',
-      'Captura: si caes exactamente en la casilla de un rival (pasada la casilla 5) lo mandas a la Salida y avanzas de 4 a 12 casillas de premio (más si comes seguido) — y a ti te puede pasar lo mismo.',
+      'Captura: si caes exactamente en la casilla de un rival (pasada la casilla 5) lo mandas de vuelta (al campamento ⛺ anterior, que hay uno cada 20 casillas, o a la Salida si aún no pasó ninguno) y avanzas de 3 a 8 casillas de premio — y a ti te puede pasar lo mismo.',
       'Dobles 🎲🎲 = tiras otra vez (¡tres seguidos te mandan a la Salida!). Cartas 🃏: guarda una (Escudo, Impulso, Rebote u Otra tirada) y úsala en tu turno desde tu ficha. A mitad de partida aparece un cofre 💰: ¡el que lo toca gana el premio!',
     ],
   },
@@ -11472,7 +11474,7 @@ const TUTORIALS = {
       'Aquí sí hay contacto directo entre jugadores: ataques y defensas repartidos por todo el camino.',
       'Ataque 🎯💥🧱🔁: Captura manda al rival más cercano a la Salida, Empujón lo hace retroceder, Bloqueo pone un muro que detiene a quien pase, e Intercambio Forzado te cambia de lugar con un rival al azar.',
       'Defensa ⬇️🚫🪞: Retroceso Fuerte te hace perder terreno, Embargo anula tu próxima habilidad de ataque, y Escudo Rebote (se guarda como carta) devuelve la próxima captura o empujón que recibas directo al atacante.',
-      'Captura: si caes exactamente en la casilla de un rival (pasada la casilla 5) lo mandas a la Salida y avanzas de 4 a 12 casillas de premio (más si comes seguido) — y a ti te puede pasar lo mismo.',
+      'Captura: si caes exactamente en la casilla de un rival (pasada la casilla 5) lo mandas de vuelta (al campamento ⛺ anterior, que hay uno cada 20 casillas, o a la Salida si aún no pasó ninguno) y avanzas de 3 a 8 casillas de premio — y a ti te puede pasar lo mismo.',
       'Dobles 🎲🎲 = tiras otra vez (¡tres seguidos te mandan a la Salida!). Cartas 🃏: guarda una (Escudo, Impulso, Rebote u Otra tirada) y úsala en tu turno desde tu ficha. A mitad de partida aparece un cofre 💰: ¡el que lo toca gana el premio!',
     ],
   },
@@ -11483,7 +11485,7 @@ const TUTORIALS = {
     color: '#ffcd4d',
     steps: [
       '¡Ritmo directo y sin zonas seguras! El tablero más largo, pensado para el combate frontal.',
-      'Captura: si caes exactamente en la casilla de un rival (pasada la casilla 5) lo mandas a la Salida y avanzas de 4 a 12 casillas de premio (más si comes seguido) — y a ti te puede pasar lo mismo.',
+      'Captura: si caes exactamente en la casilla de un rival (pasada la casilla 5) lo mandas de vuelta (al campamento ⛺ anterior, que hay uno cada 20 casillas, o a la Salida si aún no pasó ninguno) y avanzas de 3 a 8 casillas de premio — y a ti te puede pasar lo mismo.',
       'Dobles 🎲🎲 = tiras otra vez (¡tres seguidos te mandan a la Salida!). Cartas 🃏: guarda una (Escudo, Impulso, Rebote u Otra tirada) y úsala en tu turno desde tu ficha. A mitad de partida aparece un cofre 💰: ¡el que lo toca gana el premio!',
       'Dos trampas: ⚡ Electrocución te hace retroceder entre 10 y 20 casillas, y ⏪ Reversa te hace retroceder 8 casillas justo al caer. Hay 28 repartidas por el camino.',
     ],
@@ -11497,7 +11499,7 @@ const TUTORIALS = {
       'El mismo tablero Clásico de 84 casillas, con las mismas trampas y ventajas — pero a un ritmo mucho más veloz.',
       '⏱️ Tenés solo 10 segundos por turno para tirar (en vez de los habituales), así que pensá rápido.',
       '🐇 Las fichas se mueven al doble de velocidad por el tablero — las partidas se resuelven bastante más rápido de principio a fin.',
-      'Captura: si caes exactamente en la casilla de un rival (pasada la casilla 5) lo mandas a la Salida y avanzas de 4 a 12 casillas de premio (más si comes seguido) — y a ti te puede pasar lo mismo.',
+      'Captura: si caes exactamente en la casilla de un rival (pasada la casilla 5) lo mandas de vuelta (al campamento ⛺ anterior, que hay uno cada 20 casillas, o a la Salida si aún no pasó ninguno) y avanzas de 3 a 8 casillas de premio — y a ti te puede pasar lo mismo.',
       'Dobles 🎲🎲 = tiras otra vez (¡tres seguidos te mandan a la Salida!). Cartas 🃏: guarda una (Escudo, Impulso, Rebote u Otra tirada) y úsala en tu turno desde tu ficha. A mitad de partida aparece un cofre 💰: ¡el que lo toca gana el premio!',
     ],
   },
@@ -15957,6 +15959,17 @@ function boardFxBuild(){
     }
     b3d.scene.add(g); b3d._lmObjs.push(g); return g;
   };
+  try{
+    campList().forEach(c=>{
+      const cell=path[c]; if(!cell) return; const p=cellWorldPos3D(cell.row,cell.col);
+      const g=new THREE.Group(); g.position.set(p.x,0.1,p.z);
+      const r1=_fxRing(0.36,0.47,0x6fc8ff,0.8); g.add(r1);
+      const cv=document.createElement('canvas'); cv.width=cv.height=96; const cx=cv.getContext('2d'); cx.font='64px serif'; cx.textAlign='center'; cx.textBaseline='middle'; cx.fillText('⛺',48,52);
+      const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(cv),transparent:true,depthTest:false}));
+      sp.scale.set(0.6,0.6,0.6); sp.position.set(-0.28,0.45,-0.28); sp.renderOrder=50; g.add(sp);
+      g.userData={type:'camp', r1}; b3d.scene.add(g); b3d._lmObjs.push(g);
+    });
+  }catch(e){}
   const a=path[0], z=path[META_INDEX];
   if(a) mk(cellWorldPos3D(a.row,a.col),'salida');
   if(z){ const p=cellWorldPos3D(z.row,z.col); b3d._metaPos=p; mk(p,'meta'); }
@@ -15973,6 +15986,9 @@ function boardFxStep(now){
       u.r1.scale.setScalar(1+0.18*k); u.r1.material.opacity=0.55+0.4*k;
       u.r2.scale.setScalar(1.15-0.12*k); u.r2.material.opacity=0.25+0.4*(1-k);
       u.beam.rotation.y=t*0.8; u.beam.material.opacity=0.12+0.14*k;
+    } else if(u.type==='camp'){
+      const k=0.5+0.5*Math.sin(t*1.5+2);
+      u.r1.material.opacity=0.45+0.35*k;
     } else {
       const k=0.5+0.5*Math.sin(t*1.8+1);
       u.r1.scale.setScalar(1+0.1*k); u.r1.material.opacity=0.35+0.4*k;
@@ -16031,6 +16047,10 @@ function openStoreForUpdate(){
   try{ window.location.href = 'market://details?id='+STORE_PKG; }catch(e){}
   setTimeout(()=>{ try{ window.open(web,'_system'); }catch(e){ window.location.href = web; } }, 900);
 }
+/* Campamentos: cada 20 casillas. Al comerte vuelves al campamento anterior (o a la Salida si aún no pasaste el primero). */
+function campList(){ const L=[]; for(let c=20;c<META_INDEX-5;c+=20) L.push(c); return L; }
+function campRespawn(pos){ let r=0; campList().forEach(c=>{ if(c<pos && c>r) r=c; }); return r; }
+function campText(r){ return r>0 ? `al campamento ⛺ de la casilla ${r}` : 'a la Salida'; }
 function showUpdateScreen(hard){
   if(document.getElementById('updateOverlay')) return;
   const o = document.createElement('div'); o.id='updateOverlay';
