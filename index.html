@@ -5076,7 +5076,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running'){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1186';
+const BUILD_VERSION = '1187';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -16062,6 +16062,40 @@ async function checkAppUpdate(){
 }
 window.addEventListener('load', ()=>setTimeout(checkAppUpdate, 1200));
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) checkAppUpdate(); });
+
+/* ===== SOLO EN LÍNEA (v1187): sin internet no se puede jugar ===== */
+function showOfflineScreen(){
+  if(document.getElementById('offlineOverlay')) return;
+  const o = document.createElement('div'); o.id='offlineOverlay';
+  o.style.cssText = 'position:fixed;inset:0;z-index:99999;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box;background:radial-gradient(circle at 50% 35%,#1d3a78,#0b1233 70%);';
+  o.innerHTML = '<div style="max-width:340px;width:100%;text-align:center;color:#fff;font-family:\'Archivo Black\',system-ui,sans-serif;background:linear-gradient(170deg,#27406f,#0d1a35);border:3px solid #f0c64a;border-radius:22px;padding:26px 20px;box-shadow:0 10px 30px rgba(0,0,0,.6);">'
+    +'<div style="font-size:44px;line-height:1">📡</div>'
+    +'<div style="font-size:22px;margin:10px 0 8px;color:#ffe27a">Sin conexión</div>'
+    +'<div style="font:500 15px/1.45 system-ui,sans-serif;color:#e9f0ff;margin-bottom:18px">Parche se juega en línea. Conéctate a internet (Wi-Fi o datos) para seguir jugando.</div>'
+    +'<button id="offBtn" style="width:100%;padding:14px;border:0;border-radius:14px;font:inherit;font-size:17px;color:#0a1430;background:linear-gradient(180deg,#fff0b8,#ffcc4c 55%,#e09a14);box-shadow:0 4px 0 #8a5a06;cursor:pointer">Reintentar</button>'
+    +'<div id="offMsg" style="font:600 13px system-ui,sans-serif;color:#a8c6ff;margin-top:10px;min-height:18px"></div></div>';
+  document.body.appendChild(o);
+  try{ stopAllGameAudio(); }catch(e){}
+  document.getElementById('offBtn').onclick = async ()=>{
+    const m=document.getElementById('offMsg'); if(m) m.textContent='Comprobando…';
+    const ok = await _netReallyOnline();
+    if(ok) hideOfflineScreen(); else if(m) m.textContent='Todavía sin conexión.';
+  };
+}
+function hideOfflineScreen(){ const o=document.getElementById('offlineOverlay'); if(o) o.remove(); }
+async function _netReallyOnline(){
+  if(navigator.onLine===false) return false;
+  try{
+    const ctl=new AbortController(); const to=setTimeout(()=>ctl.abort(),5000);
+    await fetch(UPDATE_JSON_URL+'?t='+Date.now(), {cache:'no-store', signal:ctl.signal}); clearTimeout(to);
+    return true;
+  }catch(e){ return navigator.onLine!==false; }
+}
+function checkOnlineNow(){ if(navigator.onLine===false) showOfflineScreen(); }
+window.addEventListener('offline', ()=>showOfflineScreen());
+window.addEventListener('online', ()=>{ _netReallyOnline().then(ok=>{ if(ok) hideOfflineScreen(); }); });
+window.addEventListener('load', ()=>setTimeout(checkOnlineNow, 800));
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) checkOnlineNow(); });
 </script>
 </body>
 </html>
