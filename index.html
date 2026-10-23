@@ -5076,7 +5076,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running'){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1190';
+const BUILD_VERSION = '1191';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -5346,7 +5346,7 @@ async function connectToServerOnce(){
         const w = players.find(p=>p.color===payload.color);
         if(w && !winner){
           winner = w;
-          if(payload.reason==='meta'){ w.position = payload.position; log(`${NAMES[w.color]} llegó a la Meta y ganó.`); }
+          if(payload.reason==='meta'){ w.position = payload.position; log(`${NAMES[w.color]} llegó a la Meta y ganó.`); try{ victoryShow(w.color); }catch(e){} }
           else log(`${NAMES[w.color]} ganó — el otro jugador salió de la partida.`);
           if(w.color===MY_COLOR){ sfxWin(); vibrate([40,60,40,60,120]); fireConfetti(); }
           else { sfxPenalty(); vibrate([60,40,60]); }
@@ -8330,7 +8330,11 @@ function render(){
 
   if(winner && !endGameShown){
     endGameShown = true;
-    showEndGameModal();
+    // Si ganó llegando a la meta, se deja ver la celebración (ficha grande + fuegos artificiales) antes de la pantalla final
+    const _viaMeta = winner.position>=META_INDEX;
+    const _w0 = winner;
+    if(_viaMeta) setTimeout(()=>{ if(winner===_w0) showEndGameModal(); }, 4300);
+    else showEndGameModal();
   } else if(!winner){
     endGameShown = false;
     document.getElementById('endGameOverlay').style.display = 'none';
