@@ -5092,7 +5092,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running'){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1201';
+const BUILD_VERSION = '1202';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -5726,7 +5726,7 @@ function mpHandlePresence(ev){
     clearTimeout(botTimers[pr.user_id]);
     botTimers[pr.user_id] = setTimeout(()=>{
       if(winner) return;
-      if(!(teamUpMatchPresences||[]).some(x=>x.user_id===pr.user_id)){ if(multiplayerPublic){ if(!mpForfeitWin(col)) mpMarkBot(col, 'se desconectó'); } else mpPrivateWaitStart(col); }
+      if(!(teamUpMatchPresences||[]).some(x=>x.user_id===pr.user_id)){ if(multiplayerPublic){ mpMarkBot(col, 'se desconectó'); } else mpPrivateWaitStart(col); }
     }, BOT_GRACE_MS);
   });
   (ev.joins||[]).forEach(pr=>{
@@ -5782,7 +5782,7 @@ function mpOnGameData(op, payload, presence){
    internet o se cierra la app, y la partida sigue viva, aparece "Volver a tu partida": entras a la
    misma mesa, recuperas tu color y el estado actual (mientras tanto una máquina jugó por ti). */
 const ACTIVE_MATCH_KEY = 'parcheActiveMatch';
-const ACTIVE_MATCH_MAX_AGE_MS = 20*60*1000;
+const ACTIVE_MATCH_MAX_AGE_MS = 90*1000; // pasado 1 min 30 la partida se da por olvidada
 let mpGotSync = false;
 function saveActiveMatch(){
   try{
@@ -5805,6 +5805,7 @@ function getActiveMatch(){
 setInterval(()=>{ try{ if(winner) clearActiveMatch(); else saveActiveMatch(); }catch(e){} }, 5000);
 
 function refreshRejoinPill(){
+  { const el0 = document.getElementById('rejoinPill'); if(el0) el0.style.display='none'; return; } // reemplazado por entrada directa
   const am = getActiveMatch();
   const lob = document.getElementById('lobbyScreen'), gs = document.getElementById('gameScreen');
   const show = !!am && !multiplayerActive && lob && lob.style.display!=='none' && (!gs || gs.style.display==='none');
@@ -5826,9 +5827,17 @@ setInterval(refreshRejoinPill, 2000);
 function discardActiveMatch(){
   showConfirmDialog('¿Dejar esa partida? Una máquina seguirá jugando por ti y no podrás volver.', ()=>{ clearActiveMatch(); });
 }
-function offerRejoin(){
-  if(getActiveMatch() && !multiplayerActive) showConfirmDialog('Tu partida sigue en curso. ¿Quieres volver a entrar?', ()=>{ rejoinActiveMatch(); });
+function offerRejoin(){ autoRejoin(); }
+let _autoRejoinAt = 0;
+function autoRejoin(){ // entra directo, sin preguntar
+  try{
+    if(multiplayerActive || rejoining || !getActiveMatch()) return;
+    const lob = document.getElementById('lobbyScreen'); if(!lob || lob.style.display==='none') return;
+    if(Date.now()-_autoRejoinAt < 9000) return; _autoRejoinAt = Date.now();
+    rejoinActiveMatch();
+  }catch(e){}
 }
+setInterval(autoRejoin, 3000);
 let rejoining = false;
 async function rejoinActiveMatch(){
   if(rejoining) return;
@@ -7602,6 +7611,8 @@ function toggleGameMenu(){
 }
 function confirmExitMatch(){
   toggleGameMenu();
+  if(multiplayerActive && !tableLaunched){ cancelMultiplayerWait(); return; } // todavía buscando rival: se devuelve la apuesta
+  try{ clearActiveMatch(); }catch(e){} // salí a propósito: no me vuelven a meter
   if(multiplayerActive){
     // Avisamos que salimos: en 1 contra 1 el rival gana; en mesas de más jugadores siguen y una máquina toma nuestro lugar.
     sendMatchData(OPCODE_LEFT, {c: MY_COLOR});
@@ -11751,6 +11762,7 @@ async function recordMatchResult(youWon){
   profileStats.gamesPlayed += 1;
 
   let goldWon = 0, betPayout = 0, chestResult = {granted:false};
+  const _refundBet = !youWon && multiplayerActive && !!winner && !!winner.isBot && winner.color!==MY_COLOR && !!colorUserId(winner.color) && pendingBet>0;
   if(youWon){
     profileStats.gamesWon += 1;
     profileStats.winStreak = (profileStats.winStreak||0) + 1;
@@ -11770,6 +11782,9 @@ async function recordMatchResult(youWon){
       goldWon += betPayout;
     }
     chestResult = await grantChestForWin(pendingBet>0 ? BET_TIERS.indexOf(pendingBet) : -1);
+  } else if(_refundBet){
+    lobbyGold += pendingBet; // ganó la máquina de un jugador desconectado: no pierdes tu apuesta
+    try{ lobbyToast('Tu rival se desconectó: te devolvimos tu apuesta.'); }catch(e){}
   } else {
     profileStats.gamesLost += 1;
     profileStats.winStreak = 0;
@@ -14605,7 +14620,7 @@ function showMultiplayerGate(){
     gate.style.cssText = 'position:fixed;inset:0;z-index:300;background:rgba(10,20,40,.9);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:#fff;text-align:center;padding:24px;';
     document.body.appendChild(gate);
   }
-  gate.style.display = 'flex';
+  gate.style.display = 'flex'; gate.style.pointerEvents = '';
   gate.dataset.mode = ''; gate.dataset.code = ''; // siempre se dibuja de cero: antes se quedaba el código de la mesa anterior
   updateMultiplayerGateUI();
 }
@@ -14637,7 +14652,7 @@ function updateMultiplayerGateUI(){
   if(multiplayerIsHost && !multiplayerPublic){
     const cEl = document.getElementById('gateCount');
     if(cEl && gate.dataset.mode==='host' && gate.dataset.code===teamUpCode){ cEl.textContent = '(' + count + '/' + multiplayerRequiredCount + ')'; return; }
-    gate.dataset.mode = 'host'; gate.dataset.code = teamUpCode;
+    gate.dataset.mode = 'host'; gate.dataset.code = teamUpCode; gate.style.pointerEvents = '';
     gate.style.background = 'rgba(10,20,40,.92)'; gate.style.justifyContent = 'center'; gate.style.paddingBottom = '24px';
     gate.innerHTML = `
       <div class="gm-modal">
@@ -14664,10 +14679,10 @@ function updateMultiplayerGateUI(){
     gate.style.background = 'transparent';
     gate.style.justifyContent = 'flex-end';
     gate.style.paddingBottom = 'calc(env(safe-area-inset-bottom,0px) + 18px)';
-    gate.innerHTML = `<button onclick="cancelMultiplayerWait()" style="padding:11px 26px;border-radius:24px;border:1px solid rgba(255,255,255,.45);background:rgba(10,20,40,.75);color:#fff;font-weight:800;">Cancelar búsqueda</button>`;
+    gate.innerHTML = ''; gate.style.pointerEvents = 'none'; // sin botón Cancelar: se sale por ☰ → Salir del juego
     return;
   }
-  gate.style.justifyContent = 'center'; gate.style.paddingBottom = '24px';
+  gate.style.justifyContent = 'center'; gate.style.paddingBottom = '24px'; gate.style.pointerEvents = '';
   gate.dataset.mode = '';
   gate.style.background = 'rgba(10,20,40,.9)';
   const botonesCodigo = multiplayerPublic ? `''  ` : multiplayerIsHost ? `
