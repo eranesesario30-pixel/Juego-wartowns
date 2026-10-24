@@ -5092,7 +5092,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running'){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1200';
+const BUILD_VERSION = '1201';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -14606,11 +14606,12 @@ function showMultiplayerGate(){
     document.body.appendChild(gate);
   }
   gate.style.display = 'flex';
+  gate.dataset.mode = ''; gate.dataset.code = ''; // siempre se dibuja de cero: antes se quedaba el código de la mesa anterior
   updateMultiplayerGateUI();
 }
 function hideMultiplayerGate(){
   const gate = document.getElementById('multiplayerGate');
-  if(gate) gate.style.display = 'none';
+  if(gate){ gate.style.display = 'none'; gate.dataset.mode = ''; gate.dataset.code = ''; gate.innerHTML = ''; }
 }
 function updateMultiplayerGateUI(){
   const gate = document.getElementById('multiplayerGate');
@@ -14635,8 +14636,8 @@ function updateMultiplayerGateUI(){
   // uno nuevo. Ahora el texto es distinto según el rol real.
   if(multiplayerIsHost && !multiplayerPublic){
     const cEl = document.getElementById('gateCount');
-    if(cEl && gate.dataset.mode==='host'){ cEl.textContent = '(' + count + '/' + multiplayerRequiredCount + ')'; return; }
-    gate.dataset.mode = 'host';
+    if(cEl && gate.dataset.mode==='host' && gate.dataset.code===teamUpCode){ cEl.textContent = '(' + count + '/' + multiplayerRequiredCount + ')'; return; }
+    gate.dataset.mode = 'host'; gate.dataset.code = teamUpCode;
     gate.style.background = 'rgba(10,20,40,.92)'; gate.style.justifyContent = 'center'; gate.style.paddingBottom = '24px';
     gate.innerHTML = `
       <div class="gm-modal">
