@@ -5092,7 +5092,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running'){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1198';
+const BUILD_VERSION = '1199';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -5157,6 +5157,7 @@ const OPCODE_STATE_REQ = 34; // volví a conectar: pido el estado actual de la p
 const OPCODE_PROFILE = 37;    // nombre y foto de cada jugador de la mesa
 const OPCODE_OPEN = 36;       // mesa pública todavía en espera: el que llegó puede quedarse
 const OPCODE_LOCKED = 35;     // mesa pública ya empezada: avisa al que llegó tarde que busque otra
+const OPCODE_TURN_BEACON = 40; // señal de turno: {c:color de quien cree que juega}. Si dos celulares no coinciden, manda el de ID menor
 const OPCODE_CHAT = 39;       // mensaje de chat: {c:color, v:texto}
 const OPCODE_EMOTE = 38;      // emoji o frase rápida: {c:color, t:'emoji'|'text', v:contenido}
 const OPCODE_STATE_SYNC = 3; // manda el estado completo de la partida al terminar cada turno
@@ -5384,6 +5385,8 @@ async function connectToServerOnce(){
       if(multiplayerPublic && !tableLaunched) mpTableOpen = true;
     } else if(matchData.op_code === OPCODE_LOCKED){
       if(multiplayerPublic && !tableLaunched) mpTableLocked = true;
+    } else if(matchData.op_code === OPCODE_TURN_BEACON){
+      try{ mpOnTurnBeacon(matchData.presence && matchData.presence.user_id, payload); }catch(e){}
     } else if(matchData.op_code === OPCODE_STATE_SYNC){
       mpEnqueue(()=>applyStateSync(payload), 0);
     } else if(matchData.op_code===OPCODE_MOVE || matchData.op_code===OPCODE_DIE_USED || matchData.op_code===OPCODE_DICE || matchData.op_code===OPCODE_LEFT || matchData.op_code===OPCODE_STATE_REQ){
@@ -8805,7 +8808,9 @@ async function addFriendFromTable(uid){
     closePlayerInfo();
   }catch(e){ lobbyToast('No se pudo agregar'); }
 }
+let _piLast = 0;
 async function openPlayerInfo(color){
+  if(Date.now()-_piLast < 600) return; _piLast = Date.now(); // el toque se detecta al apretar y también al soltar: que no abra dos veces
   if(color===MY_COLOR){ openProfile(); return; }
   const pf = profileOfColor(color);
   const uid = colorUserId(color);
@@ -16297,6 +16302,40 @@ function refreshModeHints(){
   }catch(e){}
 }
 (function(){ const o=window.openBoardChoice; if(typeof o==='function'){ window.openBoardChoice=function(){ const r=o.apply(this,arguments); setTimeout(refreshModeHints,50); return r; }; } })();
+
+/* Autocorrección de turno: cada 3 s cada celular avisa de quién cree que es el turno. Si pasa un buen rato con
+   desacuerdo (cada uno cree que le toca al otro y nadie puede tirar), el celular con ID menor manda y el otro se ajusta. */
+let _beaconMis = 0;
+function mpOnTurnBeacon(uid, payload){
+  const mine = nakamaSession && nakamaSession.user_id;
+  if(!uid || !mine || !payload || !players || !players.length || winner || !tableLaunched) return;
+  const idx = players.findIndex(x=>x.color===payload.c);
+  if(idx<0) return;
+  if(idx===current){ _beaconMis = 0; return; }
+  if(rolling || animating || remoteApplying) return;
+  _beaconMis++;
+  if(_beaconMis>=3 && uid<mine){
+    _beaconMis = 0;
+    mpLog('⚠ turnos distintos: me ajusto al del otro celular (' + payload.c + ')');
+    current = idx; dice=[null,null]; usedDie=[false,false]; pendingDoubleExtra=false; armMode=null;
+    try{ render(); }catch(e){}
+    try{ startTurnTimer(); }catch(e){}
+  }
+}
+setInterval(()=>{ try{
+  if(!multiplayerActive || !tableLaunched || !players || !players.length || winner || !nakamaMatchId) return;
+  sendMatchData(OPCODE_TURN_BEACON, { c: players[current].color });
+}catch(e){} }, 3000);
+
+/* El perfil se abre apenas tocas la foto (al apretar), sin esperar a soltar: la mesa se vuelve a dibujar seguido y a veces se perdía el toque. */
+document.addEventListener('pointerdown', e=>{
+  try{
+    const fr = e.target && e.target.closest && e.target.closest('.avatar-frame-metal'); if(!fr) return;
+    const card = fr.closest('.p-card'); if(!card) return;
+    const m = /\bp-(red|blue|yellow|green)\b/.exec(card.className); if(!m) return;
+    openPlayerInfo(m[1]);
+  }catch(err){}
+}, true);
 </script>
 </body>
 </html>
