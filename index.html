@@ -5104,7 +5104,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running'){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1205';
+const BUILD_VERSION = '1206';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -6795,7 +6795,7 @@ async function completeLogin(data, online){
 }
 /* ---------- Construcción del tablero ---------- */
 // Combinación fija de tipos (siempre la misma cantidad de cada uno), pero eligen posición al azar
-const SPECIAL_TYPE_POOL = ['lance','lance','lance','turno','turno','turno','turno','baja','baja','baja','baja','sube','sube','sube','vuelva','lance','turno','baja','sube','baja','sube','turno'];
+const SPECIAL_TYPE_POOL = ['lance','lance','lance','turno','turno','turno','turno','baja','baja','baja','baja','sube','sube','sube','sube','vuelva','lance','turno','baja','sube','baja','sube','turno'];
 
 /* Mantener a los jugadores juntos: las ventajas que empujan hacia adelante tienden a caer
    en la primera mitad y las trampas que hacen retroceder, en la segunda. Con mucho azar. */
@@ -6854,9 +6854,9 @@ function generateBoard(){
   const middleIdx = [];
   for(let i=12;i<=88;i++){ if(i%20!==0) middleIdx.push(i); } // los campamentos ⛺ (cada 20) quedan solos: sin trampas ni ventajas encima
   /* */ // se excluyen las últimas 10 casillas antes de la Meta: nada de trampas/ventajas ahí
-  const specialSet = new Set(pickSpacedIndices(middleIdx, 22, 1));
-  const gambleSet = new Set(pickSpacedIndices(middleIdx.filter(i=>!specialSet.has(i) && i>=18 && i<=80), 3, 6));
-  const specialTypes = packOrder(SPECIAL_TYPE_POOL);
+  const specialSet = new Set(pickSpacedIndices(middleIdx, 16, 2)); // tablero más libre: 16 especiales, nunca pegadas
+  const gambleSet = new Set(pickSpacedIndices(middleIdx.filter(i=>!specialSet.has(i) && !specialSet.has(i-1) && !specialSet.has(i+1) && i>=18 && i<=80), 3, 6));
+  const specialTypes = packOrder(SPECIAL_TYPE_POOL.slice(0,16));
 
   // 3) construir grid y path: números secuenciales en las casillas no especiales
   grid = Array.from({length:10}, ()=>Array(10));
@@ -6909,7 +6909,7 @@ function generateBoard(){
 // No toca generateBoard() ni generateBoardSized(); es una función aparte solo para el Modo 2.
 // Casillas ❓ de Apuesta: reemplazan números comunes (nunca trampas ni poderes), lejos de la Salida y de la Meta.
 function pickGambleNumbers(count, taken){
-  const pool = []; for(let n=14;n<=88;n++){ if(!taken.has(n) && n%20!==0) pool.push(n); }
+  const pool = []; for(let n=14;n<=88;n++){ if(!taken.has(n) && !taken.has(n-1) && !taken.has(n+1) && n%20!==0) pool.push(n); }
   return new Set(pickSpacedIndices(pool, count, 6));
 }
 const MODE2_TRAP_TYPES = ['congelado','congelado','congelado','lava','lava','lava','empujon','empujon','empujon','intercambio','intercambio'];
@@ -6934,8 +6934,8 @@ function generateBoardMode2(){
   const eligible = [];
   for(let n=12;n<=98;n++){ if(n%20!==0) eligible.push(n); } // sin trampas/ventajas sobre los campamentos ⛺ (cada 20)
   /* */ // se excluyen los últimos 10 números antes de la Meta: nada de trampas/ventajas ahí
-  const specialNumbers = new Set(pickSpacedIndices(eligible, 30, 1));
-  const allTypes = packOrder([...fillTypes(MODE2_TRAP_TYPES, 16), ...fillTypes(MODE2_POWER_TYPES, 14)]);
+  const specialNumbers = new Set(pickSpacedIndices(eligible, 18, 2));
+  const allTypes = packOrder([...fillTypes(MODE2_TRAP_TYPES, 10), ...fillTypes(MODE2_POWER_TYPES, 8)]);
   const gambleNumbers = pickGambleNumbers(4, specialNumbers);
 
   grid = Array.from({length:rows}, ()=>Array(10));
@@ -6986,8 +6986,8 @@ function generateBoardMode3(){
   const eligible = [];
   for(let n=12;n<=98;n++){ if(n%20!==0) eligible.push(n); } // sin trampas/ventajas sobre los campamentos ⛺ (cada 20)
   /* */ // se excluyen los últimos 10 números antes de la Meta: nada de trampas/ventajas ahí
-  const specialNumbers = new Set(pickSpacedIndices(eligible, 36, 1));
-  const allTypes = packOrder([...fillTypes(MODE3_ATTACK_TYPES, 18), ...fillTypes(MODE3_DEFENSE_TYPES, 18)]);
+  const specialNumbers = new Set(pickSpacedIndices(eligible, 20, 2));
+  const allTypes = packOrder([...fillTypes(MODE3_ATTACK_TYPES, 10), ...fillTypes(MODE3_DEFENSE_TYPES, 10)]);
   const gambleNumbers = pickGambleNumbers(4, specialNumbers);
 
   grid = Array.from({length:rows}, ()=>Array(10));
@@ -7034,9 +7034,9 @@ function generateBoardMode4(){
   const eligible = [];
   for(let n=12;n<=98;n++){ if(n%20!==0) eligible.push(n); } // sin trampas/ventajas sobre los campamentos ⛺ (cada 20)
   /* */ // se excluyen los últimos 10 números antes de la Meta: nada de Electrocución ahí
-  const _early = eligible.filter(n=>n<=55), _late = eligible.filter(n=>n>55);
-  const trapNumbers = pickSpacedIndices(_early, 9, 1).concat(pickSpacedIndices(_late, 19, 1));
-  const trapTypes = shuffleArray([...Array(16).fill('electro'), ...Array(12).fill('reversa')]);
+  const _early = eligible.filter(n=>n<=55), _late = eligible.filter(n=>n>56);
+  const trapNumbers = pickSpacedIndices(_early, 5, 2).concat(pickSpacedIndices(_late, 12, 2));
+  const trapTypes = shuffleArray([...Array(10).fill('electro'), ...Array(7).fill('reversa')]);
   const trapByNumber = {}; trapNumbers.forEach((n,i)=>{ trapByNumber[n] = trapTypes[i]; });
   const gambleNumbers = pickGambleNumbers(5, new Set(trapNumbers));
 
