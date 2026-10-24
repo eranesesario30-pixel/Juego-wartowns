@@ -5104,7 +5104,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running'){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1204';
+const BUILD_VERSION = '1205';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -6852,7 +6852,8 @@ function generateBoard(){
   // 2) elegir al azar 15 posiciones intermedias (desde la 12 en adelante,
   // así el arranque de la partida no tiene sorpresas) para que sean especiales
   const middleIdx = [];
-  for(let i=12;i<=88;i++) middleIdx.push(i); // se excluyen las últimas 10 casillas antes de la Meta: nada de trampas/ventajas ahí
+  for(let i=12;i<=88;i++){ if(i%20!==0) middleIdx.push(i); } // los campamentos ⛺ (cada 20) quedan solos: sin trampas ni ventajas encima
+  /* */ // se excluyen las últimas 10 casillas antes de la Meta: nada de trampas/ventajas ahí
   const specialSet = new Set(pickSpacedIndices(middleIdx, 22, 1));
   const gambleSet = new Set(pickSpacedIndices(middleIdx.filter(i=>!specialSet.has(i) && i>=18 && i<=80), 3, 6));
   const specialTypes = packOrder(SPECIAL_TYPE_POOL);
@@ -6908,7 +6909,7 @@ function generateBoard(){
 // No toca generateBoard() ni generateBoardSized(); es una función aparte solo para el Modo 2.
 // Casillas ❓ de Apuesta: reemplazan números comunes (nunca trampas ni poderes), lejos de la Salida y de la Meta.
 function pickGambleNumbers(count, taken){
-  const pool = []; for(let n=14;n<=88;n++){ if(!taken.has(n)) pool.push(n); }
+  const pool = []; for(let n=14;n<=88;n++){ if(!taken.has(n) && n%20!==0) pool.push(n); }
   return new Set(pickSpacedIndices(pool, count, 6));
 }
 const MODE2_TRAP_TYPES = ['congelado','congelado','congelado','lava','lava','lava','empujon','empujon','empujon','intercambio','intercambio'];
@@ -6931,7 +6932,8 @@ function generateBoardMode2(){
   // 20 números al azar entre el 12 y el 99 se convierten en casilla especial
   // (nada de trampas/ventajas al arrancar la partida)
   const eligible = [];
-  for(let n=12;n<=98;n++) eligible.push(n); // se excluyen los últimos 10 números antes de la Meta: nada de trampas/ventajas ahí
+  for(let n=12;n<=98;n++){ if(n%20!==0) eligible.push(n); } // sin trampas/ventajas sobre los campamentos ⛺ (cada 20)
+  /* */ // se excluyen los últimos 10 números antes de la Meta: nada de trampas/ventajas ahí
   const specialNumbers = new Set(pickSpacedIndices(eligible, 30, 1));
   const allTypes = packOrder([...fillTypes(MODE2_TRAP_TYPES, 16), ...fillTypes(MODE2_POWER_TYPES, 14)]);
   const gambleNumbers = pickGambleNumbers(4, specialNumbers);
@@ -6982,7 +6984,8 @@ function generateBoardMode3(){
 
   // 30 números al azar entre el 12 y el 99 se convierten en casilla especial
   const eligible = [];
-  for(let n=12;n<=98;n++) eligible.push(n); // se excluyen los últimos 10 números antes de la Meta: nada de trampas/ventajas ahí
+  for(let n=12;n<=98;n++){ if(n%20!==0) eligible.push(n); } // sin trampas/ventajas sobre los campamentos ⛺ (cada 20)
+  /* */ // se excluyen los últimos 10 números antes de la Meta: nada de trampas/ventajas ahí
   const specialNumbers = new Set(pickSpacedIndices(eligible, 36, 1));
   const allTypes = packOrder([...fillTypes(MODE3_ATTACK_TYPES, 18), ...fillTypes(MODE3_DEFENSE_TYPES, 18)]);
   const gambleNumbers = pickGambleNumbers(4, specialNumbers);
@@ -7029,7 +7032,8 @@ function generateBoardMode4(){
 
   // 15 casillas de Electrocución, repartidas al azar con separación mínima
   const eligible = [];
-  for(let n=12;n<=98;n++) eligible.push(n); // se excluyen los últimos 10 números antes de la Meta: nada de Electrocución ahí
+  for(let n=12;n<=98;n++){ if(n%20!==0) eligible.push(n); } // sin trampas/ventajas sobre los campamentos ⛺ (cada 20)
+  /* */ // se excluyen los últimos 10 números antes de la Meta: nada de Electrocución ahí
   const _early = eligible.filter(n=>n<=55), _late = eligible.filter(n=>n>55);
   const trapNumbers = pickSpacedIndices(_early, 9, 1).concat(pickSpacedIndices(_late, 19, 1));
   const trapTypes = shuffleArray([...Array(16).fill('electro'), ...Array(12).fill('reversa')]);
