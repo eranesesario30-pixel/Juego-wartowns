@@ -3871,6 +3871,8 @@ body.dice-shaking .dice-cube-wrap, body.dice-shaking .dice-sprite{ animation:dic
   #fastPlayersOv .fp-s{margin:6px 0 14px;font:800 13px/1.2 system-ui,sans-serif;color:#c9c1ad;}
   #fastPlayersOv button{display:block;width:100%;margin:8px 0;padding:13px;border-radius:12px;border:2px solid #fff6de;background:linear-gradient(160deg,#ffe27a,#f2b21c);color:#3a2600;font:900 16px/1 'Archivo Black',system-ui,sans-serif;cursor:pointer;box-shadow:0 3px 0 #8a5e00;}
   #fastPlayersOv .fp-x{margin-top:10px;font:800 12px system-ui,sans-serif;color:#c9c1ad;cursor:pointer;}
+
+  .pi-addfriend{display:block;margin:12px auto 0;padding:11px 20px;border-radius:14px;border:2px solid #fff6de;background:linear-gradient(160deg,#5FFFA0,#09B85D);color:#04341c;font:900 15px/1 'Archivo Black',system-ui,sans-serif;cursor:pointer;box-shadow:0 3px 0 #05683a;}
 </style>
 </head>
 <body>
@@ -4442,7 +4444,7 @@ body.dice-shaking .dice-cube-wrap, body.dice-shaking .dice-sprite{ animation:dic
             </div>
             <div class="fr2-myid"><span>Tu ID: <b id="myIdLabel"></b></span><button onclick="copyMyId()">📋 Copiar ID y enlace</button></div>
             <div class="fr2-add">
-              <input id="friendIdInput" placeholder="Agregar por ID (ej. P84-AB12CD)" maxlength="20">
+              <input id="friendIdInput" placeholder="Agregar por ID (ej. 4829175)" maxlength="20" inputmode="numeric">
               <button onclick="addFriendById()">Agregar</button>
             </div>
             <span id="friendsCount" style="display:none">0</span>
@@ -5090,7 +5092,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running'){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1197';
+const BUILD_VERSION = '1198';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -6720,7 +6722,7 @@ async function loginAsGuest(){
 
 async function completeLogin(data, online){
   isOnlineAuthenticated = !!online;
-  if(online){ try{ setTimeout(()=>{ try{ publishPublicProfile(); }catch(e){} }, 5000); }catch(e){} }
+  if(online){ try{ setTimeout(()=>{ try{ publishPublicProfile(); }catch(e){} }, 5000); }catch(e){} try{ setTimeout(()=>{ ensureShortId(); }, 1500); }catch(e){} }
   { const g=document.getElementById('loginBtnGuest'); if(g){ g.dataset.busy='0'; g.textContent='Jugar como Invitado'; } }
   if(online && data){
     authToken = data.token;
@@ -7685,6 +7687,16 @@ function updateGameHudDiamonds(){
     costEl.textContent = cost===undefined ? '' : (cost===0 ? 'Próximo: GRATIS' : `Próximo: ${cost} 💎`);
   }
 }
+function mpResetLocalState(){ // deja limpia toda la mesa anterior: así la próxima mesa nunca hereda el código ni la espera vieja
+  try{ stopPublicWaitTimer(); }catch(e){}
+  try{ stopSearchRotation(); }catch(e){}
+  try{ if(tableConfigTimer){ clearInterval(tableConfigTimer); tableConfigTimer = null; } }catch(e){}
+  try{ if(gameSocket && socketIsConnected && multiplayerTicket){ gameSocket.removeMatchmaker(multiplayerTicket); } }catch(e){}
+  multiplayerTicket = null; multiplayerWaitingForMatchmaker = false; multiplayerPublic = false;
+  mpTableLocked = false; mpTableOpen = false; publicGrace = false; mpSearching = false;
+  tableLaunched = false; tableConfigReceived = false; teamUpMatchPresences = []; multiplayerRoster = {};
+  teamUpCode = '';
+}
 function backToLobby(){
   try{ endTour(true); }catch(e){}
   try{ mpPrivateWaitStop(false); }catch(e){}
@@ -7704,6 +7716,7 @@ function backToLobby(){
     tableLaunched = false; tableConfigReceived = false;
     teamUpMatchPresences = [];
   }
+  try{ mpResetLocalState(); }catch(e){}
   disposeBoard3D();
   document.getElementById('gameScreen').style.display = 'none';
   document.getElementById('lobbyScreen').style.display = 'flex';
@@ -8744,7 +8757,7 @@ function myStatsForTable(){
   return { c: myCountry(), lv: profileStats.level||1, gp: profileStats.gamesPlayed||0, gw: profileStats.gamesWon||0, st: profileStats.winStreak||0, w2: profileStats.wins2p||0, w4: profileStats.wins4p||0, wt: profileStats.winsTeam||0 };
 }
 function closePlayerInfo(){ const o=document.getElementById('playerInfoOverlay'); if(o) o.style.display='none'; }
-function showPlayerCard(name, url, d, kind){
+function showPlayerCard(name, url, d, kind, uid){
   const card = document.getElementById('playerInfoCard'); if(!card) return;
   const av = url ? `<img src="${url}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : '🙂';
   let body;
@@ -8768,26 +8781,43 @@ function showPlayerCard(name, url, d, kind){
         <div class="pi-box" style="grid-column:1/3;"><b>${d.wt}</b><span>Gana por equipos</span></div>
       </div><div class="profile-note">Datos que comparte el propio jugador.</div>`;
   }
+  const _sid = (d && d.id) ? `<div class="profile-note" style="margin:0 0 6px;">ID: <b>${escapeHtml(d.id)}</b></div>` : '';
+  let _fr = '';
+  if(uid && kind!=='loading' && kind!=='bot'){
+    const isF = (profileStats.friends||[]).some(f=>f.id===uid);
+    _fr = isF ? `<div class="profile-note" style="margin-top:10px;">✅ Ya es tu amigo</div>`
+              : `<button class="pi-addfriend" onclick="addFriendFromTable('${uid}')">➕ Agregar amigo</button>`;
+  }
   card.innerHTML = `<button class="profile-close" onclick="closePlayerInfo()">✕</button>
     <div class="profile-title">Perfil</div>
     <div class="profile-avatar-frame"><div class="lobby-avatar" style="width:72px;height:72px;font-size:34px;overflow:hidden;">${av}</div></div>
-    <div class="profile-name" style="margin-bottom:6px;">${escapeHtml(name||'Jugador')}</div>${body}`;
+    <div class="profile-name" style="margin-bottom:6px;">${escapeHtml(name||'Jugador')}</div>${_sid}${body}${_fr}`;
   document.getElementById('playerInfoOverlay').style.display = 'flex';
 }
 let _piToken = 0;
+async function addFriendFromTable(uid){
+  try{
+    if(!uid || (nakamaSession && uid===nakamaSession.user_id)) return;
+    if(!profileStats.friends) profileStats.friends = [];
+    if(!profileStats.friends.some(f=>f.id===uid)){ profileStats.friends.push({id:uid, addedAt:Date.now()}); await saveProfile(); }
+    lobbyToast('¡Amigo agregado!');
+    try{ renderFriendsList(); }catch(e){}
+    closePlayerInfo();
+  }catch(e){ lobbyToast('No se pudo agregar'); }
+}
 async function openPlayerInfo(color){
   if(color===MY_COLOR){ openProfile(); return; }
   const pf = profileOfColor(color);
   const uid = colorUserId(color);
   if(!uid){ showPlayerCard(pf.n, pf.url, null, 'bot'); return; }
   const d = mpProfiles[uid];
-  if(d && d.gp!==undefined){ showPlayerCard(pf.n, pf.url, d); return; }
+  if(d && d.gp!==undefined){ showPlayerCard(pf.n, pf.url, d, null, uid); return; }
   // el otro jugador no mandó estadísticas por la mesa: se buscan en el servidor
   const my = ++_piToken;
   showPlayerCard(pf.n, pf.url, null, 'loading');
   const sv = await fetchPublicCard(uid);
   if(my !== _piToken) return;
-  showPlayerCard(sv ? sv.n : pf.n, sv ? cardAvatarUrl(sv, uid) : pf.url, sv);
+  showPlayerCard(sv ? sv.n : pf.n, sv ? cardAvatarUrl(sv, uid) : pf.url, sv || d || null, null, uid);
 }
 async function openFriendInfo(id){
   const uid = String(id||'').toLowerCase();
@@ -8834,7 +8864,7 @@ function prepareMyThumb(){
 function myPublicProfile(){
   let a = (!profileStats.photoUrl && profileStats.avatarId && profileStats.avatarId!=='av0') ? profileStats.avatarId : null;
   if(!a && !profileStats.photoUrl){ try{ a = defaultAvatarId(String(ensureDisplayName())); }catch(e){} }
-  return Object.assign({ dd: profileStats.equippedDice || 'classic', tk: mySkinForMatch(), n: ensureDisplayName(), a, p: (profileStats.photoUrl && myThumb.key===profileStats.photoUrl) ? myThumb.data : null }, myStatsForTable());
+  return Object.assign({ id: profileStats.shortId || '', dd: profileStats.equippedDice || 'classic', tk: mySkinForMatch(), n: ensureDisplayName(), a, p: (profileStats.photoUrl && myThumb.key===profileStats.photoUrl) ? myThumb.data : null }, myStatsForTable());
 }
 async function sendMyProfile(){
   try{ await prepareMyThumb(); }catch(e){}
@@ -8850,7 +8880,7 @@ function cleanCard(d){
   const c = (typeof d.c==='string' && COUNTRIES[d.c]) ? d.c : '';
   let dd = null; try{ ensureDiceSkins(); if(typeof d.dd==='string' && DICE_CATALOG.some(x=>x.id===d.dd)) dd = d.dd; }catch(e){}
   let tk = null; try{ if(typeof d.tk==='string' && ANIMAL_NAMES[d.tk]) tk = d.tk; }catch(e){}
-  return { dd, tk, n: n || 'Invitado', a, p, c, lv:num(d.lv,999), gp: d.gp!==undefined?num(d.gp):undefined, gw:num(d.gw), st:num(d.st), w2:num(d.w2), w4:num(d.w4), wt:num(d.wt) };
+  return { id: (typeof d.id==='string' && /^\d{5,9}$/.test(d.id)) ? d.id : '', dd, tk, n: n || 'Invitado', a, p, c, lv:num(d.lv,999), gp: d.gp!==undefined?num(d.gp):undefined, gw:num(d.gw), st:num(d.st), w2:num(d.w2), w4:num(d.w4), wt:num(d.wt) };
 }
 function onProfileData(uid, d){
   if(!uid || !d || typeof d!=='object') return;
@@ -10548,7 +10578,13 @@ async function executeMove(idx){
   }
   if(!winner){
     try{
-      const victim = players.find(x=>x.active && x!==p && x.position===p.position && x.position>=5 && x.position<META_INDEX-8 && !(p.team && x.team===p.team));
+      let victim = players.find(x=>x.active && x!==p && x.position===p.position && x.position>=5 && x.position<META_INDEX-8 && !(p.team && x.team===p.team));
+      if(victim && victim.shield){ // el Escudo 🛡️ también protege de que lo coman (se gasta)
+        victim.shield = false;
+        effectMsg += ` 🛡️ ¡El Escudo de ${NAMES[victim.color]} lo protegió! No lo pueden comer.`;
+        sfxBonus(); vibrate(15); try{ render(); }catch(e){}
+        victim = null;
+      }
       if(victim){
         await wait(200);
         const _vPos = victim.position;
@@ -11244,6 +11280,33 @@ let lobbyGold = START_GOLD;
 /* ---------- Perfil del jugador (persistente) ---------- */
 let profileStats = {playerId:'', goldEarned:0, gamesPlayed:0, gamesWon:0, gamesLost:0};
 
+/* ID corto: número de 7 dígitos. Se guarda como "nombre de usuario" en el servidor (único), así otros lo pueden buscar. */
+function displayId(){ return (profileStats && (profileStats.shortId || profileStats.playerId)) || ''; }
+async function ensureShortId(){
+  try{
+    if(!nakamaSession || !isOnlineAuthenticated) return;
+    const hdr = { 'Authorization':'Bearer '+nakamaSession.token, 'Content-Type':'application/json' };
+    let cur = null;
+    try{ const r = await fetchT(SERVER_URL + '/v2/account', { headers:hdr }); if(r.ok){ const a = await r.json(); cur = a && a.user && a.user.username; } }catch(e){}
+    let id = (cur && /^\d{7}$/.test(cur)) ? cur : null;
+    for(let i=0; !id && i<10; i++){
+      const cand = String(1000000 + Math.floor(Math.random()*9000000));
+      const r = await fetchT(SERVER_URL + '/v2/account', { method:'PUT', headers:hdr, body: JSON.stringify({ username: cand }) });
+      if(r.ok) id = cand; else if(r.status!==409 && r.status!==400) break; // 409 = ya existe: probar otro
+    }
+    if(id && profileStats.shortId !== id){ profileStats.shortId = id; try{ await saveProfile(); }catch(e){} try{ publishPublicProfile(); }catch(e){} }
+    try{ const l=document.getElementById('myIdLabel'); if(l) l.textContent = displayId(); renderProfile(); }catch(e){}
+  }catch(e){}
+}
+async function resolveShortId(id){
+  try{
+    if(!nakamaSession) return null;
+    const r = await fetchT(SERVER_URL + '/v2/user?usernames=' + encodeURIComponent(id), { headers:{ 'Authorization':'Bearer '+nakamaSession.token } });
+    if(!r.ok) return null;
+    const d = await r.json(); const u = d && d.users && d.users[0];
+    return u ? u.id : null;
+  }catch(e){ return null; }
+}
 function genPlayerId(){
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let id = '';
@@ -11393,7 +11456,7 @@ function renderProfilePhoto(){
 function renderProfile(){
   updateLevelBadges();
   try{ renderCountrySelect(); }catch(e){}
-  document.getElementById('profileId').textContent = 'ID: ' + (profileStats.playerId||'—');
+  document.getElementById('profileId').textContent = 'ID: ' + (displayId()||'—');
   try{ updateNameHint(); }catch(e){}
   try{ const nm=ensureDisplayName(); const l=document.getElementById('profileNameLbl'); if(l) l.textContent=nm; const i=document.getElementById('profileNameInput'); if(i) i.value=nm; }catch(e){}
   document.getElementById('statGoldEarned').textContent = profileStats.goldEarned;
@@ -11860,8 +11923,8 @@ function triggerRandomGameNotification(){
   if(friends.length>0){
     const f = friends[Math.floor(Math.random()*friends.length)];
     pool.push(
-      ()=>showGameNotification('🎲','¡Tu amigo está en línea!', `${escapeHtml(f.id)} quiere jugar contigo`, openFriends, {kind:'friend',action:'Jugar'}),
-      ()=>showGameNotification('💌', `¡${escapeHtml(f.id)} te retó!`, '¿Aceptas el desafío ahora?', openFriends, {kind:'friend',action:'▶'}),
+      ()=>showGameNotification('🎲','¡Tu amigo está en línea!', `${escapeHtml(friendName(f.id))} quiere jugar contigo`, openFriends, {kind:'friend',action:'Jugar'}),
+      ()=>showGameNotification('💌', `¡${escapeHtml(friendName(f.id))} te retó!`, '¿Aceptas el desafío ahora?', openFriends, {kind:'friend',action:'▶'}),
     );
   }
   // Solo avisos que son verdad: el premio diario solo si falta reclamarlo y el ánfora solo si hay una lista
@@ -13855,7 +13918,7 @@ function watchAdStep(){
 
 /* ---------- Amigos ---------- */
 function openFriends(){
-  try{ const l=document.getElementById('myIdLabel'); if(l) l.textContent = profileStats.playerId || ''; }catch(e){}
+  try{ const l=document.getElementById('myIdLabel'); if(l) l.textContent = displayId(); }catch(e){}
   setTimeout(()=>{ try{ startFriendsOnlinePolling(); }catch(e){} }, 100);
   renderFriendsList();
   document.getElementById('friendsOverlay').style.display = 'flex';
@@ -13868,7 +13931,7 @@ function gameLink(withFriend){
   let base = location.href.split('?')[0].split('#')[0];
   // En la app de Android la dirección es interna (localhost): para invitar se usa el enlace público de Parche
   try{ if(typeof _isNativeApp==='function' && _isNativeApp()) base = 'https://eranesesario30-pixel.github.io/Juego-wartowns/'; }catch(e){}
-  return withFriend && profileStats.playerId ? base + '?amigo=' + encodeURIComponent(profileStats.playerId) : base;
+  return withFriend && displayId() ? base + '?amigo=' + encodeURIComponent(displayId()) : base;
 }
 async function shareOut(text, url){
   try{
@@ -13898,20 +13961,22 @@ function shareViaWhatsApp(){
   shareOut('¡Juega Parche conmigo! 🎲 Entra con mi enlace y quedamos como amigos.', gameLink(true));
 }
 async function copyMyId(){
-  const t = (profileStats.playerId||'') + ' — ' + gameLink(true);
+  const t = displayId() + ' — ' + gameLink(true);
   try{ await navigator.clipboard.writeText(t); lobbyToast('Copiado: tu ID y tu enlace'); }
-  catch(e){ lobbyToast('Tu ID: ' + (profileStats.playerId||''), 6000); }
+  catch(e){ lobbyToast('Tu ID: ' + displayId(), 6000); }
 }
 // Quien entra con el enlace de un amigo (?amigo=ID) queda agregado
 const PENDING_FRIEND_FROM_LINK = (()=>{ try{ const v = new URLSearchParams(location.search).get('amigo'); return v && /^[A-Za-z0-9_-]{1,24}$/.test(v) ? v.toUpperCase() : null; }catch(e){ return null; } })();
 async function applyFriendFromLink(){
   const id = PENDING_FRIEND_FROM_LINK;
-  if(!id || !profileStats || id===profileStats.playerId) return;
+  if(!id || !profileStats || id===profileStats.playerId || id===displayId()) return;
   if(!profileStats.friends) profileStats.friends = [];
-  if(profileStats.friends.some(f=>f.id===id)) return;
-  profileStats.friends.push({id, addedAt: Date.now()});
+  let fid = id;
+  if(/^\d{5,9}$/.test(id)){ const u = await resolveShortId(id); if(!u) return; if(nakamaSession && u===nakamaSession.user_id) return; fid = u; }
+  if(profileStats.friends.some(f=>f.id===fid)) return;
+  profileStats.friends.push({id:fid, addedAt: Date.now()});
   try{ await saveProfile(); }catch(e){}
-  lobbyToast('¡' + id + ' ahora es tu amigo!');
+  lobbyToast('¡' + friendName(fid) + ' ahora es tu amigo!');
 }
 
 /* ---------- Formar Equipo ----------
@@ -14109,6 +14174,8 @@ async function submitMatchmakerTicket(query, min, max, props){
 }
 
 async function createTeamUpTableFinal(){
+  if(nakamaMatchId){ try{ gameSocket.leaveMatch(nakamaMatchId); }catch(e){} nakamaMatchId = null; }
+  try{ mpResetLocalState(); }catch(e){}
   multiplayerPublic = false;
   mpLog('CREATE INICIADO');
   const sock = await ensureConnected();
@@ -14639,7 +14706,7 @@ function renderInviteFriendsPanel(){
   panel.innerHTML = friends.map(f=>`
     <div style="display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid rgba(255,255,255,.08);">
       <div style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">🙂</div>
-      <div style="flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(f.id)}</div>
+      <div style="flex:1;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(friendName(f.id))}</div>
       <button onclick="inviteFriendToTable('${escapeHtml(f.id)}')" style="padding:5px 12px;border-radius:14px;border:none;background:#09B85D;color:#fff;font-weight:700;font-size:11px;flex-shrink:0;">Invitar</button>
     </div>
   `).join('');
@@ -14767,8 +14834,7 @@ function cancelMultiplayerWait(){
     try{ gameSocket.leaveMatch(nakamaMatchId); }catch(e){}
   }
   nakamaMatchId = null;
-  tableLaunched = false; tableConfigReceived = false; multiplayerWaitingForMatchmaker = false;
-  teamUpMatchPresences = [];
+  try{ mpResetLocalState(); }catch(e){}
   if(pendingBet){ lobbyGold += pendingBet; pendingBet = 0; syncEconomy(); } // devolver el oro apostado
   disposeBoard3D();
   document.getElementById('gameScreen').style.display = 'none';
@@ -14804,7 +14870,7 @@ function switchFriendsTab(tab){
 }
 
 function friendCard(id){ const h = pubCache[String(id).toLowerCase()]; return h && h.card; }
-function friendName(id){ const c = friendCard(id); return c ? c.n : id; }
+function friendName(id){ const c = friendCard(id); return c ? c.n : (String(id).length>16 ? 'Amigo' : id); }
 function friendAvHTML(id){ const c = friendCard(id); return c ? `<img src="${cardAvatarUrl(c,String(id).toLowerCase())}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">` : '🙂'; }
 let _friendCardsBusy = false;
 function loadFriendCards(){
@@ -14873,13 +14939,13 @@ async function sendGiftToFriend(idx){
   if(f.lastSentAt && (now-f.lastSentAt)<86400000) return;
   f.lastSentAt = now;
   await saveProfile();
-  lobbyToast(`¡Enviaste 100 de oro a ${f.id}! (bono del juego, no te descuenta nada)`);
+  lobbyToast(`¡Enviaste 100 de oro a ${friendName(f.id)}! (bono del juego, no te descuenta nada)`);
   renderFriendsList();
   setTimeout(async ()=>{
     f.pendingGift = true;
     await saveProfile();
     renderFriendsList();
-    lobbyToast(`${f.id} te devolvió el gesto: ¡tienes un regalo esperando! 🎁`);
+    lobbyToast(`${friendName(f.id)} te devolvió el gesto: ¡tienes un regalo esperando! 🎁`);
   }, 4000);
 }
 
@@ -14903,10 +14969,18 @@ async function addFriendById(){
   const id = input.value.trim().toUpperCase();
   if(!id){ lobbyToast('Escribe un ID de jugador primero'); return; }
   if(!/^[A-Z0-9_-]{1,24}$/.test(id)){ lobbyToast('El ID solo puede tener letras, números, guiones (máx. 24 caracteres)'); return; }
-  if(id === profileStats.playerId){ lobbyToast('Ese es tu propio ID 🙂'); return; }
+  if(id === profileStats.playerId || id === displayId()){ lobbyToast('Ese es tu propio ID 🙂'); return; }
   if(!profileStats.friends) profileStats.friends = [];
-  if(profileStats.friends.some(f=>f.id===id)){ lobbyToast('Ya está en tu lista'); return; }
-  profileStats.friends.push({id, addedAt: Date.now()});
+  let fid = id;
+  if(/^\d{5,9}$/.test(id)){ // ID corto → se busca en el servidor
+    lobbyToast('Buscando…');
+    const u = await resolveShortId(id);
+    if(!u){ lobbyToast('No existe ningún jugador con ese ID'); return; }
+    if(nakamaSession && u===nakamaSession.user_id){ lobbyToast('Ese es tu propio ID 🙂'); return; }
+    fid = u;
+  }
+  if(profileStats.friends.some(f=>f.id===fid)){ lobbyToast('Ya está en tu lista'); return; }
+  profileStats.friends.push({id:fid, addedAt: Date.now()});
   await saveProfile();
   input.value = '';
   renderFriendsList();
