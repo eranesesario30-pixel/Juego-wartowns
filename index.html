@@ -4772,7 +4772,7 @@ body.dice-shaking .dice-cube-wrap, body.dice-shaking .dice-sprite{ animation:dic
       <button class="settings-link-btn" onclick="window.open('?pagina=eliminar-datos','_blank')">🗑️ Eliminar mis datos</button>
       <button class="settings-link-btn danger" onclick="confirmDeleteAccount()">🗑️ Eliminar mi cuenta y mis datos</button>
       <button class="settings-link-btn" id="camFxToggleBtn" onclick="camFxToggle()">🎥 Cámara con efectos: sí</button>
-      <div id="settingsVersion" style="text-align:center;font-size:10px;opacity:.5;margin-top:14px;"></div>
+      <div id="settingsVersion" style="text-align:center;font:900 17px/1.2 'Archivo Black',system-ui,sans-serif;color:#ffe27a;text-shadow:0 2px 0 #6a4300;margin:18px 0 8px;padding:10px;border-radius:12px;background:rgba(0,0,0,.35);border:2px solid #ffe27a;"></div>
     </div>
   </div>
 
@@ -5092,7 +5092,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running'){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1199';
+const BUILD_VERSION = '1200';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
