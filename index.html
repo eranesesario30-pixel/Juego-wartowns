@@ -4015,46 +4015,6 @@ body.dice-shaking .dice-cube-wrap, body.dice-shaking .dice-sprite{ animation:dic
     </div>
   </div>
 
-  <div id="bigWinOverlay" style="display:none;" onclick="if(event.target===this) closeBigWinModal();">
-    <div class="bigwin-card">
-      <button class="profile-close" onclick="closeBigWinModal()">✕</button>
-      <div class="bigwin-header">
-        <div class="bigwin-title">💰 BIG WIN</div>
-        <div class="bigwin-pot"><small>POZO</small><span class="bw-amount"><span id="bigWinPot">100M</span> <svg viewBox="0 0 24 24" width="30" height="30" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10" fill="#f2b20f" stroke="#08368a" stroke-width="1.3"/><text x="12" y="16.5" text-anchor="middle" font-size="10" fill="#08368a">$</text></svg></span></div>
-        <div class="bigwin-timer" id="bigWinTimerFull">--:--:--</div>
-      </div>
-
-      <div class="bigwin-chest-platform">
-        <div class="bigwin-chest-icon">🏺</div>
-        <div class="bigwin-chest-name">Ánfora Atlantis</div>
-        <div class="bigwin-boost-row">
-          <div class="bigwin-boost">🛡️<span>Seguro</span></div>
-          <div class="bigwin-boost">⚡<span>Impulso</span></div>
-          <div class="bigwin-boost">🎲<span>Doble</span></div>
-        </div>
-      </div>
-
-      <div class="bigwin-rewards-row">
-        <div class="bigwin-reward">🌟 <span>+50</span></div>
-        <div class="bigwin-reward">🔥 <span>+120 XP</span></div>
-      </div>
-
-      <div class="bigwin-players-select">
-        <div class="bwp-opt active" onclick="selectBigWinPlayers(this,'1v1')">1 vs 1</div>
-        <div class="bwp-opt" onclick="selectBigWinPlayers(this,'4p')">4 Jugadores</div>
-      </div>
-
-      <button class="offer-cta" onclick="enterBigWin()">ENTRAR — 50M <svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10" fill="#f2b20f" stroke="#08368a" stroke-width="1.3"/><text x="12" y="16.5" text-anchor="middle" font-size="10" fill="#08368a">$</text></svg></button>
-
-      <div class="bigwin-bottom-banner">
-        <span><svg viewBox="0 0 24 24" width="14" height="14" style="vertical-align:-2px;"><circle cx="12" cy="12" r="10" fill="#f2b20f" stroke="#08368a" stroke-width="1.3"/><text x="12" y="16.5" text-anchor="middle" font-size="10" fill="#08368a">$</text></svg> 15M de Oro</span>
-        <b>$49.99 <s>$99.99</s></b>
-        <button onclick="buyBigWinGoldPack()">Comprar</button>
-      </div>
-    </div>
-  </div>
-
-
   <div id="confirmDialogOverlay" style="display:none;">
     <div class="profile-card" style="max-width:300px;text-align:center;">
       <div class="profile-note" id="confirmDialogMsg" style="font-size:14px;color:#f2ebd8;margin-bottom:14px;"></div>
@@ -4151,13 +4111,6 @@ body.dice-shaking .dice-cube-wrap, body.dice-shaking .dice-sprite{ animation:dic
           <div class="tw-profile-info">
             <div class="tw-name" id="twLeagueRank">#—</div>
             <div class="tw-sub" id="twLeagueTimer">5d 2h</div>
-          </div>
-        </div>
-        <div class="tw-card-mini tw-bigwin" onclick="openBigWinModal()">
-          <div class="tw-bigwin-icon">💰</div>
-          <div class="tw-profile-info">
-            <div class="tw-name">BIG WIN</div>
-            <div class="tw-sub" id="twBigWinTimer">--:--</div>
           </div>
         </div>
       </div>
@@ -5012,7 +4965,6 @@ function lobbyTourSteps(){
     {sel:'.lobby-xp-bar-wrap', title:'Tu nivel', text:'Cada partida te da puntos de experiencia. ¡Gana más para subir de nivel y desbloquear premios!'},
     {sel:'.lobby-profile', title:'Tu perfil', text:'Toca aquí para ver tus estadísticas, cambiar tu foto, tu marco y tu nombre.'},
     {sel:'.tw-league', title:'La Liga', text:'Gana partidas para subir puntos y escalar de liga. ¡Cada semana hay premios para los mejores!'},
-    {sel:'.tw-bigwin', title:'Big Win', text:'Un torneo especial con grandes premios. Mira el reloj: ¡no te lo pierdas!'},
     {sel:'#lobbyCarousel', title:'Elige cómo jugar', text:'Desliza las tarjetas para ver los modos: 4 jugadores, 1 contra 1, por equipos y más. Toca una para empezar a jugar.'},
     {sel:'#chestSlots', title:'Tus ánforas', text:'Cuando ganas una partida recibes una ánfora. Tócala para abrirla y descubrir qué premios tiene dentro.'},
     {sel:'#lobbyAdBtn', title:'Premio por video', text:'Mira un video corto y cobra una recompensa extra cuando quieras.'},
@@ -5104,7 +5056,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running'){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1207';
+const BUILD_VERSION = '1208';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -6478,7 +6430,9 @@ async function fbApplyProfile(){
   if(!FB_PROFILE) return;
   const fp = FB_PROFILE; FB_PROFILE = null;
   try{
-    if(profileStats.fbApplied && profileStats.photoUrl) return;
+    // Si el último en poner el nombre/foto fue Google, Facebook los recupera al entrar con Facebook.
+    const _googleLast = profileStats.profileSrc==='gg' || (profileStats.ggApplied && !profileStats.profileSrc);
+    if(profileStats.fbApplied && profileStats.photoUrl && !_googleLast) return;
     let diag = fp.err || '';
     if(fp.name){ profileStats.displayName = fp.name.replace(/[\u0000-\u001f<>]/g,'').trim().slice(0,16); }
     try{
@@ -6499,7 +6453,7 @@ async function fbApplyProfile(){
       } else if(pj && pj.data && pj.data.is_silhouette){ diag += ' sin-foto'; }
       else if(pj && pj.error){ diag += ' foto:' + (pj.error.message||'error').slice(0,40); }
     }catch(e){ diag += ' foto:' + (e && e.message || e); }
-    profileStats.fbApplied = !!fp.name; profileStats.fbLinked = true;
+    profileStats.fbApplied = !!fp.name; profileStats.fbLinked = true; profileStats.profileSrc = 'fb';
     await saveProfile();
     try{ renderProfilePhoto(); }catch(e){}
     try{ lobbyToast(fp.name ? 'Entraste con Facebook' : ('Facebook: no se pudo leer tu nombre ' + diag)); }catch(e){}
@@ -6561,6 +6515,7 @@ async function ggApplyProfile(){
   const gp = GG_PROFILE; GG_PROFILE = null;
   try{
     if(profileStats.ggApplied && profileStats.photoUrl) return;
+    if(profileStats.fbApplied && profileStats.photoUrl && profileStats.profileSrc!=='gg') return; // la cuenta ya tiene nombre y foto de Facebook: no se pisan
     if(gp.name){ profileStats.displayName = gp.name.replace(/[\u0000-\u001f<>]/g,'').trim().slice(0,16); }
     if(gp.picture){
       const url = gp.picture.replace(/=s\d+(-c)?$/, '=s200-c');
@@ -6572,7 +6527,7 @@ async function ggApplyProfile(){
         profileStats.photoUrl = cv.toDataURL('image/jpeg',0.75); profileStats.avatarId = null;
       }catch(e2){ profileStats.photoUrl = url; profileStats.avatarId = null; }
     }
-    profileStats.ggApplied = !!gp.name;
+    profileStats.ggApplied = !!gp.name; profileStats.profileSrc = 'gg';
     await saveProfile();
     try{ renderProfilePhoto(); }catch(e){}
     try{ lobbyToast(gp.name ? 'Entraste con Google' : 'Google: no se pudo leer tu nombre'); }catch(e){}
@@ -6782,7 +6737,6 @@ async function completeLogin(data, online){
     ['checkWelcomeOffer', ()=>{ if(profileStats && profileStats.tourLobbyV1) showWelcomeOfferThenDailyReward(); else setTimeout(()=>runLobbyTour(false), 900); }],
     ['startBannerSimulation', startBannerSimulation],
     ['updateLeagueWidgets', updateLeagueWidgets],
-    ['updateBigWinWidgets', updateBigWinWidgets],
     ['startGameNotificationLoop', startGameNotificationLoop],
     ['offerRejoin', ()=>setTimeout(offerRejoin, 2500)],
     ['friendFromLink', ()=>setTimeout(applyFriendFromLink, 1500)],
@@ -12556,50 +12510,6 @@ function closeLeagueScreen(){
   document.getElementById('leagueOverlay').style.display = 'none';
 }
 
-/* ---------- Big Win (evento simulado) ----------
-   NOTA: el pozo compartido entre jugadores reales requiere servidor propio;
-   aquí el pozo crece con un contador local solo para mostrar la interfaz. */
-let bigWinPlayersMode = '1v1';
-let bigWinEndsAt = 0;
-
-function bigWinPotDisplay(){
-  const base = 100000000;
-  const grown = base + Math.floor((Date.now()%86400000)/1000)*137;
-  return (grown/1000000).toFixed(1)+'M';
-}
-
-function updateBigWinWidgets(){
-  if(!bigWinEndsAt || bigWinEndsAt<Date.now()){
-    bigWinEndsAt = Date.now() + (2*3600000 + Math.floor(Math.random()*3600000));
-  }
-  const msLeft = Math.max(0, bigWinEndsAt-Date.now());
-  const h = Math.floor(msLeft/3600000), m = Math.floor((msLeft%3600000)/60000), s = Math.floor((msLeft%60000)/1000);
-  const txt = `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
-  const el1 = document.getElementById('twBigWinTimer'); if(el1) el1.textContent = txt;
-  const el2 = document.getElementById('bigWinTimerFull'); if(el2) el2.textContent = txt;
-  const potEl = document.getElementById('bigWinPot'); if(potEl) potEl.textContent = bigWinPotDisplay();
-}
-
-function openBigWinModal(){
-  updateBigWinWidgets();
-  document.getElementById('bigWinOverlay').style.display = 'flex';
-}
-function closeBigWinModal(){
-  document.getElementById('bigWinOverlay').style.display = 'none';
-}
-function selectBigWinPlayers(el, mode){
-  bigWinPlayersMode = mode;
-  document.querySelectorAll('.bwp-opt').forEach(o=>o.classList.remove('active'));
-  el.classList.add('active');
-}
-function enterBigWin(){
-  const fee = 50000000;
-  if(lobbyGold<fee){ lobbyToast('No te alcanza el oro para entrar al Big Win.'); return; }
-  lobbyGold -= fee;
-  syncEconomy();
-  closeBigWinModal();
-  lobbyToast('¡Entraste al Big Win!');
-}
 /* Compras con dinero real: en la web todavía NO hay cobro, así que no se entrega nada (antes se regalaba).
    Solo la vista previa dentro del chat (para diseño) y la app nativa con la tienda real las dejan pasar. */
 /* ---------- Compras reales (Google Play / App Store) ----------
@@ -12721,18 +12631,10 @@ function realPurchaseBlocked(){
   lobbyToast('Las compras con dinero real estarán disponibles pronto.');
   return true;
 }
-function buyBigWinGoldPack(){
-  if(window.MonetizationBridge && MonetizationBridge.isNative()){ iapBuy('bigwin_gold_15m'); return; }
-  if(realPurchaseBlocked()) return;
-  lobbyGold += 15000000;
-  profileStats.goldEarned += 15000000;
-  syncEconomy();
-  lobbyToast('+15,000,000 de oro');
-}
 
 setInterval(()=>{
   const lobbyVisible = document.getElementById('lobbyScreen') && document.getElementById('lobbyScreen').style.display!=='none';
-  if(lobbyVisible){ updateLeagueWidgets(); updateBigWinWidgets(); }
+  if(lobbyVisible){ updateLeagueWidgets(); }
 }, 1000);
 
 /* ---------- Banners flotantes superiores ----------
