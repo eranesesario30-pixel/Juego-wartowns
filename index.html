@@ -3092,6 +3092,8 @@ window.__threeReadyPromise = (async ()=>{
   .vx-btns{position:relative;display:flex;gap:10px;width:100%;}
   .vx-btn{flex:1;padding:14px 8px;border-radius:18px;font-family:'Archivo Black',sans-serif;font-size:14px;cursor:pointer;color:#fff;border:2px solid transparent;}
   .vx-btn.rematch{flex:1.35;background:linear-gradient(180deg,#52ea92,#16b45a 55%,#0b8a42);border-color:#c3ffd9;box-shadow:0 5px 0 #06602d,0 10px 18px rgba(0,0,0,.4),inset 0 2px 0 rgba(255,255,255,.4);text-shadow:0 2px 0 rgba(0,0,0,.35);animation:ctaPulse 2.2s ease-in-out infinite;}
+  .vx-rm-note{position:relative;min-height:15px;margin-top:8px;font:700 12px/1.3 system-ui,sans-serif;color:#cfe3ff;text-align:center;}
+  .vx-btn:disabled{cursor:default;}
   .vx-btn.home{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.25);box-shadow:0 4px 0 rgba(0,0,0,.3);}
   .vx-btn:active{transform:translateY(3px);}
   .eg-win-stars{display:flex;align-items:flex-end;gap:10px;margin-bottom:-6px;filter:drop-shadow(0 2px 3px rgba(0,0,0,.4));animation:egFlashPop .5s ease-out;}
@@ -5050,7 +5052,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running'){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1210';
+const BUILD_VERSION = '1211';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -5117,6 +5119,7 @@ const OPCODE_OPEN = 36;       // mesa pública todavía en espera: el que llegó
 const OPCODE_LOCKED = 35;     // mesa pública ya empezada: avisa al que llegó tarde que busque otra
 const OPCODE_TURN_BEACON = 40; // señal de turno: {c:color de quien cree que juega}. Si dos celulares no coinciden, manda el de ID menor
 const OPCODE_CHAT = 39;       // mensaje de chat: {c:color, v:texto}
+const OPCODE_REMATCH = 41;     // pide/retira revancha con los mismos jugadores: {a:1} quiero · {a:0} ya no
 const OPCODE_EMOTE = 38;      // emoji o frase rápida: {c:color, t:'emoji'|'text', v:contenido}
 const OPCODE_STATE_SYNC = 3; // manda el estado completo de la partida al terminar cada turno
 
@@ -5349,6 +5352,8 @@ async function connectToServerOnce(){
       mpEnqueue(()=>applyStateSync(payload), 0);
     } else if(matchData.op_code===OPCODE_MOVE || matchData.op_code===OPCODE_DIE_USED || matchData.op_code===OPCODE_DICE || matchData.op_code===OPCODE_LEFT || matchData.op_code===OPCODE_STATE_REQ){
       mpOnGameData(matchData.op_code, payload, matchData.presence);
+    } else if(matchData.op_code === OPCODE_REMATCH){
+      try{ rematchOnMsg(matchData.presence && matchData.presence.user_id, payload); }catch(e){}
     } else if(matchData.op_code === OPCODE_CHAT){
       try{
         const c = payload && payload.c;
@@ -5674,6 +5679,7 @@ function mpHandlePresence(ev){
       try{ sendMatchData(tableLaunched ? OPCODE_LOCKED : OPCODE_OPEN, {}); }catch(e){}
     });
   }
+  try{ if(winner) rematchRefresh(); }catch(e){} // alguien entró o salió mientras se ve la pantalla final
   if(!tableLaunched || winner || !nakamaSession) return;
   const myId = nakamaSession.user_id;
   (ev.leaves||[]).forEach(pr=>{
@@ -7184,6 +7190,7 @@ function confirmBet(amount){
 }
 
 function launchPendingGame(){
+  try{ rematchReset(false); }catch(e){}
   const kind = kindBase(pendingBetKind);
   isRapidoSpeed = kindFast(pendingBetKind);
   pauseLobbyScene3D();
@@ -7676,6 +7683,7 @@ function mpResetLocalState(){ // deja limpia toda la mesa anterior: así la pró
   teamUpCode = '';
 }
 function backToLobby(){
+  try{ rematchReset(true); }catch(e){}
   try{ endTour(true); }catch(e){}
   try{ mpPrivateWaitStop(false); }catch(e){}
   clearTurnTimer();
@@ -11522,10 +11530,12 @@ async function showEndGameModal(){
     <div class="vx-tiles">${tilesHtml}</div>
     ${chips}
     <div class="vx-btns">
-      <button class="vx-btn rematch" onclick="rematchGame()">🔄 Revancha</button>
+      <button class="vx-btn rematch" id="vxRematchBtn" onclick="rematchGame()">🔄 Revancha</button>
       <button class="vx-btn home" onclick="backToLobby()">🏠 Inicio</button>
     </div>
+    <div id="vxRematchNote" class="vx-rm-note"></div>
   `;
+  try{ rematchRefresh(); }catch(e){}
   // sonidos escalonados con la aparición de los premios
   if(won){ tiles.forEach((t,i)=> setTimeout(()=>{ if(overlay.style.display!=='none') sfxCoin(); }, 1000+i*160)); }
   endGameDecorate(won);
@@ -11548,7 +11558,110 @@ function showPromotionToasts(){
   pendingPromotions = [];
 }
 
+/* ---------- Revancha con las mismas personas ----------
+   Si todos los que jugaron siguen en la mesa, cada uno toca "Revancha" (se manda {a:1}). Cuando los
+   demás también aceptaron, todos pasan a una mesa NUEVA con un nombre que sale de la mesa anterior
+   (igual en todos los celulares). Si alguien se fue o juegas con máquinas, el botón busca otra partida. */
+let rmYes = new Set(), rmStarted = false, rmTimedOut = false, rmTimer = null;
+function rematchPeers(loose){ // ids de los jugadores reales de esta partida si TODOS siguen aquí; si no, null. loose=true: no mira quién sigue conectado (solo quién jugó)
+  try{
+    if(!multiplayerActive || !tableLaunched || !nakamaMatchId || !nakamaSession || !players) return null;
+    const hum = players.filter(p=>p.active && !p.isBot && colorUserId(p.color));
+    if(hum.length < 2 || hum.length !== multiplayerRequiredCount) return null;
+    const ids = hum.map(p=>colorUserId(p.color));
+    const me = nakamaSession.user_id;
+    if(!ids.includes(me)) return null;
+    if(!loose){
+      const here = new Set((teamUpMatchPresences||[]).map(x=>x.user_id));
+      if(!ids.every(id=>id===me || here.has(id))) return null;
+    }
+    return ids;
+  }catch(e){ return null; }
+}
+function rematchName(uid){ const c = multiplayerRoster[uid]; try{ return c ? profileOfColor(c).n : 'Jugador'; }catch(e){ return 'Jugador'; } }
+function rematchReset(retract){
+  try{ if(retract && nakamaSession && rmYes.has(nakamaSession.user_id) && !rmStarted) sendMatchData(OPCODE_REMATCH, {a:0}); }catch(e){}
+  rmYes = new Set(); rmStarted = false; rmTimedOut = false;
+  if(rmTimer){ clearTimeout(rmTimer); rmTimer = null; }
+}
+function rematchRefresh(){
+  const btn = document.getElementById('vxRematchBtn'), note = document.getElementById('vxRematchNote');
+  if(!btn) return;
+  let label = '🔄 Revancha', msg = '', dis = false;
+  const peers = rematchPeers();
+  if(peers){
+    const me = nakamaSession.user_id, n = peers.length, got = peers.filter(id=>rmYes.has(id)).length;
+    const others = peers.filter(id=>id!==me && rmYes.has(id)).map(rematchName);
+    if(rmStarted){ label = '⏳ Armando la revancha…'; dis = true; }
+    else if(rmTimedOut){ label = '🔄 Buscar otra partida'; msg = 'Los demás no respondieron a tiempo.'; }
+    else if(rmYes.has(me)){ label = '⏳ Esperando… (' + got + '/' + n + ')'; msg = 'Esperando a que los demás acepten.'; dis = true; }
+    else if(others.length){ label = '🔄 Aceptar revancha (' + got + '/' + n + ')'; msg = others.join(', ') + (others.length>1 ? ' quieren' : ' quiere') + ' la revancha.'; }
+    else { label = '🔄 Revancha con los mismos'; }
+  } else if(multiplayerActive && winner && Object.keys(multiplayerRoster).length >= 2){
+    label = '🔄 Buscar otra partida'; msg = 'Alguien ya salió de la mesa.';
+  }
+  btn.textContent = label; btn.disabled = dis; btn.style.opacity = dis ? '.75' : '';
+  if(note) note.textContent = msg;
+}
+function rematchOnMsg(uid, payload){
+  if(!uid || !payload || !nakamaSession || uid === nakamaSession.user_id) return;
+  if(!multiplayerRoster[uid]) return; // solo cuentan los que jugaron esta partida
+  if(payload.a === 1){
+    if(!rmYes.has(uid)){
+      rmYes.add(uid);
+      try{ if(!rmYes.has(nakamaSession.user_id) && winner) lobbyToast('🔄 ' + rematchName(uid) + ' quiere la revancha'); }catch(e){}
+    }
+  } else if(payload.a === 0){ rmYes.delete(uid); }
+  rematchRefresh(); rematchCheck();
+}
+function rematchCheck(){
+  if(rmStarted || !nakamaSession) return;
+  // Aquí NO se mira quién sigue conectado: los que ya aceptaron pueden empezar a cambiar de mesa antes de que a otro le llegue el último aviso.
+  const peers = rematchPeers(true);
+  if(!peers || !peers.every(id=>rmYes.has(id))) return;
+  rmStarted = true;
+  if(rmTimer){ clearTimeout(rmTimer); rmTimer = null; }
+  rematchRefresh();
+  setTimeout(rematchStart, 700); // un momento para que los últimos mensajes lleguen a todos antes de cambiar de mesa
+}
+function rematchStart(){
+  try{
+    const peers = rematchPeers(true);
+    if(!peers || !nakamaMatchId){ rmStarted = false; rmYes = new Set(); rematchRefresh(); return; }
+    if(pendingBet > lobbyGold){
+      lobbyToast('No te alcanza el oro para otra partida con esa apuesta.');
+      try{ sendMatchData(OPCODE_REMATCH, {a:0}); }catch(e){}
+      rmStarted = false; rmYes = new Set(); rematchRefresh(); return;
+    }
+    const code = 'RV' + String(nakamaMatchId).replace(/[^A-Za-z0-9]/g,'').slice(0,12).toUpperCase() + String(multiplayerRequiredCount);
+    const pub = !!multiplayerPublic;
+    document.getElementById('endGameOverlay').style.display = 'none';
+    lobbyGold -= pendingBet; syncEconomy();
+    rematchReset(false);
+    startPublicMatch({code, pub});
+  }catch(e){ rmStarted = false; console.warn('revancha', e); }
+}
+function rematchGiveUp(){
+  rmTimer = null;
+  if(rmStarted || !nakamaSession) return;
+  rmYes.delete(nakamaSession.user_id);
+  try{ sendMatchData(OPCODE_REMATCH, {a:0}); }catch(e){}
+  rmTimedOut = true; rematchRefresh();
+}
 function rematchGame(){
+  if(rmStarted) return;
+  if(rematchPeers() && !rmTimedOut){
+    const me = nakamaSession.user_id;
+    if(rmYes.has(me)) return;
+    if(pendingBet > lobbyGold){ lobbyToast('No te alcanza el oro para otra partida con esa apuesta.'); return; }
+    rmYes.add(me);
+    try{ sendMatchData(OPCODE_REMATCH, {a:1}); }catch(e){}
+    if(rmTimer) clearTimeout(rmTimer);
+    rmTimer = setTimeout(rematchGiveUp, 30000);
+    rematchRefresh(); rematchCheck();
+    return;
+  }
+  rematchReset(true);
   document.getElementById('endGameOverlay').style.display = 'none';
   if(pendingBet > lobbyGold){
     lobbyToast('No te alcanza el oro para otra partida con esa apuesta.');
@@ -14252,7 +14365,8 @@ function startPublicWaitTimer(){
     try{ checkAndShowTutorial(kindTut(pendingBetKind)); }catch(e){}
   }, PUBLIC_WAIT_MS);
 }
-async function startPublicMatch(){
+async function startPublicMatch(opts){
+  const fixed = (opts && opts.code) ? String(opts.code) : null; // revancha: mesa nueva con nombre fijo, solo para los mismos jugadores
   if(PREVIEW_OFFLINE){ launchPendingGame(); return; }
   const refund = ()=>{ if(pendingBet){ lobbyGold += pendingBet; pendingBet = 0; syncEconomy(); } };
   const sock = await ensureConnected();
@@ -14263,7 +14377,7 @@ async function startPublicMatch(){
     return;
   }
   if(nakamaMatchId){ try{ gameSocket.leaveMatch(nakamaMatchId); }catch(e){} nakamaMatchId = null; }
-  multiplayerPublic = true;
+  multiplayerPublic = fixed ? !!opts.pub : true;
   multiplayerIsHost = true;   // todos iguales: nadie paga la apuesta dos veces al arrancar
   multiplayerActive = false;
   multiplayerRoster = {};
@@ -14278,18 +14392,18 @@ async function startPublicMatch(){
     try{ applyGameMode(); render(); }catch(e){}
     startSearchRotation();
     showMultiplayerGate();
-    for(let slot=0; slot<8; slot++){
-      teamUpCode = publicTableCode(slot, multiplayerRequiredCount);
+    for(let slot=0; slot<(fixed ? 1 : 8); slot++){
+      teamUpCode = fixed ? fixed : publicTableCode(slot, multiplayerRequiredCount);
       mpTableLocked = false; mpTableOpen = false;
-      publicGrace = true;       // no armar la partida hasta confirmar que la mesa no está ya empezada
+      publicGrace = !fixed;     // no armar la partida hasta confirmar que la mesa no está ya empezada (la mesa de revancha es nueva: no hace falta)
       const r = await enterNamedTable();
       if(r === 'full'){ publicGrace = false; continue; }
-      if(teamUpMatchPresences.length >= 1){
+      if(!fixed && teamUpMatchPresences.length >= 1){
         const t0 = Date.now();
         while(Date.now()-t0 < 5000 && !mpTableLocked && !mpTableOpen) await new Promise(res=>setTimeout(res,100));
       }
       publicGrace = false;
-      if(teamUpMatchPresences.length >= 1 && !mpTableOpen) mpTableLocked = true; // sin respuesta = no es seguro entrar
+      if(!fixed && teamUpMatchPresences.length >= 1 && !mpTableOpen) mpTableLocked = true; // sin respuesta = no es seguro entrar
       if(mpTableLocked){
         mpLog('mesa ya empezada, busco otra');
         try{ gameSocket.leaveMatch(nakamaMatchId); }catch(e){}
