@@ -16921,7 +16921,7 @@ function selectSkinColor(color){
 
 function tokenOptions(){
   return [{id:'clasico', name:'Clásico', emoji:'♟️'}].concat(
-    Object.keys(ANIMAL_NAMES).map(id=>({id, name:ANIMAL_NAMES[id], emoji:ANIMAL_EMOJI[id]}))
+    Object.keys(ANIMAL_NAMES).filter(id=>!PASS_ONLY_TOKENS.includes(id) || tokenOwned(id)).map(id=>({id, name:ANIMAL_NAMES[id], emoji:ANIMAL_EMOJI[id]}))
   );
 }
 function tokenOwned(id){
