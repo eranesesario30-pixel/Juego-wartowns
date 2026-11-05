@@ -5350,7 +5350,7 @@ body.dice-shaking .dice-cube-wrap, body.dice-shaking .dice-sprite{ animation:dic
           <div class="profile-stat"><span class="ps-icon">🎮</span><span class="ps-label">Partidas jugadas</span><span class="ps-value" id="statPlayed">0</span></div>
           <div class="profile-stat"><span class="ps-icon">🏆</span><span class="ps-label">Partidas ganadas</span><span class="ps-value" id="statWon">0</span></div>
           <div class="profile-stat"><span class="ps-icon">💔</span><span class="ps-label">Partidas perdidas</span><span class="ps-value" id="statLost">0</span></div>
-          <div class="profile-stat"><span class="ps-icon">📊</span><span class="ps-label">% de victorias</span><span class="ps-value" id="statWinPct">0%</span></div>
+          <div class="profile-stat"><span class="ps-icon">📊</span><span class="ps-label">% de victorias</span><span class="ps-value" id="statWinPct">100%</span></div>
         </div>
         <button class="store-free-btn" onclick="closeProfile(); openCollections('fichas');" style="margin-top:10px;">
           <span class="sf-icon">🏆</span>
@@ -9994,7 +9994,7 @@ function showPlayerCard(name, url, d, kind, uid){
   } else if(!d || d.gp===undefined){
     body = `<div class="pi-country"><span class="pi-flag">🌍</span><span>Sin información</span></div><div class="profile-note">Este jugador todavía no compartió sus estadísticas (puede tener una versión más vieja del juego o no haber jugado todavía).</div>`;
   } else {
-    const pct = d.gp>0 ? Math.round(d.gw/d.gp*100) : 0;
+    const pct = d.gp>0 ? Math.round(d.gw/d.gp*100) : 100;
     const cn = COUNTRIES[d.c] ? COUNTRIES[d.c] : 'País no indicado';
     body = `<div class="pi-country"><span class="pi-flag">${countryFlag(d.c)}</span><span>${escapeHtml(cn)}</span></div>
       <div class="pi-grid">
@@ -13012,7 +13012,7 @@ function renderProfile(){
   document.getElementById('statPlayed').textContent = profileStats.gamesPlayed;
   document.getElementById('statWon').textContent = profileStats.gamesWon;
   document.getElementById('statLost').textContent = profileStats.gamesLost;
-  const pct = profileStats.gamesPlayed>0 ? Math.round((profileStats.gamesWon/profileStats.gamesPlayed)*100) : 0;
+  const pct = profileStats.gamesPlayed>0 ? Math.round((profileStats.gamesWon/profileStats.gamesPlayed)*100) : 100;
   document.getElementById('statWinPct').textContent = pct + '%';
 }
 
