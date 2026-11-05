@@ -13974,8 +13974,11 @@ function playRewardedAdOrSimulate(onComplete){
       if(ok) onComplete();
       else lobbyToast('No hay anuncio disponible ahora. Inténtalo en un momento.');
     });
+  } else if(IN_SANDBOX_PREVIEW){
+    simulateAdDelay(onComplete);   // solo en la vista previa de pruebas
   } else {
-    simulateAdDelay(onComplete);
+    // En la web no hay anuncios reales: NO se da ningún premio (si no, cualquiera haría trampa).
+    lobbyToast('Los videos con premio solo están en la app de Android y iOS.');
   }
 }
 function simulateAdDelay(onComplete){
