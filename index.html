@@ -9927,7 +9927,7 @@ function diceSlotHTML(idx, color){
 /* ---------- Nombres y fotos de los jugadores (cada uno elige los suyos; se comparten en la mesa) ---------- */
 function ensureDisplayName(){
   if(!profileStats.displayName){
-    profileStats.displayName = 'Invitado ' + (1000 + Math.floor(Math.random()*9000));
+    profileStats.displayName = 'Guest' + (1000 + Math.floor(Math.random()*9000));
     try{ saveProfile(); }catch(e){}
   }
   return profileStats.displayName;
@@ -10101,14 +10101,14 @@ async function sendMyProfile(){
 function cleanCard(d){
   if(!d || typeof d!=='object') return null;
   let n = String(d.n||'').replace(/[\u0000-\u001f<>]/g,'').trim().slice(0,16);
-  if(hasBadWords(n)) n = 'Invitado';
+  if(hasBadWords(n)) n = 'Guest';
   const a = (typeof d.a==='string' && AVATAR_CATALOG.some(x=>x.id===d.a)) ? d.a : null;
   const p = (typeof d.p==='string' && d.p.indexOf('data:image/jpeg;base64,')===0 && d.p.length<30000) ? d.p : null;
   const num = (v,mx)=>{ v = Number(v); return (isFinite(v) && v>=0) ? Math.min(Math.floor(v), mx||1000000) : 0; };
   const c = (typeof d.c==='string' && COUNTRIES[d.c]) ? d.c : '';
   let dd = null; try{ ensureDiceSkins(); if(typeof d.dd==='string' && DICE_CATALOG.some(x=>x.id===d.dd)) dd = d.dd; }catch(e){}
   let tk = null; try{ if(typeof d.tk==='string' && ANIMAL_NAMES[d.tk]) tk = d.tk; }catch(e){}
-  return { id: (typeof d.id==='string' && /^\d{5,9}$/.test(d.id)) ? d.id : '', dd, tk, n: n || 'Invitado', a, p, c, lv:num(d.lv,999), gp: d.gp!==undefined?num(d.gp):undefined, gw:num(d.gw), st:num(d.st), w2:num(d.w2), w4:num(d.w4), wt:num(d.wt) };
+  return { id: (typeof d.id==='string' && /^\d{5,9}$/.test(d.id)) ? d.id : '', dd, tk, n: n || 'Guest', a, p, c, lv:num(d.lv,999), gp: d.gp!==undefined?num(d.gp):undefined, gw:num(d.gw), st:num(d.st), w2:num(d.w2), w4:num(d.w4), wt:num(d.wt) };
 }
 function onProfileData(uid, d){
   if(!uid || !d || typeof d!=='object') return;
@@ -10195,7 +10195,7 @@ function profileOfColor(color){
   let bp = botProfiles[color];
   if(!bp){
     const pool = AVATAR_CATALOG.filter(x=>x.tier==='basic' && x.id!=='av0');
-    bp = botProfiles[color] = { n: 'Invitado ' + (1000 + Math.floor(Math.random()*9000)), a: pool.length ? pool[Math.floor(Math.random()*pool.length)].id : null };
+    bp = botProfiles[color] = { n: 'Guest' + (1000 + Math.floor(Math.random()*9000)), a: pool.length ? pool[Math.floor(Math.random()*pool.length)].id : null };
   }
   return { n: bp.n, url: bp.a ? avatarURL(bp.a) : null };
 }
