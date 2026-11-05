@@ -12,8 +12,8 @@ local LIMITS = {
   diamonds_per_hour = 2500,
   gold_hard_cap     = 5000000000,
   diamonds_hard_cap = 1000000,
-  start_gold        = 1000,      -- perfil nuevo
-  start_diamonds    = 200,
+  start_gold        = 2000,      -- perfil nuevo
+  start_diamonds    = 500,
 }
 local GUARD = "econ_guard"
 local HOUR = 3600
