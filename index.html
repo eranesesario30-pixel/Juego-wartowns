@@ -6293,7 +6293,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running'){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1237';
+const BUILD_VERSION = '1238';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -7995,6 +7995,7 @@ async function completeLogin(data, online){
     ['friendFromLink', ()=>setTimeout(applyFriendFromLink, 1500)],
     ['inbox', ()=>setTimeout(()=>{ ensureConnected().catch(()=>{}); },1200)],
     ['iapPendientes', ()=>setTimeout(()=>{ try{ iapClaimAndApply(); }catch(e){} },4000)],
+    ['ligaPremio', ()=>setTimeout(()=>{ try{ if(LEAGUE_PRIZES_LIVE) ligaClaimAndApply(); }catch(e){} },6000)],
   ];
   postLoginSteps.forEach(([name, fn])=>{
     try{ fn(); } catch(e){ console.warn('Falló '+name+' al entrar al lobby:', e); }
@@ -13443,6 +13444,7 @@ async function recordMatchResult(youWon){
   const xpGained = (10 + (youWon?20:0)) * (isXpBoostActive() ? 2 : 1);
   bumpPassPoints(xpGained);
   profileStats.gamesPlayed += 1;
+  try{ ligaReport(youWon); }catch(e){}
 
   let goldWon = 0, betPayout = 0, chestResult = {granted:false};
   const _refundBet = !youWon && multiplayerActive && !!winner && !!winner.isBot && winner.color!==MY_COLOR && !!colorUserId(winner.color) && pendingBet>0;
@@ -14184,7 +14186,9 @@ const LEAGUE_REWARDS = [
   [['#1',150000,2500,'oro'],['#2',100000,2500,'plata'],['#3',100000,2500,'plata'],['#4',70000,25,null],['#5',70000,25,null],['#6',70000,25,null],['#7',70000,25,null]],
   [['#1',300000,5000,'diamante'],['#2',200000,5000,'oro'],['#3',200000,5000,'oro'],['#4',100000,50,null],['#5',100000,50,null],['#6',100000,50,null],['#7',100000,50,null]],
 ];
-const LEAGUE_PRIZES_LIVE = false; // pasar a true cuando el servidor reparta los premios y la tabla global
+const LEAGUE_GLOBAL_LIVE = true;  // tabla global semanal: el servidor ya la lleva y paga al #1
+const LEAGUE_PRIZES_LIVE = LEAGUE_GLOBAL_LIVE; // (alias para el cobro del premio global)
+const LEAGUE_RANK_PRIZES_LIVE = false; // premios por liga (Bronce..Élite): el servidor aún no los reparte
 let lpzTier = 0;
 function leagueNum(n){ return n>=1000 ? (n%1000===0 ? (n/1000)+'K' : n.toLocaleString('en-US')) : String(n); }
 function renderLeaguePrizes(){
@@ -14202,21 +14206,57 @@ function renderLeaguePrizes(){
 function openLeaguePrizes(){ lpzTier = leagueData ? leagueData.tierIdx : 0; renderLeaguePrizes(); document.getElementById('leaguePrizes').style.display='flex'; }
 function closeLeaguePrizes(){ document.getElementById('leaguePrizes').style.display='none'; }
 
-function openLeagueGlobal(){
+async function ligaReport(won){
+  if(!isOnlineAuthenticated) return;
+  let nm = 'Jugador'; try{ nm = ensureDisplayName() || 'Jugador'; }catch(e){}
+  let av = null; try{ av = myAvatarUrl(); }catch(e){}
+  if(av && !(/^https?:\/\//.test(av) && av.length<=200)) av = null;
+  try{ await iapRpc('global_report', { won: !!won, name: nm, avatar: av }); }catch(e){}
+}
+let ligaClaimBusy = false;
+async function ligaClaimAndApply(){
+  if(ligaClaimBusy || !isOnlineAuthenticated) return;
+  ligaClaimBusy = true;
+  try{
+    const r = await iapRpc('liga_claim', {});
+    if(r && r.ok && Array.isArray(r.grants) && r.grants.length){
+      let g=0, d=0; r.grants.forEach(x=>{ g+=x.gold||0; d+=x.diamonds||0; });
+      if(g){ lobbyGold += g; profileStats.goldEarned += g; }
+      if(d){ lobbyDiamonds += d; }
+      syncEconomy();
+      await saveProfile();
+      for(const x of r.grants){ try{ await iapRpc('liga_ack', { key: x.key }); }catch(e){} }
+      sfxCoin();
+      lobbyToast('¡Fuiste el #1 de la liga global! +' + d.toLocaleString('en-US') + ' 💎 +' + g.toLocaleString('en-US') + ' de oro');
+    }
+  }catch(e){}
+  ligaClaimBusy = false;
+}
+async function openLeagueGlobal(){
   ensureLeagueData();
-  let myName = 'Tú'; try{ myName = ensureDisplayName() || 'Tú'; }catch(e){}
-  let myAv = null; try{ myAv = myAvatarUrl(); }catch(e){}
-  const pts = profileStats.weekPts||0;
-  const ms = Math.max(0, leagueData.resetAt-Date.now());
-  document.getElementById('lgGlobalTimer').textContent = Math.floor(ms/86400000)+'d '+Math.floor((ms%86400000)/3600000)+'h';
-  const row = `<div class="lg-row me"><div class="lg-rank">1</div><div class="lg-av">${myAv?`<img src="${myAv}" alt="">`:iconImgHTML('avatarBot','🙂','icon-fill')}</div><div class="lg-name">Tú · ${myName}</div><div class="lg-pts">${pts}</div></div>`;
-  document.getElementById('lgGlobalList').innerHTML = row + '<div style="text-align:center;color:#cbb98a;font-size:13px;padding:14px 10px;">Gana partidas para sumar puntos.<br>Aquí aparecerán los mejores jugadores del mundo.</div>';
   document.getElementById('leagueGlobal').style.display='flex';
+  const listEl = document.getElementById('lgGlobalList');
+  const msg = t => `<div style="text-align:center;color:#cbb98a;font-size:13px;padding:14px 10px;">${t}</div>`;
+  listEl.innerHTML = msg('Cargando…');
+  const ms0 = Math.max(0, leagueData.resetAt-Date.now());
+  document.getElementById('lgGlobalTimer').textContent = Math.floor(ms0/86400000)+'d '+Math.floor((ms0%86400000)/3600000)+'h';
+  try{ await ligaClaimAndApply(); }catch(e){}
+  let r = null;
+  try{ r = await iapRpc('global_top', {}); }catch(e){}
+  if(!r || !r.ok){ listEl.innerHTML = msg('No se pudo cargar la tabla. Revisa tu internet e inténtalo otra vez.'); return; }
+  if(r.next_reset){ const ms = Math.max(0, r.next_reset*1000-Date.now()); document.getElementById('lgGlobalTimer').textContent = Math.floor(ms/86400000)+'d '+Math.floor((ms%86400000)/3600000)+'h'; }
+  const esc = t => String(t==null?'':t).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const row = x => `<div class="lg-row ${x.me?'me':''} ${x.rank<=3?'top'+x.rank:''}"><div class="lg-rank">${x.rank}</div><div class="lg-av">${(()=>{ let u = (x.av&&/^https?:\/\//.test(x.av)) ? x.av : null; if(!u){ try{ u = x.me ? myAvatarUrl() : defaultAvatarUrl(x.name); }catch(e){} } return u ? `<img src="${esc(u)}" alt="">` : iconImgHTML('avatarBot','🙂','icon-fill'); })()}</div><div class="lg-name">${x.me?'Tú · ':''}${esc(x.name)}</div><div class="lg-pts">${x.points}</div></div>`;
+  let html = (r.rows||[]).map(row).join('');
+  if(!(r.rows||[]).length) html = msg('Todavía nadie ha sumado puntos esta semana. ¡Sé el primero!');
+  const inTop = (r.rows||[]).some(x=>x.me);
+  if(!inTop && r.me){ let nm='Tú'; try{ nm = ensureDisplayName()||'Tú'; }catch(e){} html += msg('Tu puesto') + row({rank:r.me.rank, points:r.me.points, me:true, name:nm, av:(()=>{try{return myAvatarUrl();}catch(e){return null;}})()}); }
+  listEl.innerHTML = html;
 }
 function closeLeagueGlobal(){ document.getElementById('leagueGlobal').style.display='none'; }
 function openLeagueScreen(){
   ensureLeagueData();
-  try{ const show = LEAGUE_PRIZES_LIVE || IN_SANDBOX_PREVIEW; document.querySelectorAll('.lg-prizebtn').forEach(b=>b.style.display = show ? '' : 'none'); }catch(e){}
+  try{ document.querySelectorAll('.lg-prizebtn').forEach(b=>{ const g = /openLeagueGlobal/.test(b.getAttribute('onclick')||''); const show = IN_SANDBOX_PREVIEW || (g ? LEAGUE_GLOBAL_LIVE : LEAGUE_RANK_PRIZES_LIVE); b.style.display = show ? '' : 'none'; }); }catch(e){}
   const tierIdx = leagueData.tierIdx;
   const tier = LEAGUE_TIERS[tierIdx];
   document.getElementById('lgEmblem').innerHTML = iconImgHTML(tier.img, tier.shield);
