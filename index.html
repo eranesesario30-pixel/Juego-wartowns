@@ -13590,7 +13590,7 @@ function triggerRandomGameNotification(){
   if(document.getElementById('lobbyScreen').style.display==='none') return; // solo si estás mirando el lobby
   const friends = profileStats.friends || [];
   const pool = [];
-  if(friends.length>0){
+  if(false && friends.length>0){   // desactivado: eran avisos inventados (el amigo no estaba realmente en línea ni te había retado)
     const f = friends[Math.floor(Math.random()*friends.length)];
     pool.push(
       ()=>showGameNotification('🎲','¡Tu amigo está en línea!', `${escapeHtml(friendName(f.id))} quiere jugar contigo`, openFriends, {kind:'friend',action:'Jugar'}),
@@ -14347,8 +14347,9 @@ function simulateFriendActivity(){
 }
 
 function startBannerSimulation(){
+  // Desactivado: era una simulación que mostraba a un amigo "en línea" al azar (con su código en vez del nombre).
+  // El aviso de amigo en línea real sigue funcionando por otro lado.
   clearInterval(bannerSimTimer);
-  bannerSimTimer = setInterval(simulateFriendActivity, 90000);
 }
 
 let welcomeOfferEndsAt = 0;
