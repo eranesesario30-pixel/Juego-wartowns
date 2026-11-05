@@ -283,6 +283,141 @@ nk.register_rpc(rpc_iap_validate, "iap_validate")
 nk.register_rpc(rpc_iap_claim, "iap_claim")
 nk.register_rpc(rpc_iap_ack, "iap_ack")
 
+
+-- ============================================================================
+-- LIGA GLOBAL SEMANAL
+-- Cada partida (ganada +25, perdida +8) se apunta en una tabla del servidor que se
+-- reinicia sola cada lunes a las 00:00 UTC (domingo en la noche en América).
+-- El teléfono solo avisa "gané" o "perdí"; los puntos los pone el servidor, y no deja
+-- apuntar partidas con menos de 60 segundos de diferencia.
+-- El #1 de la semana pasada cobra su premio UNA sola vez con liga_claim (el oro y los
+-- diamantes entran por la guardia, igual que las compras, sin recortes).
+-- ============================================================================
+local GLOBAL_BOARD = "global_weekly"
+local LIGA_RL = "liga_rl"
+local LIGA_GRANTS = "liga_grants"
+local LIGA_MIN_GAP = 60
+local GLOBAL_PRIZE = { gold = 500000, diamonds = 15000 }
+local GLOBAL_TOP_N = 50
+
+pcall(function()
+  nk.leaderboard_create(GLOBAL_BOARD, true, "desc", "incr", "0 0 * * 1", {})
+end)
+
+local function clean_text(v, maxlen)
+  if type(v) ~= "string" then return nil end
+  v = v:gsub("[%c<>\"\\]", ""):sub(1, maxlen)
+  if v == "" then return nil end
+  return v
+end
+
+local function board_info()
+  local ok, r = pcall(nk.leaderboards_get_id, { GLOBAL_BOARD })
+  if ok and r and r[1] then return r[1] end
+  return nil
+end
+
+local function rpc_global_report(context, payload)
+  local uid = context.user_id
+  if not uid then return reply({ ok = false, error = "sin_sesion" }) end
+  local okd, d = pcall(nk.json_decode, payload or "{}")
+  if not okd or type(d) ~= "table" then return reply({ ok = false, error = "pedido_invalido" }) end
+  local now = os.time()
+  local rl = nk.storage_read({{ collection = LIGA_RL, key = "main", user_id = uid }})
+  if rl and #rl > 0 and type(rl[1].value) == "table" and (now - (tonumber(rl[1].value.t) or 0)) < LIGA_MIN_GAP then
+    return reply({ ok = false, error = "muy_rapido" })
+  end
+  nk.storage_write({{ collection = LIGA_RL, key = "main", user_id = uid, value = { t = now },
+                      permission_read = 0, permission_write = 0 }})
+  local pts = (d.won == true) and 25 or 8
+  local name = clean_text(d.name, 24) or "Jugador"
+  local meta = {}
+  local av = clean_text(d.avatar, 200)
+  if av then meta.av = av end
+  local ok, rec = pcall(nk.leaderboard_record_write, GLOBAL_BOARD, uid, name, pts, 0, meta)
+  if not ok then
+    nk.logger_warn("LIGA no se pudo apuntar user=" .. tostring(uid) .. " err=" .. tostring(rec))
+    return reply({ ok = false, error = "no_se_pudo" })
+  end
+  return reply({ ok = true, points = rec and rec.score or pts })
+end
+
+local function rpc_global_top(context, payload)
+  local uid = context.user_id
+  if not uid then return reply({ ok = false, error = "sin_sesion" }) end
+  local ok, recs, owner_recs = pcall(nk.leaderboard_records_list, GLOBAL_BOARD, { uid }, GLOBAL_TOP_N, nil, nil)
+  if not ok then return reply({ ok = false, error = "no_se_pudo" }) end
+  local rows = {}
+  for _, r in ipairs(recs or {}) do
+    local m = r.metadata
+    if type(m) == "string" then local okm, mm = pcall(nk.json_decode, m); m = okm and mm or nil end
+    rows[#rows + 1] = { rank = r.rank, name = r.username or "Jugador", points = r.score,
+                        av = type(m) == "table" and m.av or nil, me = (r.owner_id == uid) }
+  end
+  local me = nil
+  if owner_recs and owner_recs[1] then me = { rank = owner_recs[1].rank, points = owner_recs[1].score } end
+  local info = board_info()
+  return reply({ ok = true, rows = rows, me = me, next_reset = info and info.next_reset or nil,
+                 prize = GLOBAL_PRIZE })
+end
+
+-- Premio de la semana pasada: solo si fuiste el #1 y solo una vez.
+local function rpc_liga_claim(context, payload)
+  local uid = context.user_id
+  if not uid then return reply({ ok = false, error = "sin_sesion" }) end
+  -- 1) crear el premio pendiente si ganaste la semana pasada
+  local info = board_info()
+  local prev = info and tonumber(info.prev_reset) or 0
+  if prev > 0 then
+    local ok, recs = pcall(nk.leaderboard_records_list, GLOBAL_BOARD, nil, 1, nil, prev)
+    if ok and recs and recs[1] and recs[1].owner_id == uid and (tonumber(recs[1].score) or 0) > 0 then
+      local key = "global_" .. tostring(prev)
+      local ex = nk.storage_read({{ collection = LIGA_GRANTS, key = key, user_id = uid }})
+      if not (ex and #ex > 0) then
+        nk.storage_write({{ collection = LIGA_GRANTS, key = key, user_id = uid, permission_read = 0, permission_write = 0,
+          value = { kind = "global_weekly", gold = GLOBAL_PRIZE.gold, diamonds = GLOBAL_PRIZE.diamonds,
+                    status = "pending", credited = false, created = os.time() } }})
+        nk.logger_info("LIGA premio global creado user=" .. tostring(uid) .. " semana=" .. key)
+      end
+    end
+  end
+  -- 2) entregar lo pendiente (igual que las compras)
+  local objs = nk.storage_list(uid, LIGA_GRANTS, 50, nil)
+  local out = {}
+  for _, o in ipairs(objs or {}) do
+    local v = o.value
+    if type(v) == "table" and v.status ~= "granted" then
+      if not v.credited then
+        credit_guard(uid, v.gold, v.diamonds)
+        v.credited = true
+        nk.storage_write({{ collection = LIGA_GRANTS, key = o.key, user_id = uid, value = v, permission_read = 0, permission_write = 0 }})
+      end
+      out[#out + 1] = { key = o.key, kind = v.kind, gold = v.gold or 0, diamonds = v.diamonds or 0 }
+    end
+  end
+  return reply({ ok = true, grants = out, count = #out })
+end
+
+local function rpc_liga_ack(context, payload)
+  local uid = context.user_id
+  if not uid then return reply({ ok = false, error = "sin_sesion" }) end
+  local okd, d = pcall(nk.json_decode, payload or "{}")
+  if not okd or type(d) ~= "table" or type(d.key) ~= "string" then return reply({ ok = false, error = "pedido_invalido" }) end
+  local r = nk.storage_read({{ collection = LIGA_GRANTS, key = d.key, user_id = uid }})
+  if r and #r > 0 and type(r[1].value) == "table" then
+    local v = r[1].value
+    v.status = "granted"; v.granted_at = os.time()
+    nk.storage_write({{ collection = LIGA_GRANTS, key = d.key, user_id = uid, value = v, permission_read = 0, permission_write = 0 }})
+    return reply({ ok = true })
+  end
+  return reply({ ok = false, error = "no_existe" })
+end
+
+nk.register_rpc(rpc_global_report, "global_report")
+nk.register_rpc(rpc_global_top, "global_top")
+nk.register_rpc(rpc_liga_claim, "liga_claim")
+nk.register_rpc(rpc_liga_ack, "liga_ack")
+
 nk.register_req_before(before_write, "WriteStorageObjects")
 nk.register_req_before(before_delete, "DeleteStorageObjects")
 nk.logger_info("Parche: guardia de economía activa")
