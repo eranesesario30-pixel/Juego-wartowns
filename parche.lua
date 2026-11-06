@@ -418,6 +418,211 @@ nk.register_rpc(rpc_global_top, "global_top")
 nk.register_rpc(rpc_liga_claim, "liga_claim")
 nk.register_rpc(rpc_liga_ack, "liga_ack")
 
+
+-- ============================================================================
+-- TORNEOS (copas de 24 horas, por puntos)
+-- Tres copas (bronce, plata, elite). Cada una se reinicia sola todos los dias a las
+-- 00:00 UTC. Entras pagando la entrada (el telefono la descuenta; el servidor solo
+-- anota que entraste). Cada partida online ganada suma 10 puntos a las copas donde
+-- estes anotado (maximo 1 reporte por minuto). Al cerrar, el premio sale de lo
+-- recaudado: 50% al 1ro, 30% al 2do, 20% al 3ro. Con
+-- menos de 3 anotados se devuelve la entrada. Cada premio se cobra
+-- UNA sola vez con tour_claim.
+-- ============================================================================
+local TOUR_CUPS = {
+  bronce = { fee = 1000 },
+  plata  = { fee = 5000 },
+  elite  = { fee = 20000 },
+}
+local TOUR_ORDER = { "bronce", "plata", "elite" }
+local TOUR_ENTRY = "tour_entry"
+local TOUR_GRANTS = "tour_grants"
+local TOUR_RL = "tour_rl"
+local TOUR_MIN_GAP = 60
+local TOUR_WIN_PTS = 10
+local TOUR_SPLIT = { 0.5, 0.3, 0.2 }
+
+for _, c in ipairs(TOUR_ORDER) do
+  pcall(function()
+    nk.leaderboard_create("tour_" .. c, true, "desc", "incr", "0 0 * * *", {})
+  end)
+end
+
+local function tour_info_of(cup)
+  local ok, r = pcall(nk.leaderboards_get_id, { "tour_" .. cup })
+  if ok and r and r[1] then return r[1] end
+  return nil
+end
+
+local function tour_pid(info)
+  -- inicio del periodo actual = proximo reinicio - 1 dia
+  local nr = info and tonumber(info.next_reset) or 0
+  if nr <= 0 then return nil end
+  return nr - 86400
+end
+
+local function tour_joined(uid, cup, pid)
+  local r = nk.storage_read({{ collection = TOUR_ENTRY, key = cup .. "_" .. tostring(pid), user_id = uid }})
+  return r and #r > 0
+end
+
+local function rpc_tour_info(context, payload)
+  local uid = context.user_id
+  if not uid then return reply({ ok = false, error = "sin_sesion" }) end
+  local cups = {}
+  for _, cup in ipairs(TOUR_ORDER) do
+    local info = tour_info_of(cup)
+    local pid = tour_pid(info)
+    local entry = { id = cup, fee = TOUR_CUPS[cup].fee, ends_at = info and info.next_reset or nil,
+                    joined = false, entrants = 0, pool = 0, points = 0, rank = nil, top = {} }
+    if pid then
+      entry.joined = tour_joined(uid, cup, pid) and true or false
+      local ok, recs, owner_recs = pcall(nk.leaderboard_records_list, "tour_" .. cup, { uid }, 100, nil, nil)
+      if ok then
+        entry.entrants = #(recs or {})
+        entry.pool = entry.entrants * TOUR_CUPS[cup].fee
+        for i, r in ipairs(recs or {}) do
+          if i <= 3 and (tonumber(r.score) or 0) > 0 then
+            entry.top[#entry.top + 1] = { rank = r.rank, name = r.username or "Jugador", points = r.score, me = (r.owner_id == uid) }
+          end
+        end
+        if entry.joined and owner_recs and owner_recs[1] then
+          entry.points = owner_recs[1].score; entry.rank = owner_recs[1].rank
+        end
+      end
+    end
+    cups[#cups + 1] = entry
+  end
+  return reply({ ok = true, cups = cups, split = TOUR_SPLIT })
+end
+
+local function rpc_tour_join(context, payload)
+  local uid = context.user_id
+  if not uid then return reply({ ok = false, error = "sin_sesion" }) end
+  local okd, d = pcall(nk.json_decode, payload or "{}")
+  if not okd or type(d) ~= "table" or type(d.cup) ~= "string" or not TOUR_CUPS[d.cup] then
+    return reply({ ok = false, error = "pedido_invalido" })
+  end
+  local cup = d.cup
+  local info = tour_info_of(cup)
+  local pid = tour_pid(info)
+  if not pid then return reply({ ok = false, error = "no_disponible" }) end
+  -- no dejar entrar en el ultimo minuto del torneo
+  if (tonumber(info.next_reset) or 0) - os.time() < 60 then return reply({ ok = false, error = "cerrando" }) end
+  if tour_joined(uid, cup, pid) then return reply({ ok = false, error = "ya_anotado" }) end
+  local name = clean_text(d.name, 24) or "Jugador"
+  local ok, err = pcall(nk.leaderboard_record_write, "tour_" .. cup, uid, name, 0, 0, {})
+  if not ok then
+    nk.logger_warn("TORNEO no se pudo anotar user=" .. tostring(uid) .. " err=" .. tostring(err))
+    return reply({ ok = false, error = "no_se_pudo" })
+  end
+  nk.storage_write({{ collection = TOUR_ENTRY, key = cup .. "_" .. tostring(pid), user_id = uid,
+                      value = { fee = TOUR_CUPS[cup].fee, t = os.time() }, permission_read = 0, permission_write = 0 }})
+  return reply({ ok = true, fee = TOUR_CUPS[cup].fee })
+end
+
+local function rpc_tour_report(context, payload)
+  local uid = context.user_id
+  if not uid then return reply({ ok = false, error = "sin_sesion" }) end
+  local okd, d = pcall(nk.json_decode, payload or "{}")
+  if not okd or type(d) ~= "table" then return reply({ ok = false, error = "pedido_invalido" }) end
+  if d.won ~= true then return reply({ ok = true, added = 0 }) end
+  local now = os.time()
+  local rl = nk.storage_read({{ collection = TOUR_RL, key = "main", user_id = uid }})
+  if rl and #rl > 0 and type(rl[1].value) == "table" and (now - (tonumber(rl[1].value.t) or 0)) < TOUR_MIN_GAP then
+    return reply({ ok = false, error = "muy_rapido" })
+  end
+  nk.storage_write({{ collection = TOUR_RL, key = "main", user_id = uid, value = { t = now },
+                      permission_read = 0, permission_write = 0 }})
+  local name = clean_text(d.name, 24) or "Jugador"
+  local added = 0
+  for _, cup in ipairs(TOUR_ORDER) do
+    local pid = tour_pid(tour_info_of(cup))
+    if pid and tour_joined(uid, cup, pid) then
+      local ok = pcall(nk.leaderboard_record_write, "tour_" .. cup, uid, name, TOUR_WIN_PTS, 0, {})
+      if ok then added = added + TOUR_WIN_PTS end
+    end
+  end
+  return reply({ ok = true, added = added })
+end
+
+-- Premios (o devolucion) de la copa anterior. Cada uno se crea una sola vez.
+local function rpc_tour_claim(context, payload)
+  local uid = context.user_id
+  if not uid then return reply({ ok = false, error = "sin_sesion" }) end
+  for _, cup in ipairs(TOUR_ORDER) do
+    local info = tour_info_of(cup)
+    local prev = info and tonumber(info.prev_reset) or 0
+    if prev > 0 and tour_joined(uid, cup, prev) then
+      local key = cup .. "_" .. tostring(prev)
+      local ex = nk.storage_read({{ collection = TOUR_GRANTS, key = key, user_id = uid }})
+      if not (ex and #ex > 0) then
+        local ok, recs = pcall(nk.leaderboard_records_list, "tour_" .. cup, nil, 100, nil, prev)
+        if ok and recs then
+          local n = #recs
+          local fee = TOUR_CUPS[cup].fee
+          local gold, kind = 0, nil
+          if n < 3 then
+            gold = fee; kind = "tour_refund"
+          else
+            local pool = n * fee
+            for i = 1, 3 do
+              local r = recs[i]
+              if r and r.owner_id == uid and (tonumber(r.score) or 0) > 0 then
+                gold = math.floor(pool * TOUR_SPLIT[i]); kind = "tour_prize"
+              end
+            end
+          end
+          if kind then
+            nk.storage_write({{ collection = TOUR_GRANTS, key = key, user_id = uid, permission_read = 0, permission_write = 0,
+              value = { kind = kind, cup = cup, gold = gold, diamonds = 0, status = "pending", credited = false, created = os.time() } }})
+            nk.logger_info("TORNEO premio creado user=" .. tostring(uid) .. " " .. key .. " " .. kind .. " oro=" .. tostring(gold))
+          else
+            -- sin premio: marcar como revisado para no recalcular cada vez
+            nk.storage_write({{ collection = TOUR_GRANTS, key = key, user_id = uid, permission_read = 0, permission_write = 0,
+              value = { kind = "none", cup = cup, gold = 0, diamonds = 0, status = "granted", credited = true, created = os.time() } }})
+          end
+        end
+      end
+    end
+  end
+  local objs = nk.storage_list(uid, TOUR_GRANTS, 50, nil)
+  local out = {}
+  for _, o in ipairs(objs or {}) do
+    local v = o.value
+    if type(v) == "table" and v.status ~= "granted" then
+      if not v.credited then
+        credit_guard(uid, v.gold, 0)
+        v.credited = true
+        nk.storage_write({{ collection = TOUR_GRANTS, key = o.key, user_id = uid, value = v, permission_read = 0, permission_write = 0 }})
+      end
+      out[#out + 1] = { key = o.key, kind = v.kind, cup = v.cup, gold = v.gold or 0 }
+    end
+  end
+  return reply({ ok = true, grants = out, count = #out })
+end
+
+local function rpc_tour_ack(context, payload)
+  local uid = context.user_id
+  if not uid then return reply({ ok = false, error = "sin_sesion" }) end
+  local okd, d = pcall(nk.json_decode, payload or "{}")
+  if not okd or type(d) ~= "table" or type(d.key) ~= "string" then return reply({ ok = false, error = "pedido_invalido" }) end
+  local r = nk.storage_read({{ collection = TOUR_GRANTS, key = d.key, user_id = uid }})
+  if r and #r > 0 and type(r[1].value) == "table" then
+    local v = r[1].value
+    v.status = "granted"; v.granted_at = os.time()
+    nk.storage_write({{ collection = TOUR_GRANTS, key = d.key, user_id = uid, value = v, permission_read = 0, permission_write = 0 }})
+    return reply({ ok = true })
+  end
+  return reply({ ok = false, error = "no_existe" })
+end
+
+nk.register_rpc(rpc_tour_info, "tour_info")
+nk.register_rpc(rpc_tour_join, "tour_join")
+nk.register_rpc(rpc_tour_report, "tour_report")
+nk.register_rpc(rpc_tour_claim, "tour_claim")
+nk.register_rpc(rpc_tour_ack, "tour_ack")
+
 nk.register_req_before(before_write, "WriteStorageObjects")
 nk.register_req_before(before_delete, "DeleteStorageObjects")
 nk.logger_info("Parche: guardia de economía activa")
