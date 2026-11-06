@@ -6420,7 +6420,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running'){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1239';
+const BUILD_VERSION = '1240';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -14845,7 +14845,7 @@ async function claimChallenge(id){
    Entras pagando la entrada; cada partida online ganada suma 10 puntos a las copas donde estés
    anotado. Al cerrar (00:00 UTC) el servidor reparte lo recaudado: 50% / 30% / 20% a los 3 primeros.
    Con menos de 3 anotados se devuelve la entrada. */
-const TOURNEY_LIVE = false;   // pasar a true cuando el servidor (tour_*) esté desplegado
+const TOURNEY_LIVE = true;    // pasar a true cuando el servidor (tour_*) esté desplegado
 const TOURNAMENTS = [
   {id:'bronce', name:'Copa Bronce', icon:'🥉', fee:1000},
   {id:'plata',  name:'Copa Plata',  icon:'🥈', fee:5000},
