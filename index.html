@@ -5328,7 +5328,7 @@ body.dice-shaking .dice-cube-wrap, body.dice-shaking .dice-sprite{ animation:dic
         <div class="lpz-title">🏆 PREMIOS</div>
         <div class="lpz-tabs" id="lpzTabs"></div>
         <div class="lpz-list" id="lpzList"></div>
-        <div class="lpz-note">Se reparten al cierre de la semana (domingo), según tu puesto final. Solo ganan los 7 primeros de cada liga.</div>
+        <div class="lpz-note">Se reparten al cierre de la semana (domingo), según tu puesto final. Solo ganan los 7 primeros de cada liga. Solo cuentan partidas online contra personas reales que no sean tus amigos. Para cobrar hacen falta al menos 3 jugadores en tu liga y 50 puntos esa semana.</div>
       </div>
     </div>
   </div>
@@ -6425,7 +6425,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running'){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1244';
+const BUILD_VERSION = '1245';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -13712,6 +13712,17 @@ function updateLevelBadges(leveledUp){
   if(label) label.textContent = `${profileStats.lvlXp}/${need}`;
 }
 
+/* Partida "real": online y contra al menos una persona de verdad. Solo esas suman a la liga y a los torneos
+   (contra bots no, para que nadie pueda inflar puntos). El servidor vuelve a comprobarlo. */
+function liveMatchCtx(){
+  try{
+    if(!multiplayerActive) return {online:false, opps:[]};
+    const opps = [];
+    const fr = (profileStats.friends||[]).map(f=>f.id);
+    players.forEach(p=>{ if(p.active && p.color!==MY_COLOR){ const u = colorUserId(p.color); if(u && opps.indexOf(u)<0 && fr.indexOf(u)<0) opps.push(u); } });
+    return {online: opps.length>0, opps};
+  }catch(e){ return {online:false, opps:[]}; }
+}
 function checkProgressAfterMatch(youWon){
   const promos = [];
 
@@ -13727,8 +13738,10 @@ function checkProgressAfterMatch(youWon){
 
   ensureLeagueData();
   const oldTier = leagueData.tierIdx;
-  leagueData.points = (leagueData.points||0) + (youWon?25:8);
-  profileStats.weekPts = (profileStats.weekPts||0) + (youWon?25:8);
+  if(liveMatchCtx().online){
+    leagueData.points = (leagueData.points||0) + (youWon?25:8);
+    profileStats.weekPts = (profileStats.weekPts||0) + (youWon?25:8);
+  }
   const newTier = Math.min(LEAGUE_TIERS.length-1, Math.floor(leagueData.points/300));
   if(newTier>oldTier) promos.push({type:'league', from:oldTier, to:newTier});
   leagueData.tierIdx = newTier;
@@ -13748,8 +13761,9 @@ async function recordMatchResult(youWon){
   const xpGained = (10 + (youWon?20:0)) * (isXpBoostActive() ? 2 : 1);
   bumpPassPoints(xpGained);
   profileStats.gamesPlayed += 1;
-  try{ ligaReport(youWon); }catch(e){}
-  try{ tourneyReport(youWon); }catch(e){}
+  const _mctx = liveMatchCtx();
+  try{ ligaReport(youWon, _mctx); }catch(e){}
+  try{ tourneyReport(youWon, _mctx); }catch(e){}
 
   let goldWon = 0, betPayout = 0, chestResult = {granted:false};
   const _refundBet = !youWon && multiplayerActive && !!winner && !!winner.isBot && winner.color!==MY_COLOR && !!colorUserId(winner.color) && pendingBet>0;
@@ -14504,7 +14518,7 @@ const LEAGUE_REWARDS = [
 ];
 const LEAGUE_GLOBAL_LIVE = true;  // tabla global semanal: el servidor ya la lleva y paga al #1
 const LEAGUE_PRIZES_LIVE = LEAGUE_GLOBAL_LIVE; // (alias para el cobro del premio global)
-const LEAGUE_RANK_PRIZES_LIVE = false; // premios por liga (Bronce..Élite): el servidor aún no los reparte
+const LEAGUE_RANK_PRIZES_LIVE = true;  // premios por liga (Bronce..Élite): el servidor ya los reparte (top 7 por liga, mínimo 3 jugadores)
 let lpzTier = 0;
 function leagueNum(n){ return n>=1000 ? (n%1000===0 ? (n/1000)+'K' : n.toLocaleString('en-US')) : String(n); }
 function renderLeaguePrizes(){
@@ -14522,31 +14536,80 @@ function renderLeaguePrizes(){
 function openLeaguePrizes(){ lpzTier = leagueData ? leagueData.tierIdx : 0; renderLeaguePrizes(); document.getElementById('leaguePrizes').style.display='flex'; }
 function closeLeaguePrizes(){ document.getElementById('leaguePrizes').style.display='none'; }
 
-async function ligaReport(won){
+function myFriendIds(){ try{ return (profileStats.friends||[]).map(f=>String(f.id)).filter(x=>x && x.length<=64).slice(0,100); }catch(e){ return []; } }
+function ligaApplyServer(r){
+  // el servidor es quien manda en los puntos y en la liga
+  try{
+    if(r && typeof r.total==='number'){
+      ensureLeagueData();
+      leagueData.points = r.total;
+      leagueData.tierIdx = Math.min(LEAGUE_TIERS.length-1, Math.floor(r.total/300));
+      profileStats.league = leagueData;
+      saveProfile();
+      updateLeagueWidgets();
+    }
+  }catch(e){}
+}
+async function ligaReport(won, ctx){
   if(!isOnlineAuthenticated) return;
+  if(!ctx || !ctx.online) return;
   let nm = 'Jugador'; try{ nm = ensureDisplayName() || 'Jugador'; }catch(e){}
   let av = null; try{ av = myAvatarUrl(); }catch(e){}
   if(av && !(/^https?:\/\//.test(av) && av.length<=200)) av = null;
-  try{ await iapRpc('global_report', { won: !!won, name: nm, avatar: av }); }catch(e){}
+  try{ const r = await iapRpc('global_report', { won: !!won, name: nm, avatar: av, online: true, opps: ctx.opps, friends: myFriendIds() }); ligaApplyServer(r); }catch(e){}
 }
 let ligaClaimBusy = false;
+function giveLeagueAmphora(type){
+  ensureChestSlots();
+  const i = chestSlotsData.findIndex(x=>!x);
+  if(i===-1) return false;
+  chestSlotsData[i] = {type, state:'idle', endsAt:0};
+  profileStats.chestSlots = chestSlotsData; renderChestSlots();
+  return true;
+}
 async function ligaClaimAndApply(){
   if(ligaClaimBusy || !isOnlineAuthenticated) return;
   ligaClaimBusy = true;
   try{
     const r = await iapRpc('liga_claim', {});
     if(r && r.ok && Array.isArray(r.grants) && r.grants.length){
-      let g=0, d=0; r.grants.forEach(x=>{ g+=x.gold||0; d+=x.diamonds||0; });
+      let g=0, d=0, msgs=[], noSlot=false;
+      r.grants.forEach(x=>{
+        g+=x.gold||0; d+=x.diamonds||0;
+        if(x.kind==='league_rank'){
+          const tn = (LEAGUE_TIERS.find(t=>t.id===x.tier)||{name:'Liga'}).name;
+          msgs.push('Puesto #'+x.rank+' en la '+tn);
+          if(x.amphora && !giveLeagueAmphora(x.amphora)) noSlot = true;
+        } else msgs.push('#1 de la liga global');
+      });
       if(g){ lobbyGold += g; profileStats.goldEarned += g; }
       if(d){ lobbyDiamonds += d; }
       syncEconomy();
       await saveProfile();
       for(const x of r.grants){ try{ await iapRpc('liga_ack', { key: x.key }); }catch(e){} }
       sfxCoin();
-      lobbyToast('¡Fuiste el #1 de la liga global! +' + d.toLocaleString('en-US') + ' 💎 +' + g.toLocaleString('en-US') + ' de oro');
+      lobbyToast('¡' + msgs.join(' · ') + '! +' + d.toLocaleString('en-US') + ' 💎 +' + g.toLocaleString('en-US') + ' de oro' + (noSlot ? ' (sin espacio para la ánfora)' : ''));
     }
   }catch(e){}
   ligaClaimBusy = false;
+}
+/* Tabla semanal de MI liga, directo del servidor */
+async function ligaTierLoad(){
+  if(!isOnlineAuthenticated) return;
+  try{
+    const r = await iapRpc('liga_tier_top', {});
+    if(!r || !r.ok) return;
+    ligaApplyServer(r);
+    const el = document.getElementById('leagueList'); if(!el || !Array.isArray(r.rows)) return;
+    if(!r.rows.length){ return; }
+    el.innerHTML = r.rows.map(x=>`
+      <div class="lg-row ${x.me?'me':''} ${x.rank<=3?'top'+x.rank:''}">
+        <div class="lg-rank">${x.rank}</div>
+        <div class="lg-av">${x.av?`<img src="${x.av}" alt="">`:iconImgHTML('avatarBot','🙂','icon-fill')}</div>
+        <div class="lg-name">${x.me?'Tú · ':''}${String(x.name).replace(/[<>&"]/g,'')}</div>
+        <div class="lg-pts">${x.points}</div>
+      </div>`).join('');
+  }catch(e){}
 }
 async function openLeagueGlobal(){
   ensureLeagueData();
@@ -14608,6 +14671,7 @@ function openLeagueScreen(){
   leagueData.rank = me.rank;
   updateLeagueWidgets();
   document.getElementById('leagueOverlay').style.display = 'flex';
+  ligaTierLoad();
 }
 function closeLeagueScreen(){
   try{ closeLeaguePrizes(); closeLeagueGlobal(); }catch(e){}
@@ -15063,11 +15127,12 @@ async function enterTournament(id){
     tourneyData=null; renderTournaments();
   }catch(e){ lobbyToast('Sin conexión. No se cobró nada.'); }
 }
-async function tourneyReport(won){
+async function tourneyReport(won, ctx){
   if(PREVIEW_OFFLINE){ if(won && window._tSim) Object.values(window._tSim).forEach(x=>{ if(x.joined) x.points += 10; }); return; }
   if(!TOURNEY_LIVE || !won || !isOnlineAuthenticated) return;
   let nm = 'Jugador'; try{ nm = ensureDisplayName() || 'Jugador'; }catch(e){}
-  try{ await iapRpc('tour_report', {won:true, name:nm}); }catch(e){}
+  if(!ctx || !ctx.online) return;
+  try{ await iapRpc('tour_report', {won:true, name:nm, online:true, opps:ctx.opps, friends: myFriendIds()}); }catch(e){}
 }
 let tourneyClaimBusy = false;
 async function tourneyClaimAndApply(){
