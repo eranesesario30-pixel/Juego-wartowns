@@ -553,7 +553,8 @@ local function rpc_tour_claim(context, payload)
   for _, cup in ipairs(TOUR_ORDER) do
     local info = tour_info_of(cup)
     local prev = info and tonumber(info.prev_reset) or 0
-    if prev > 0 and tour_joined(uid, cup, prev) then
+    -- la entrada se guarda con el INICIO del periodo; el periodo que acaba de cerrar empezo un dia antes de prev_reset
+    if prev > 0 and tour_joined(uid, cup, prev - 86400) then
       local key = cup .. "_" .. tostring(prev)
       local ex = nk.storage_read({{ collection = TOUR_GRANTS, key = key, user_id = uid }})
       if not (ex and #ex > 0) then
