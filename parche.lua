@@ -372,13 +372,44 @@ end
 
 local function today_key() return os.date("!%Y%m%d") end
 
--- Rivales validos de una partida: ids distintos al propio, que existan de verdad.
-local function match_opps(uid, d)
+local function read_liga(uid, key)
+  local r = nk.storage_read({{ collection = LIGA_STATE, key = key, user_id = uid }})
+  if r and #r > 0 and type(r[1].value) == "table" then return r[1].value end
+  return { pts = 0 }
+end
+
+local function write_liga(uid, key, st)
+  nk.storage_write({{ collection = LIGA_STATE, key = key, user_id = uid, value = st,
+                      permission_read = 0, permission_write = 0 }})
+end
+
+-- Lista de amigos que manda el telefono (solo ids validos, maximo 100).
+local function clean_friends(v)
+  local out = {}
+  if type(v) ~= "table" then return out end
+  for _, f in ipairs(v) do
+    if type(f) == "string" and #f > 0 and #f <= 64 then out[#out + 1] = f end
+    if #out >= 100 then break end
+  end
+  return out
+end
+
+-- Rivales validos de una partida: ids distintos al propio, que existan de verdad y
+-- que NO sean amigos (ni mios, ni de ellos: si el rival me tiene de amigo tampoco cuenta).
+local function match_opps(uid, d, friends)
   if d.online ~= true or type(d.opps) ~= "table" then return nil end
+  local fset = {}
+  for _, f in ipairs(friends or {}) do fset[f] = true end
   local seen, opps = {}, {}
   for _, o in ipairs(d.opps) do
     if type(o) == "string" and o ~= uid and #o > 0 and #o <= 64 and not seen[o] then
-      seen[o] = true; opps[#opps + 1] = o
+      seen[o] = true
+      if not fset[o] then
+        local ost = read_liga(o, "main")
+        local theirs = false
+        for _, f in ipairs(type(ost.fr) == "table" and ost.fr or {}) do if f == uid then theirs = true; break end end
+        if not theirs then opps[#opps + 1] = o end
+      end
     end
     if #opps >= 3 then break end
   end
@@ -404,17 +435,6 @@ local function farm_ok(st, opps, day_cap, opp_cap)
   return true
 end
 
-local function read_liga(uid, key)
-  local r = nk.storage_read({{ collection = LIGA_STATE, key = key, user_id = uid }})
-  if r and #r > 0 and type(r[1].value) == "table" then return r[1].value end
-  return { pts = 0 }
-end
-
-local function write_liga(uid, key, st)
-  nk.storage_write({{ collection = LIGA_STATE, key = key, user_id = uid, value = st,
-                      permission_read = 0, permission_write = 0 }})
-end
-
 local function rpc_global_report(context, payload)
   local uid = context.user_id
   if not uid then return reply({ ok = false, error = "sin_sesion" }) end
@@ -422,9 +442,12 @@ local function rpc_global_report(context, payload)
   if not okd or type(d) ~= "table" then return reply({ ok = false, error = "pedido_invalido" }) end
   local st = read_liga(uid, "main")
   local total = tonumber(st.pts) or 0
-  local opps = match_opps(uid, d)
+  local friends = clean_friends(d.friends)
+  if type(d.friends) == "table" then st.fr = friends end
+  local opps = match_opps(uid, d, friends)
   if not opps then
-    -- partida sin personas reales (bots / sin conexion): no suma
+    -- partida sin personas reales (bots / amigos / sin conexion): no suma
+    if type(d.friends) == "table" then write_liga(uid, "main", st) end
     return reply({ ok = true, counted = false, reason = "sin_rivales", total = total, tier = tier_of_pts(total) })
   end
   local now = os.time()
@@ -704,7 +727,10 @@ local function rpc_tour_report(context, payload)
   local okd, d = pcall(nk.json_decode, payload or "{}")
   if not okd or type(d) ~= "table" then return reply({ ok = false, error = "pedido_invalido" }) end
   if d.won ~= true then return reply({ ok = true, added = 0 }) end
-  local opps = match_opps(uid, d)
+  local mst = read_liga(uid, "main")
+  local friends = clean_friends(d.friends)
+  if type(d.friends) == "table" then mst.fr = friends; write_liga(uid, "main", mst) else friends = type(mst.fr) == "table" and mst.fr or {} end
+  local opps = match_opps(uid, d, friends)
   if not opps then return reply({ ok = true, added = 0, reason = "sin_rivales" }) end
   local tst = read_liga(uid, "tour")
   if not farm_ok(tst, opps, TOUR_DAY_CAP, TOUR_OPP_CAP) then
