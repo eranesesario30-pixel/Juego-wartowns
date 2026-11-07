@@ -6420,7 +6420,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running'){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1240';
+const BUILD_VERSION = '1241';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -10838,7 +10838,8 @@ const TOKEN_GLB = { caballo:'/_blob/ba6090f749a4e0b2b036e9b00e4b4b70', leon:'/_b
 // Fichas de Tripo lisas de un solo color: se pintan ENTERAS del color del jugador, como el peón
 const TOKEN_FULL_TINT = ['caballo','leon','aguila','ancla'];
 // PRUEBA: fichas gratis mientras se prueban (quitar el id para que se compren)
-const TOKEN_FREE_TEST = [];   // PRUEBA: ficha búho (estilo personaje sobre base de color)
+const TOKEN_FREE_TEST = ['canica','domo','trompo','perla','piramide','gota','campana','barril','cono','farol','caliz','anillo','nieve','peonza','gema'];   // fichas nuevas gratis para todos
+//   // PRUEBA: ficha búho (estilo personaje sobre base de color)
 // Fichas que cambian SOLO sus zonas rojas al color del jugador (el oro y el crema se quedan)
 const TOKEN_HUE_TINT = ['buho'];
 const TOKEN_SCALE = { zorrito:1.25, chico:1.7, osoparche:1.25 };
@@ -10924,16 +10925,61 @@ const TOKEN_FRONT_FIX = { osoparche: -Math.PI/2, chico: 0, conejo: -Math.PI/2, c
 const ANIMAL_NAMES = {
   caballo:'Caballo', leon:'León', aguila:'Águila', ancla:'Ancla', torre:'Torre', corona:'Corona', estrella:'Estrella', diamante:'Diamante', cohete:'Cohete',
   corazon:'Corazón', rayo:'Rayo', luna:'Luna', escudo:'Escudo', copa:'Copa',
+  canica:'Canica', domo:'Domo', trompo:'Trompo',
+  perla:'Perla', piramide:'Pirámide', gota:'Gota', campana:'Campana', barril:'Barril', cono:'Cono', farol:'Farol', caliz:'Cáliz', anillo:'Anillo', nieve:'Nieve', peonza:'Peonza', gema:'Gema',
 };
 const ANIMAL_EMOJI = {
   caballo:'🐴', leon:'🦁', aguila:'🦅', ancla:'⚓', torre:'🏰', corona:'👑', estrella:'⭐', diamante:'💎', cohete:'🚀',
   corazon:'❤️', rayo:'⚡', luna:'🌙', escudo:'🛡️', copa:'🏆',
+  canica:'🔴', domo:'🟠', trompo:'🪀',
+  perla:'⚪', piramide:'🔺', gota:'💧', campana:'🔔', barril:'🛢️', cono:'🔺', farol:'🏮', caliz:'🍷', anillo:'⭕', nieve:'⛄', peonza:'🔶', gema:'💎',
 };
-function _tkMat(flat){ return new THREE.MeshStandardMaterial({ color:0xffffff, roughness:0.36, metalness:0.06, flatShading:!!flat }); }
+/* Peón clásico con acabados (oro, cristal, cromo, neón): mismo modelo, otro material, siempre con el color del jugador */
+// Fichas dibujadas con código: caben en la misma caja que el peón clásico (0.82 de ancho × 1.28 de alto)
+// Fichas retiradas: ya no se venden ni se ven en la colección, salvo para quien ya las tiene
+const RETIRED_TOKENS = ['torre','corona','estrella','diamante','cohete','corazon','rayo','luna','escudo','copa'];
+const CODE_TOKENS = ['perla','piramide','gota','campana','barril','cono','farol','caliz','anillo','nieve','peonza','gema','canica','domo','trompo','torre','corona','estrella','diamante','cohete','corazon','rayo','luna','escudo','copa'];
+const PAWN_FINISH = { peon_oro:1, peon_cristal:1, peon_cromo:1, peon_neon:1 };
+let _finishEnv = null;
+function finishEnvMap(){
+  if(_finishEnv) return _finishEnv;
+  const c = document.createElement('canvas'); c.width = 256; c.height = 128;
+  const g = c.getContext('2d');
+  const gr = g.createLinearGradient(0,0,0,128);
+  gr.addColorStop(0,'#ffffff'); gr.addColorStop(.35,'#bcd0e8'); gr.addColorStop(.5,'#6a7a90'); gr.addColorStop(.52,'#2a2f3a'); gr.addColorStop(1,'#10131a');
+  g.fillStyle = gr; g.fillRect(0,0,256,128);
+  g.fillStyle = 'rgba(255,255,255,.95)';
+  for(let i=0;i<4;i++) g.fillRect(i*64+10, 18, 26, 34);
+  _finishEnv = new THREE.CanvasTexture(c);
+  _finishEnv.mapping = THREE.EquirectangularReflectionMapping;
+  return _finishEnv;
+}
+function applyPawnFinish(mat, finishId, colorHex){
+  const pc = new THREE.Color(colorHex);
+  if(finishId==='peon_oro'){
+    mat.color = pc.clone().lerp(new THREE.Color(0xffc93c), 0.62);
+    mat.metalness = 0.95; mat.roughness = 0.24; mat.envMap = finishEnvMap(); mat.envMapIntensity = 1.25;
+    mat.emissive = pc.clone().multiplyScalar(0.12);
+  } else if(finishId==='peon_cromo'){
+    mat.color = pc.clone().lerp(new THREE.Color(0xffffff), 0.35);
+    mat.metalness = 1; mat.roughness = 0.1; mat.envMap = finishEnvMap(); mat.envMapIntensity = 1.4;
+    mat.emissive = pc.clone().multiplyScalar(0.1);
+  } else if(finishId==='peon_cristal'){
+    mat.color = pc.clone().lerp(new THREE.Color(0xffffff), 0.25);
+    mat.metalness = 0.1; mat.roughness = 0.05; mat.envMap = finishEnvMap(); mat.envMapIntensity = 1.6;
+    mat.transparent = true; mat.opacity = 0.72; mat.emissive = pc.clone().multiplyScalar(0.28);
+  } else if(finishId==='peon_neon'){
+    mat.color = pc.clone().multiplyScalar(0.35);
+    mat.metalness = 0.2; mat.roughness = 0.35;
+    mat.emissive = pc.clone(); mat.emissiveIntensity = 1.15;
+  }
+  mat.needsUpdate = true;
+}
+function _tkMat(flat){ return new THREE.MeshStandardMaterial({ color:0xffffff, roughness:0.14, metalness:0.06, flatShading:!!flat }); }
 function _tkMesh(geo, flat){ return new THREE.Mesh(geo, _tkMat(flat)); }
 function _tkLathe(pts, seg){ return new THREE.LatheGeometry(pts.map(p=>new THREE.Vector2(p[0],p[1])), seg||40); }
 function _tkExtrude(shape, depth, bevel){
-  const g = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled:true, bevelThickness:bevel, bevelSize:bevel, bevelSegments:4, curveSegments:24 });
+  const g = new THREE.ExtrudeGeometry(shape, { depth, bevelEnabled:true, bevelThickness:bevel, bevelSize:bevel, bevelSegments:6, curveSegments:24 });
   g.translate(0, 0, -depth/2);
   return g;
 }
@@ -10951,11 +10997,74 @@ function _tkStar(outer, inner, n){
   }
   s.closePath(); return s;
 }
+function _tkGold(m){
+  m.material = new THREE.MeshStandardMaterial({ color:0xf2b92c, metalness:0.45, roughness:0.32, emissive:0x3a2600, emissiveIntensity:0.5 });
+  m.material.userData.keep = true; return m;
+}
 function buildTokenShape(id){
   const g = new THREE.Group();
   _tkBase(g);
   const put = (m, x, y, z)=>{ m.position.set(x||0, y||0, z||0); g.add(m); return m; };
-  if(id==='torre'){
+  if(id==='canica'){
+    const sp = _tkMesh(new THREE.SphereGeometry(0.66,48,32)); sp.material.roughness = 0.12; put(sp, 0, 1.08, 0);
+    put(_tkGold(_tkMesh(new THREE.TorusGeometry(0.67,0.055,14,64))), 0, 1.08, 0).rotation.x = Math.PI/2;
+    put(_tkGold(_tkMesh(new THREE.TorusGeometry(0.23,0.07,12,40))), 0, 0.5, 0).rotation.x = Math.PI/2;
+  } else if(id==='domo'){
+    const pts = [[0,0.46],[0.66,0.46]];
+    for(let i=1;i<=14;i++){ const a = i/14*Math.PI/2; pts.push([0.66*Math.cos(a), 0.46+0.8*Math.sin(a)]); }
+    const dm = _tkMesh(_tkLathe(pts, 64)); dm.material.roughness = 0.14; put(dm);
+    put(_tkGold(_tkMesh(new THREE.TorusGeometry(0.66,0.06,14,64))), 0, 0.48, 0).rotation.x = Math.PI/2;
+    put(_tkGold(_tkMesh(new THREE.SphereGeometry(0.11,20,16))), 0, 1.3, 0);
+  } else if(id==='trompo'){
+    const tp = _tkMesh(_tkLathe([[0,0.45],[0.12,0.5],[0.42,0.82],[0.66,1.12],[0.6,1.36],[0.3,1.5],[0.14,1.56],[0.12,1.78],[0,1.8]], 64)); tp.material.roughness = 0.16; put(tp);
+    put(_tkGold(_tkMesh(new THREE.TorusGeometry(0.66,0.055,14,64))), 0, 1.13, 0).rotation.x = Math.PI/2;
+    put(_tkGold(_tkMesh(new THREE.SphereGeometry(0.1,20,16))), 0, 1.8, 0);
+  } else if(id==='perla'){
+    const sp = _tkMesh(new THREE.SphereGeometry(0.64,48,32)); sp.material.roughness = 0.04; put(sp, 0, 1.5, 0);
+    put(_tkGold(_tkMesh(_tkLathe([[0,0.5],[0.55,0.5],[0.64,0.68],[0.56,0.92],[0.4,1.08],[0.0,1.1]], 56))));
+  } else if(id==='piramide'){
+    const pm = _tkMesh(_tkLathe([[0,0.45],[0.8,0.5],[0.62,0.95],[0.4,1.4],[0.17,1.78],[0,1.95]], 4), true); pm.material.roughness = 0.1; put(pm);
+    put(_tkGold(_tkMesh(new THREE.TorusGeometry(0.78,0.06,12,64))), 0, 0.5, 0).rotation.x = Math.PI/2;
+    put(_tkGold(_tkMesh(new THREE.SphereGeometry(0.12,18,14))), 0, 1.98, 0);
+  } else if(id==='gota'){
+    const gt = _tkMesh(_tkLathe([[0,0.45],[0.3,0.5],[0.58,0.75],[0.64,1.0],[0.54,1.3],[0.34,1.65],[0.14,1.95],[0,2.08]], 64)); gt.material.roughness = 0.1; put(gt);
+    put(_tkGold(_tkMesh(new THREE.TorusGeometry(0.645,0.05,14,64))), 0, 1.0, 0).rotation.x = Math.PI/2;
+    put(_tkGold(_tkMesh(new THREE.SphereGeometry(0.09,16,12))), 0, 2.08, 0);
+  } else if(id==='campana'){
+    const cp = _tkMesh(_tkLathe([[0,0.46],[0.7,0.46],[0.66,0.7],[0.52,1.1],[0.34,1.45],[0.2,1.62],[0,1.66]], 64)); cp.material.roughness = 0.12; put(cp);
+    put(_tkGold(_tkMesh(new THREE.TorusGeometry(0.7,0.06,14,64))), 0, 0.5, 0).rotation.x = Math.PI/2;
+    put(_tkGold(_tkMesh(new THREE.SphereGeometry(0.13,18,14))), 0, 1.72, 0);
+  } else if(id==='barril'){
+    const br = _tkMesh(_tkLathe([[0,0.46],[0.5,0.46],[0.62,0.7],[0.68,1.1],[0.62,1.5],[0.5,1.74],[0,1.74]], 64)); br.material.roughness = 0.14; put(br);
+    put(_tkGold(_tkMesh(new THREE.TorusGeometry(0.645,0.055,14,64))), 0, 0.78, 0).rotation.x = Math.PI/2;
+    put(_tkGold(_tkMesh(new THREE.TorusGeometry(0.645,0.055,14,64))), 0, 1.42, 0).rotation.x = Math.PI/2;
+  } else if(id==='cono'){
+    const cn = _tkMesh(_tkLathe([[0,0.45],[0.72,0.5],[0.56,0.9],[0.38,1.3],[0.18,1.65],[0,1.9]], 64)); cn.material.roughness = 0.12; put(cn);
+    put(_tkGold(_tkMesh(new THREE.TorusGeometry(0.71,0.06,14,64))), 0, 0.52, 0).rotation.x = Math.PI/2;
+    put(_tkGold(_tkMesh(new THREE.SphereGeometry(0.12,18,14))), 0, 1.95, 0);
+  } else if(id==='farol'){
+    const fr = _tkMesh(_tkLathe([[0,0.45],[0.42,0.45],[0.46,0.55],[0.46,1.2],[0.38,1.32],[0,1.32]], 64)); fr.material.roughness = 0.12; put(fr);
+    const bl = _tkMesh(new THREE.SphereGeometry(0.3,32,24)); bl.material.roughness = 0.08; put(bl, 0, 1.55, 0);
+    put(_tkGold(_tkMesh(new THREE.TorusGeometry(0.465,0.055,14,64))), 0, 1.25, 0).rotation.x = Math.PI/2;
+    put(_tkGold(_tkMesh(new THREE.TorusGeometry(0.465,0.055,14,64))), 0, 0.6, 0).rotation.x = Math.PI/2;
+  } else if(id==='caliz'){
+    const cz = _tkMesh(_tkLathe([[0,0.4],[0.5,0.4],[0.52,0.5],[0.16,0.65],[0.12,1.0],[0.22,1.1],[0.62,1.6],[0.66,1.95],[0.55,1.95],[0,1.62]], 64)); cz.material.roughness = 0.1; put(cz);
+    put(_tkGold(_tkMesh(new THREE.TorusGeometry(0.64,0.05,14,64))), 0, 1.95, 0).rotation.x = Math.PI/2;
+    put(_tkGold(_tkMesh(new THREE.TorusGeometry(0.17,0.06,12,40))), 0, 0.95, 0).rotation.x = Math.PI/2;
+  } else if(id==='anillo'){
+    const tr = _tkMesh(new THREE.TorusGeometry(0.5,0.26,28,64)); tr.material.roughness = 0.1; put(tr, 0, 0.78, 0).rotation.x = Math.PI/2;
+    put(_tkGold(_tkMesh(new THREE.TorusGeometry(0.5,0.06,14,64))), 0, 1.04, 0).rotation.x = Math.PI/2;
+  } else if(id==='nieve'){
+    const a1 = _tkMesh(new THREE.SphereGeometry(0.52,40,28)); a1.material.roughness = 0.1; put(a1, 0, 1.0, 0);
+    const a2 = _tkMesh(new THREE.SphereGeometry(0.36,36,26)); a2.material.roughness = 0.1; put(a2, 0, 1.7, 0);
+    put(_tkGold(_tkMesh(new THREE.TorusGeometry(0.3,0.07,14,48))), 0, 1.38, 0).rotation.x = Math.PI/2;
+  } else if(id==='peonza'){
+    const pz = _tkMesh(_tkLathe([[0,0.45],[0.15,0.5],[0.55,1.0],[0.62,1.35],[0.55,1.7],[0.15,2.2],[0,2.3]], 64)); pz.material.roughness = 0.1; put(pz);
+    put(_tkGold(_tkMesh(new THREE.TorusGeometry(0.63,0.055,14,64))), 0, 1.35, 0).rotation.x = Math.PI/2;
+  } else if(id==='gema'){
+    const gm = _tkMesh(_tkLathe([[0,0.5],[0.5,0.55],[0.74,0.95],[0.5,1.4],[0,1.52]], 12), true); gm.material.roughness = 0.08; put(gm);
+    put(_tkGold(_tkMesh(new THREE.TorusGeometry(0.75,0.05,10,12))), 0, 0.95, 0).rotation.x = Math.PI/2;
+  } else if(id==='torre'){
     put(_tkMesh(_tkLathe([[0,0.4],[0.36,0.4],[0.32,0.55],[0.3,1.2],[0.5,1.3],[0.5,1.45],[0,1.45]])));
     for(let i=0;i<6;i++){
       const a = i*Math.PI/3;
@@ -10972,7 +11081,7 @@ function buildTokenShape(id){
     }
   } else if(id==='estrella'){
     put(_tkMesh(new THREE.CylinderGeometry(0.13,0.2,0.4,20)), 0, 0.62, 0);
-    put(_tkMesh(_tkExtrude(_tkStar(1.0,0.46,5), 0.34, 0.07)), 0, 1.6, 0);
+    put(_tkMesh(_tkExtrude(_tkStar(0.92,0.44,5), 0.5, 0.15)), 0, 1.6, 0);
   } else if(id==='diamante'){
     const oc = _tkMesh(new THREE.OctahedronGeometry(0.85,0), true);
     oc.scale.set(0.85,1.35,0.85); oc.rotation.y = Math.PI/4; put(oc, 0, 1.55, 0);
@@ -10993,13 +11102,13 @@ function buildTokenShape(id){
     s.bezierCurveTo(0.35,1.0,0.95,0.8,0.95,0.3);
     s.bezierCurveTo(0.95,-0.2,0.2,-0.7,0,-0.95);
     put(_tkMesh(new THREE.CylinderGeometry(0.1,0.18,0.35,16)), 0, 0.6, 0);
-    put(_tkMesh(_tkExtrude(s, 0.36, 0.08)), 0, 1.65, 0);
+    put(_tkMesh(_tkExtrude(s, 0.55, 0.15)), 0, 1.65, 0);
   } else if(id==='rayo'){
     const s = new THREE.Shape();
     s.moveTo(0.2,1.1); s.lineTo(-0.6,-0.05); s.lineTo(-0.1,-0.05); s.lineTo(-0.35,-1.1);
     s.lineTo(0.6,0.15); s.lineTo(0.08,0.15); s.lineTo(0.55,1.1); s.closePath();
     put(_tkMesh(new THREE.CylinderGeometry(0.1,0.18,0.3,16)), 0, 0.55, 0);
-    put(_tkMesh(_tkExtrude(s, 0.3, 0.07)), 0, 1.6, 0);
+    put(_tkMesh(_tkExtrude(s, 0.48, 0.14)), 0, 1.6, 0);
   } else if(id==='luna'){
     const s = new THREE.Shape(); const R = 0.95, r = 0.75, cx = 0.4;
     const t0 = Math.acos((R*R + cx*cx - r*r)/(2*R*cx));      // donde se cruzan los dos círculos
@@ -11010,15 +11119,15 @@ function buildTokenShape(id){
     for(let k=0;k<=40;k++){ const u = a0 + (a1-a0)*k/40; s.lineTo(cx+Math.cos(u)*r, Math.sin(u)*r); }
     s.closePath();
     put(_tkMesh(new THREE.CylinderGeometry(0.1,0.18,0.3,16)), 0, 0.55, 0);
-    const m = _tkMesh(_tkExtrude(s, 0.34, 0.08)); m.rotation.z = Math.PI/10; put(m, -0.05, 1.5, 0);
+    const m = _tkMesh(_tkExtrude(s, 0.52, 0.15)); m.rotation.z = Math.PI/10; put(m, -0.05, 1.5, 0);
   } else if(id==='escudo'){
     const s = new THREE.Shape();
     s.moveTo(-0.75,0.95); s.lineTo(0.75,0.95); s.lineTo(0.75,0.1);
     s.bezierCurveTo(0.75,-0.55,0.3,-0.9,0,-1.1);
     s.bezierCurveTo(-0.3,-0.9,-0.75,-0.55,-0.75,0.1); s.closePath();
     put(_tkMesh(new THREE.CylinderGeometry(0.1,0.18,0.3,16)), 0, 0.55, 0);
-    put(_tkMesh(_tkExtrude(s, 0.3, 0.08)), 0, 1.62, 0);
-    put(_tkMesh(_tkExtrude(_tkStar(0.34,0.15,5), 0.1, 0.03)), 0, 1.72, 0.26);
+    put(_tkMesh(_tkExtrude(s, 0.48, 0.14)), 0, 1.62, 0);
+    put(_tkMesh(_tkExtrude(_tkStar(0.34,0.15,5), 0.1, 0.03)), 0, 1.72, 0.4);
   } else if(id==='copa'){
     put(_tkMesh(_tkLathe([[0,0.4],[0.5,0.4],[0.52,0.5],[0.16,0.65],[0.12,1.0],[0.22,1.1],[0.62,1.6],[0.66,2.05],[0.56,2.1],[0.5,1.95],[0,1.55]])));
     [-1,1].forEach(sg=>{
@@ -11027,6 +11136,11 @@ function buildTokenShape(id){
     });
   } else {
     return null;
+  }
+  if(RETIRED_TOKENS.includes(id)){
+    // mismo acabado que Canica, Domo y Trompo: aro dorado en el borde de la base y en el cuello
+    put(_tkGold(_tkMesh(new THREE.TorusGeometry(0.68,0.05,12,56))), 0, 0.12, 0).rotation.x = Math.PI/2;
+    put(_tkGold(_tkMesh(new THREE.TorusGeometry(0.23,0.06,12,40))), 0, 0.5, 0).rotation.x = Math.PI/2;
   }
   return g;
 }
@@ -11143,7 +11257,9 @@ function create3DTokenMesh(color){
   group.name = 'token3d-'+color;
   const colorHex = PLAYER_COLOR_HEX[color]||0xffffff;
   const PAWN_SCALE = 0.58 * 1.1; // fichas más grandes para que se vean sobre los números
-  const skinId = (TEST_BLUE_FOX && color==='blue') ? 'zorro' : tokenSkinForColor(color);
+  let skinId = (TEST_BLUE_FOX && color==='blue') ? 'zorro' : tokenSkinForColor(color);
+  const finishId = (skinId && PAWN_FINISH[skinId]) ? skinId : null;
+  if(finishId) skinId = null;   // usa el modelo del peón, solo cambia el material
 
   function paintAndMount(scene, slot, walkerG){
     const model = walkerG ? scene : scene.clone(true);
@@ -11156,7 +11272,7 @@ function create3DTokenMesh(color){
       // salía diminuto): se normalizan todos a la misma altura/ancho en el tablero.
       model.scale.setScalar(1); model.position.set(0,0,0); model.updateMatrixWorld(true);
       const bb = new THREE.Box3().setFromObject(model), sz = new THREE.Vector3(); bb.getSize(sz);
-      const k = (TOKEN_SAME_BASE.includes(skinId) ? 1.0 : Math.min(1.28/(sz.y||1), 0.85/(Math.max(sz.x,sz.z)||1))) * (TOKEN_SCALE[skinId]||1);   // mismo tamaño que el peón (0.82 ancho × 1.28 alto)
+      const k = (TOKEN_SAME_BASE.includes(skinId) ? 1.0 : Math.min(1.28/(sz.y||1), (CODE_TOKENS.includes(skinId) ? 0.82 : 0.85)/(Math.max(sz.x,sz.z)||1))) * (TOKEN_SCALE[skinId]||1);   // mismo tamaño que el peón (0.82 ancho × 1.28 alto)
       model.scale.setScalar(k); model.updateMatrixWorld(true);
       const b2 = new THREE.Box3().setFromObject(model), c = new THREE.Vector3(); b2.getCenter(c);
       model.position.set(-c.x, -b2.min.y, -c.z);
@@ -11231,7 +11347,8 @@ function create3DTokenMesh(color){
         } else {
           // Sin textura (ficha clásica u otro modelo neutro) — se sigue
           // tiñendo entera con el color del jugador, como siempre.
-          o.material.color = new THREE.Color(colorHex);
+          if(!(o.material.userData && o.material.userData.keep)) o.material.color = new THREE.Color(colorHex);
+          if(finishId) applyPawnFinish(o.material, finishId, colorHex);
         }
       }
     });
@@ -17750,7 +17867,7 @@ function selectSkinColor(color){
 
 function tokenOptions(){
   return [{id:'clasico', name:'Clásico', emoji:'♟️'}].concat(
-    Object.keys(ANIMAL_NAMES).filter(id=>!PASS_ONLY_TOKENS.includes(id) || tokenOwned(id)).map(id=>({id, name:ANIMAL_NAMES[id], emoji:ANIMAL_EMOJI[id]}))
+    Object.keys(ANIMAL_NAMES).filter(id=>(!PASS_ONLY_TOKENS.includes(id) && !RETIRED_TOKENS.includes(id)) || tokenOwned(id)).map(id=>({id, name:ANIMAL_NAMES[id], emoji:ANIMAL_EMOJI[id]}))
   );
 }
 function tokenOwned(id){
@@ -17928,7 +18045,7 @@ async function tokBuildModel(id, color){
   }
   let model;
   if(TOKEN_WALKERS.includes(id)){ model = (await loadWalkerFresh(id)).scene; }
-  else { const src = await (id==='clasico' ? loadPawnModelOnce() : loadAnimalModelOnce(id)); model = src.clone(true); }
+  else { const src = await ((id==='clasico' || PAWN_FINISH[id]) ? loadPawnModelOnce() : loadAnimalModelOnce(id)); model = src.clone(true); }
   let hasTex = false;
   model.traverse(o=>{
     if(o.isMesh){
@@ -17951,7 +18068,7 @@ async function tokBuildModel(id, color){
         o.material.needsUpdate = true;
       }
       else if(o.material.map){ o.material.color.set(0xffffff); hasTex = true; }
-      else o.material.color = new THREE.Color(TOK_ICON_COLOR[color]||0xffffff);
+      else if(!(o.material.userData && o.material.userData.keep)) { o.material.color = new THREE.Color(TOK_ICON_COLOR[color]||0xffffff); if(PAWN_FINISH[id]) applyPawnFinish(o.material, id, TOK_ICON_COLOR[color]||0xffffff); }
     }
   });
   if(TOKEN_FRONT_FIX[id]) model.rotation.y = TOKEN_FRONT_FIX[id];
