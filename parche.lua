@@ -550,14 +550,12 @@ end
 local function rpc_tour_claim(context, payload)
   local uid = context.user_id
   if not uid then return reply({ ok = false, error = "sin_sesion" }) end
-  local dbg = {}
   for _, cup in ipairs(TOUR_ORDER) do
     local info = tour_info_of(cup)
     local prev = info and tonumber(info.prev_reset) or 0
     local nr = info and tonumber(info.next_reset) or 0
     -- si el servidor no da prev_reset, sale de next_reset (la copa se reinicia cada 24 h)
     if prev <= 0 and nr > 0 then prev = nr - 86400 end
-    dbg[cup] = tostring(prev) .. "/" .. tostring(prev > 0 and tour_joined(uid, cup, prev - 86400))
     -- la entrada se guarda con el INICIO del periodo; el periodo que acaba de cerrar empezo un dia antes de prev_reset
     if prev > 0 and tour_joined(uid, cup, prev - 86400) then
       local key = cup .. "_" .. tostring(prev)
@@ -605,7 +603,7 @@ local function rpc_tour_claim(context, payload)
       out[#out + 1] = { key = o.key, kind = v.kind, cup = v.cup, gold = v.gold or 0 }
     end
   end
-  return reply({ ok = true, grants = out, count = #out, dbg = dbg })
+  return reply({ ok = true, grants = out, count = #out })
 end
 
 local function rpc_tour_ack(context, payload)
