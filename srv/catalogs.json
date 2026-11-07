@@ -1,0 +1,3912 @@
+{
+ "DICE_CATALOG": [
+  {
+   "id": "classic",
+   "name": "Clásico",
+   "img": null
+  },
+  {
+   "id": "mascara",
+   "name": "Máscara tribal",
+   "img": "b/1cb58a5614289e22e3a6cae0b40c9c4f.webp"
+  },
+  {
+   "id": "astronauta",
+   "name": "Casco de astronauta",
+   "img": "b/831adb3700d7f2f35586461cbb9dd902.webp"
+  },
+  {
+   "id": "calavera",
+   "name": "Calavera mexicana",
+   "img": "b/27fb601aeebb1ecdc01ea1fd7a83dc6f.webp"
+  },
+  {
+   "id": "casete",
+   "name": "Casete rosa",
+   "img": "b/1c917fb125ff998aa4aee31f03e4a4c1.webp"
+  },
+  {
+   "id": "dragon",
+   "name": "Dragón de cristal",
+   "img": "b/90b43e5c0549d528b280fcf3dc69aaca.webp"
+  },
+  {
+   "id": "boombox",
+   "name": "Radio boombox",
+   "img": "b/83fe631386f9bf7413f84f0a78b52bf0.webp"
+  },
+  {
+   "id": "reloj",
+   "name": "Reloj de bolsillo",
+   "img": "b/b9e122309d59f6bbded23ca943f6fea6.webp"
+  },
+  {
+   "id": "volcan",
+   "name": "Volcán",
+   "img": "b/2a8ef9498bf35252eb5c90f6b94a23d1.webp"
+  },
+  {
+   "id": "pulpo",
+   "name": "Pulpo ninja con dagas",
+   "img": "b/6a06cefbe6768c2a65c6080a436ecf83.webp"
+  },
+  {
+   "id": "platillo",
+   "name": "Platillo volador",
+   "img": "b/d19593a13684d201efeb3e27afacc8b6.webp"
+  },
+  {
+   "id": "corona",
+   "name": "Corona real",
+   "img": "b/24d1e320169079c7df918d2babd73464.webp"
+  },
+  {
+   "id": "fenix",
+   "name": "Fénix de fuego",
+   "img": "b/2bf9d8809f50757d7ac92925557c3d24.webp"
+  },
+  {
+   "id": "lobo",
+   "name": "Lobo de luna",
+   "img": "b/994e932e8baf12373144d9f96389d01a.webp"
+  },
+  {
+   "id": "tigre",
+   "name": "Tigre rugiente",
+   "img": "b/4c558e8d60c8b0b1c29b6a00f0d573ed.webp"
+  },
+  {
+   "id": "aguila",
+   "name": "Águila",
+   "img": "b/42418b51a5944358b90003d40d0f81d9.webp"
+  },
+  {
+   "id": "zorro",
+   "name": "Zorro ártico",
+   "img": "b/7b9647486a3caa261b26cc3c2a6f7b29.webp"
+  },
+  {
+   "id": "buho",
+   "name": "Búho nocturno",
+   "img": "b/9df9a33c995d505866e61b27f6837e51.webp"
+  },
+  {
+   "id": "unicornio",
+   "name": "Unicornio",
+   "img": "b/2799cd50ba81cc60a461a681c1c17a96.webp"
+  },
+  {
+   "id": "pirata",
+   "name": "Calavera pirata",
+   "img": "b/eabdf396475d8317d067a45eb66b55f8.webp"
+  },
+  {
+   "id": "ancla",
+   "name": "Ancla dorada",
+   "img": "b/89cd152faba7998956c17cf51b76e63b.webp"
+  },
+  {
+   "id": "brujula",
+   "name": "Brújula del tesoro",
+   "img": "b/8d2a042ee3b81f4ed80fd720c298f88a.webp"
+  },
+  {
+   "id": "rayo",
+   "name": "Rayo violeta",
+   "img": "b/1c103f948d9f3462f2612f27f3a33d7f.webp"
+  },
+  {
+   "id": "copo",
+   "name": "Copo de hielo",
+   "img": "b/7a9966d3ee9bba0c711d21eefb063fc9.webp"
+  },
+  {
+   "id": "cometa",
+   "name": "Cometa de fuego",
+   "img": "b/0514f7118f35a2c6a3ce6d701b2d8889.webp"
+  },
+  {
+   "id": "trebol",
+   "name": "Trébol de la suerte",
+   "img": "b/8576d8c7c58e1a516658002050370824.webp"
+  },
+  {
+   "id": "herradura",
+   "name": "Herradura de la suerte",
+   "img": "b/504f15b8cf31fe268d27ff8c9d5f412b.webp"
+  },
+  {
+   "id": "dona",
+   "name": "Dona rosada",
+   "img": "b/b730e16d4f9394eca81c1fd968360328.webp"
+  },
+  {
+   "id": "helado",
+   "name": "Helado con cereza",
+   "img": "b/517669c61c238a0645cc78bd30b32b62.webp"
+  },
+  {
+   "id": "cupcake",
+   "name": "Cupcake",
+   "img": "b/8dd587e743878b47bd69412448fbc42b.webp"
+  },
+  {
+   "id": "pizza",
+   "name": "Pizza",
+   "img": "b/fa802e3e8943c173f9a899e6a155bde7.webp"
+  },
+  {
+   "id": "hamburguesa",
+   "name": "Hamburguesa",
+   "img": "b/364af655a098dd6662a134d757d59918.webp"
+  },
+  {
+   "id": "sandia",
+   "name": "Sandía",
+   "img": "b/8e22e9ba2ac1724e4b828596278eb331.webp"
+  },
+  {
+   "id": "robot",
+   "name": "Robot",
+   "img": "b/9dbfb94a4e01c92e93efb5af953e4c9d.webp"
+  },
+  {
+   "id": "cohete",
+   "name": "Cohete espacial",
+   "img": "b/824e9c41b25927591ba0f2b54e8d1178.webp"
+  },
+  {
+   "id": "saturno",
+   "name": "Saturno",
+   "img": "b/6122b594c4f48432f5401914bcf735ec.webp"
+  },
+  {
+   "id": "luna",
+   "name": "Luna dormida",
+   "img": "b/c229a1c0f460f4e5a1e3a722c738fee5.webp"
+  },
+  {
+   "id": "sol",
+   "name": "Sol sonriente",
+   "img": "b/532485e2c861143cf4be8a9092486635.webp"
+  },
+  {
+   "id": "arcoiris",
+   "name": "Arcoíris",
+   "img": "b/d7b84c59879a3c0b46d268b134c1525c.webp"
+  },
+  {
+   "id": "medusa",
+   "name": "Medusa brillante",
+   "img": "b/821c85a09a179dabbb4e0293bd20b999.webp"
+  },
+  {
+   "id": "tiburon",
+   "name": "Tiburón",
+   "img": "b/2e82fa310ca9cfdc7b8b6772b01cf334.webp"
+  },
+  {
+   "id": "caballito",
+   "name": "Caballito de mar",
+   "img": "b/db41db3f29c0ca16b071cee26432b41c.webp"
+  },
+  {
+   "id": "mariposa",
+   "name": "Mariposa azul",
+   "img": "b/6cc006ab326e65f754559d331ac43d50.webp"
+  },
+  {
+   "id": "rosa",
+   "name": "Rosa roja",
+   "img": "b/4211de4c4212fc7376dc2cc34db4847b.webp"
+  },
+  {
+   "id": "girasol",
+   "name": "Girasol",
+   "img": "b/1de9de13623620e6cfb1414007de4a85.webp"
+  },
+  {
+   "id": "loto",
+   "name": "Flor de loto",
+   "img": "b/6d5b949f1f0768c8ef277fe3b8fc5c40.webp"
+  },
+  {
+   "id": "cactus",
+   "name": "Cactus florido",
+   "img": "b/af05394a5ba06d259e0ae99c1a23b487.webp"
+  },
+  {
+   "id": "hongo",
+   "name": "Hongo mágico",
+   "img": "b/c6131f7072623e243ea6ddb617ae7229.webp"
+  },
+  {
+   "id": "pocion",
+   "name": "Poción morada",
+   "img": "b/afe0e815904377d21970ec08629cbe70.webp"
+  },
+  {
+   "id": "gato",
+   "name": "Gato negro",
+   "img": "b/6d2edf6a912b03a57017f343f8059c01.webp"
+  },
+  {
+   "id": "calabaza",
+   "name": "Calabaza",
+   "img": "b/3f5510292a80a0c11ab5c7f007819214.webp"
+  },
+  {
+   "id": "fantasma",
+   "name": "Fantasma",
+   "img": "b/8c2bd1b0765d0527f3e79b78f25156fe.webp"
+  },
+  {
+   "id": "espada",
+   "name": "Espada en la roca",
+   "img": "b/899ecf90116292e464fe26e037b5f2b9.webp"
+  },
+  {
+   "id": "dep_billar",
+   "name": "Bola 8",
+   "img": "b/44ca55e351ee7e3a8a7e8fb05e97dd55.webp"
+  },
+  {
+   "id": "dep_boxeo",
+   "name": "Guantes de boxeo",
+   "img": "b/83abc702c399221f0f4c997cd9aef4d0.webp"
+  },
+  {
+   "id": "dep_baloncesto",
+   "name": "Baloncesto",
+   "img": "b/0f1e7976be9a02899fb200fd23d8e2cf.webp"
+  },
+  {
+   "id": "dep_futbol",
+   "name": "Fútbol",
+   "img": "b/0217bd259a6bea6899474500187e0408.webp"
+  },
+  {
+   "id": "dep_beisbol",
+   "name": "Béisbol",
+   "img": "b/e23314a3c6bb8af17792de20ba8cc3f8.webp"
+  },
+  {
+   "id": "dep_carreras",
+   "name": "Bandera de carreras",
+   "img": "b/ece498cd43f5a1719fcc70ca2d6337ad.webp"
+  },
+  {
+   "id": "dep_arbolito",
+   "name": "Árbol navideño",
+   "img": "b/6954b9dfc647f8b656b8480b120b033a.webp"
+  },
+  {
+   "id": "dep_globo_nieve",
+   "name": "Globo de nieve",
+   "img": "b/fc9eb59a0d952087ea5fb57d84f0e1f0.webp"
+  },
+  {
+   "id": "dep_santa",
+   "name": "Papá Noel en trineo",
+   "img": "b/2815594188cfb2ce6af73aeb93614417.webp"
+  },
+  {
+   "id": "ex_geoda",
+   "name": "Geoda de amatista",
+   "img": "b/1d3e4fb3046a26c258fbd86258b20144.webp",
+   "exotic": true,
+   "price": 1500
+  },
+  {
+   "id": "ex_aurora",
+   "name": "Aurora boreal",
+   "img": "b/ee59017b788cd3d654eedef82596d15d.webp",
+   "exotic": true,
+   "price": 1500
+  },
+  {
+   "id": "ex_corona_oro",
+   "name": "Corona de oro",
+   "img": "b/22ab5e411a19b14ab34a8ae23aeaf95c.webp",
+   "exotic": true,
+   "price": 1500
+  },
+  {
+   "id": "ex_tormenta",
+   "name": "Tormenta en cristal",
+   "img": "b/8d51ee36d0e0807f689f92d2c1e97c77.webp",
+   "exotic": true,
+   "price": 1500
+  },
+  {
+   "id": "ex_lava",
+   "name": "Lava y obsidiana",
+   "img": "b/260454b4e871dd0d23568acea2a35625.webp",
+   "exotic": true,
+   "price": 1500
+  },
+  {
+   "id": "ex_perla",
+   "name": "Perla negra",
+   "img": "b/0eb8aa4b99dd5add085116d87094d094.webp",
+   "exotic": true,
+   "price": 1500
+  },
+  {
+   "id": "ex_hielo",
+   "name": "Hielo eterno",
+   "img": "b/2ea564bbe9139a5c64672d3ad0056331.webp",
+   "exotic": true,
+   "price": 1500
+  },
+  {
+   "id": "ex_nebulosa",
+   "name": "Nebulosa galáctica",
+   "img": "b/b49d5006db54ec3c570e123fefc90912.webp",
+   "exotic": true,
+   "price": 1500
+  },
+  {
+   "id": "ex_engranajes",
+   "name": "Engranajes de oro",
+   "img": "b/e11ed5912489c061dcb760e7444943db.webp",
+   "exotic": true,
+   "price": 1500
+  },
+  {
+   "id": "ex_mascara",
+   "name": "Máscara veneciana",
+   "img": "b/af4452698693699378552fdac1bcf56c.webp",
+   "exotic": true,
+   "price": 1500
+  },
+  {
+   "id": "ex_ojo_dragon",
+   "name": "Ojo de dragón",
+   "img": "b/316ce91c8d30b3ab3a6f5b212cdd86be.webp",
+   "exotic": true,
+   "price": 1500
+  },
+  {
+   "id": "ex_mariposa",
+   "name": "Mariposa de cristal",
+   "img": "b/d0ad09788ffd0bcd09d65a13895819c1.webp",
+   "exotic": true,
+   "price": 1500
+  },
+  {
+   "id": "ex_pluma",
+   "name": "Pluma de fénix",
+   "img": "b/b1aba2c29a8117c8ee34bdcecb21edf3.webp",
+   "exotic": true,
+   "price": 1500
+  },
+  {
+   "id": "ex_arcana",
+   "name": "Energía arcana",
+   "img": "b/e0f06b87938ed411240f1d95979743ad.webp",
+   "exotic": true,
+   "price": 1500
+  },
+  {
+   "id": "ex_corona_rey",
+   "name": "Corona de rey",
+   "img": "b/c9b9eae09f787284ca8507a0642862bb.webp",
+   "exotic": true,
+   "price": 1500
+  },
+  {
+   "id": "ex_cerezo",
+   "name": "Cerezo de medianoche",
+   "img": "b/40ba46f947d3f8f37c9c6c9ad9075238.webp",
+   "exotic": true,
+   "price": 1500
+  },
+  {
+   "id": "ex_zafiro",
+   "name": "Zafiro estrellado",
+   "img": "b/be8da0c8bf94097b3ccfcbe15fed2a25.webp",
+   "exotic": true,
+   "price": 1500
+  },
+  {
+   "id": "ex_reloj_arena",
+   "name": "Reloj de arena",
+   "img": "b/4c9aeba82d38c97fa47dc1aabb5da0c7.webp",
+   "exotic": true,
+   "price": 1500
+  },
+  {
+   "id": "ex_dragon_jade",
+   "name": "Dragón de jade",
+   "img": "b/2f958262d44cfd8a33b5d0bb873a8fb5.webp",
+   "exotic": true,
+   "price": 1500
+  },
+  {
+   "id": "pd_galaxia",
+   "name": "Galaxia dorada",
+   "img": "b/d9864baa66d3779672e2acda2f05ec8c.webp",
+   "passOnly": true
+  },
+  {
+   "id": "pd_dragon",
+   "name": "Escamas de dragón",
+   "img": "b/e67caee4905e58dad530616aa7cd9370.webp",
+   "passOnly": true
+  },
+  {
+   "id": "pd_cristal",
+   "name": "Cristal encantado",
+   "img": "b/5fd8b8188a1c77e1dd236dbc37feb126.webp",
+   "passOnly": true
+  },
+  {
+   "id": "ex_loto",
+   "name": "Loto de cristal",
+   "img": "b/9b69248d35e228b018be22664a1c1c10.webp",
+   "exotic": true,
+   "price": 1500
+  },
+  {
+   "id": "an_brujula",
+   "name": "Brújula de bronce",
+   "img": "b/07a67d0f6a80abba16562c0b57370cf8.webp",
+   "anfora": true,
+   "easy": true
+  },
+  {
+   "id": "an_llave",
+   "name": "Llave dorada",
+   "img": "b/071882cd2c3363179b4d826a3ea3f42f.webp",
+   "anfora": true,
+   "easy": true
+  },
+  {
+   "id": "an_mapa",
+   "name": "Mapa del tesoro",
+   "img": "b/78bc8218dbf06b8978160b9b15bc465e.webp",
+   "anfora": true,
+   "easy": true
+  },
+  {
+   "id": "an_lampara",
+   "name": "Lámpara mágica",
+   "img": "b/bd73b8cd49c49472796d1a6e4ebb39d1.webp",
+   "anfora": true
+  },
+  {
+   "id": "an_rayo",
+   "name": "Rayo de cristal",
+   "img": "b/12d24a15efc01e7f097bf54edd199e46.webp",
+   "anfora": true
+  },
+  {
+   "id": "an_lobo",
+   "name": "Lobo y luna llena",
+   "img": "b/dc6f796546dbe1d663abdb3e723fc623.webp",
+   "anfora": true
+  },
+  {
+   "id": "an_cuerno",
+   "name": "Cuerno vikingo",
+   "img": "b/ff855e81fb692bae8a51498f0831a39a.webp",
+   "anfora": true
+  },
+  {
+   "id": "an_ancla",
+   "name": "Ancla de oro",
+   "img": "b/d3082ab0dd401080c1ff8d7fa958d4c8.webp",
+   "anfora": true,
+   "easy": true
+  },
+  {
+   "id": "an_telescopio",
+   "name": "Telescopio de latón",
+   "img": "b/ce3fe4343a9d987606ae73deb4ab0840.webp",
+   "anfora": true
+  },
+  {
+   "id": "an_linterna",
+   "name": "Linterna flotante",
+   "img": "b/96ad270be160f3686447f5fa9718bcb8.webp",
+   "anfora": true,
+   "easy": true
+  },
+  {
+   "id": "an_guantelete",
+   "name": "Guantelete de acero",
+   "img": "b/721ca6809e8021d2b5b77a507e65361b.webp",
+   "anfora": true
+  },
+  {
+   "id": "an_estrella",
+   "name": "Estrella fugaz",
+   "img": "b/c7f26ef6cea5062aafb917e5d2c1c279.webp",
+   "anfora": true
+  },
+  {
+   "id": "an_anillo",
+   "name": "Anillo de esmeralda",
+   "img": "b/d16994b743583ba49e8f74141fe32e9c.webp",
+   "anfora": true
+  },
+  {
+   "id": "an_escudo",
+   "name": "Escudo y espadas",
+   "img": "b/0bd051c0f7cd550c5986cf6551a54304.webp",
+   "anfora": true
+  },
+  {
+   "id": "an_medalla",
+   "name": "Medalla de campeón",
+   "img": "b/1c4e63625909766d4cd199f81f1b9b25.webp",
+   "anfora": true
+  },
+  {
+   "id": "an_trebol",
+   "name": "Trébol de esmeralda",
+   "img": "b/4f0d980318c78eeb2319d3ee393fb9fd.webp",
+   "anfora": true
+  },
+  {
+   "id": "an_copa",
+   "name": "Copa de campeón",
+   "img": "b/5e689323bb1c1010b7c14a2dbd85b90a.webp",
+   "anfora": true
+  },
+  {
+   "id": "an_flor",
+   "name": "Flor de fuego",
+   "img": "b/78a691240ad30d55200d8bf77036aa65.webp",
+   "anfora": true
+  },
+  {
+   "id": "an_barco",
+   "name": "Barco en botella",
+   "img": "b/77f6abb4031f73367cf550af28c66b05.webp",
+   "anfora": true
+  },
+  {
+   "id": "an_buho",
+   "name": "Búho mecánico",
+   "img": "b/f0258226c08f51dfb17019745a4ce5e5.webp",
+   "anfora": true
+  },
+  {
+   "id": "n_pastel",
+   "name": "Pastel de cumpleaños",
+   "img": "b/2575ee557859b7d1ff5356849fea5dae.webp"
+  },
+  {
+   "id": "n_rubi",
+   "name": "Corazón de rubí",
+   "img": "b/27537a8cec86c2ba5346b78597692b3f.webp"
+  },
+  {
+   "id": "n_pez",
+   "name": "Pez dorado",
+   "img": "b/cd30f6199014561ca3d73a9dcf6a2865.webp"
+  },
+  {
+   "id": "n_guitarra",
+   "name": "Guitarra eléctrica",
+   "img": "b/7ab669cbaacbbbfe2639dc774d9e7628.webp"
+  },
+  {
+   "id": "n_zorro",
+   "name": "Zorro naranja",
+   "img": "b/2cf84d69594d4b17f12dd23cf9d9a7e1.webp"
+  },
+  {
+   "id": "n_cangrejo",
+   "name": "Cangrejo",
+   "img": "b/20927e8988f847140c9f7d648fa3b4a0.webp"
+  },
+  {
+   "id": "n_tambor",
+   "name": "Tambor y baquetas",
+   "img": "b/23d1813f74c30ab4e9c8dc87bc00a342.webp"
+  },
+  {
+   "id": "n_semaforo",
+   "name": "Semáforo",
+   "img": "b/89e92d25c7f1670431310f4ba665185c.webp"
+  },
+  {
+   "id": "n_dragon",
+   "name": "Dragón bebé",
+   "img": "b/aa4a68ecc750ea106f8d33e05acaf883.webp"
+  },
+  {
+   "id": "n_tortuga",
+   "name": "Tortuga marina",
+   "img": "b/d66aa8507d0d7c901290d3a09d557241.webp"
+  },
+  {
+   "id": "n_pinguino",
+   "name": "Pingüino",
+   "img": "b/d055cf1f9ea7d8e0f96ca833bd5042ac.webp"
+  },
+  {
+   "id": "n_panda",
+   "name": "Panda",
+   "img": "b/6cbd2c3154e3af37694e0ba872e956fd.webp"
+  },
+  {
+   "id": "n_rana",
+   "name": "Rana",
+   "img": "b/a5ee835d429a9f27bfe946cd8b53373b.webp"
+  },
+  {
+   "id": "n_abeja",
+   "name": "Abeja con panal",
+   "img": "b/2a28d2bc7ee93a716664ddeb193bdc56.webp"
+  },
+  {
+   "id": "n_tucan",
+   "name": "Tucán",
+   "img": "b/3e4ad0d9121e1085b8d83102c60b5b66.webp"
+  },
+  {
+   "id": "n_faro",
+   "name": "Faro",
+   "img": "b/05f20d3bfda82174f4e63455cf2fbb3c.webp"
+  },
+  {
+   "id": "n_castillo",
+   "name": "Castillo",
+   "img": "b/b72c9abbf1db8be5ace0d2650f4a82c7.webp"
+  },
+  {
+   "id": "n_tren",
+   "name": "Tren de vapor",
+   "img": "b/4f40257c478bcd7ff1d43f609cb6efc3.webp"
+  },
+  {
+   "id": "n_submarino",
+   "name": "Submarino",
+   "img": "b/2816a107f195e9dd36f71de5faa84572.webp"
+  },
+  {
+   "id": "n_globo",
+   "name": "Globo aerostático",
+   "img": "b/d8b5ab3d88020b71071266d47e9deec2.webp"
+  }
+ ],
+ "AVATAR_CATALOG": [
+  {
+   "id": "av0",
+   "tier": "basic",
+   "name": "Sin foto",
+   "svg": {
+    "bg": [
+     "#d9dde6",
+     "#aab2c2"
+    ],
+    "custom": "<circle cx=\"50\" cy=\"38\" r=\"17\" fill=\"#f3f5f9\"/><path d=\"M14 100 Q16 66 50 64 Q84 66 86 100Z\" fill=\"#f3f5f9\"/>"
+   },
+   "plain": true
+  },
+  {
+   "id": "av1",
+   "tier": "basic",
+   "name": "Lucas",
+   "svg": {
+    "bg": [
+     "#fff3c4",
+     "#f3cf6b"
+    ],
+    "skin": "#f6d3b0",
+    "hair": "side",
+    "hc": "#c9a15a",
+    "eyes": "normal",
+    "mouth": "smile",
+    "shirt": "#2f4b8a"
+   }
+  },
+  {
+   "id": "av2",
+   "tier": "basic",
+   "name": "Mía",
+   "svg": {
+    "bg": [
+     "#d7f2ee",
+     "#8fd4c8"
+    ],
+    "skin": "#f3cfae",
+    "hair": "long",
+    "hc": "#2b1d17",
+    "eyes": "normal",
+    "mouth": "red",
+    "shirt": "#14b3a0"
+   }
+  },
+  {
+   "id": "av3",
+   "tier": "basic",
+   "name": "Rafa",
+   "svg": {
+    "bg": [
+     "#c8e6f7",
+     "#78b4de"
+    ],
+    "skin": "#9b6b4a",
+    "hair": "curly",
+    "hc": "#1d140f",
+    "eyes": "shades",
+    "mouth": "smile",
+    "shirt": "#c9372f"
+   }
+  },
+  {
+   "id": "av4",
+   "tier": "basic",
+   "name": "Sofi",
+   "svg": {
+    "bg": [
+     "#d9f5b8",
+     "#8ed14e"
+    ],
+    "skin": "#d9a077",
+    "hair": "long",
+    "hc": "#14110f",
+    "eyes": "glasses",
+    "gc": "#f2c014",
+    "mouth": "red",
+    "shirt": "#d65fb0"
+   }
+  },
+  {
+   "id": "av5",
+   "tier": "basic",
+   "name": "Vera",
+   "svg": {
+    "bg": [
+     "#cfeadf",
+     "#6fb39a"
+    ],
+    "skin": "#f1c9a1",
+    "hair": "curly",
+    "hc": "#c99a4b",
+    "eyes": "shades",
+    "mouth": "grin",
+    "shirt": "#7a3fa6"
+   }
+  },
+  {
+   "id": "av6",
+   "tier": "basic",
+   "name": "Abu Leo",
+   "svg": {
+    "bg": [
+     "#fde6c0",
+     "#e5b36a"
+    ],
+    "skin": "#d9a982",
+    "hair": "short",
+    "hc": "#d8d8dc",
+    "eyes": "shades",
+    "mouth": "smile",
+    "shirt": "#f4f4f6"
+   }
+  },
+  {
+   "id": "av7",
+   "tier": "basic",
+   "name": "Dani",
+   "svg": {
+    "bg": [
+     "#c9e8c0",
+     "#74b65e"
+    ],
+    "skin": "#f1c9a1",
+    "hair": "short",
+    "hc": "#2b1d17",
+    "eyes": "normal",
+    "mouth": "smile",
+    "shirt": "#4c9a3f"
+   }
+  },
+  {
+   "id": "av8",
+   "tier": "basic",
+   "name": "Kai",
+   "svg": {
+    "bg": [
+     "#f3e3ff",
+     "#c1a0ea"
+    ],
+    "skin": "#e8b88f",
+    "hair": "spiky",
+    "hc": "#14110f",
+    "eyes": "glasses",
+    "gc": "#3a2a1c",
+    "mouth": "smile",
+    "shirt": "#7a5bd1"
+   }
+  },
+  {
+   "id": "av9",
+   "tier": "basic",
+   "name": "Gus",
+   "svg": {
+    "bg": [
+     "#bfe8f2",
+     "#4fa9c2"
+    ],
+    "skin": "#e9bf98",
+    "hair": "short",
+    "hc": "#8a8a90",
+    "beard": "#9a9aa0",
+    "eyes": "normal",
+    "mouth": "smile",
+    "shirt": "#2b6b8f"
+   }
+  },
+  {
+   "id": "av11",
+   "tier": "basic",
+   "name": "Sam",
+   "svg": {
+    "bg": [
+     "#ffe0d0",
+     "#f29a78"
+    ],
+    "skin": "#f6d3b0",
+    "hair": "bun",
+    "hc": "#a8481f",
+    "eyes": "normal",
+    "mouth": "o",
+    "shirt": "#e24c3b"
+   }
+  },
+  {
+   "id": "av12",
+   "tier": "basic",
+   "name": "Nico",
+   "svg": {
+    "bg": [
+     "#ffe9c7",
+     "#f0b86a"
+    ],
+    "skin": "#e8b88f",
+    "hair": "buzz",
+    "hc": "#3a2a1c",
+    "eyes": "normal",
+    "mouth": "smile",
+    "shirt": "#d6432f"
+   }
+  },
+  {
+   "id": "av13",
+   "tier": "basic",
+   "name": "Lía",
+   "svg": {
+    "bg": [
+     "#e6dcff",
+     "#a98ae6"
+    ],
+    "skin": "#f3cfae",
+    "hair": "bob",
+    "hc": "#14110f",
+    "eyes": "normal",
+    "mouth": "red",
+    "shirt": "#7a4fd1"
+   }
+  },
+  {
+   "id": "av14",
+   "tier": "basic",
+   "name": "Omar",
+   "svg": {
+    "bg": [
+     "#d3efe0",
+     "#5fb88a"
+    ],
+    "skin": "#9b6b4a",
+    "hair": "short",
+    "hc": "#14110f",
+    "beard": "#241a14",
+    "eyes": "normal",
+    "mouth": "grin",
+    "shirt": "#1f7a5a"
+   }
+  },
+  {
+   "id": "av15",
+   "tier": "basic",
+   "name": "Elena",
+   "svg": {
+    "bg": [
+     "#ffe0e6",
+     "#f08aa3"
+    ],
+    "skin": "#f6d3b0",
+    "hair": "pony",
+    "hc": "#b5441f",
+    "eyes": "normal",
+    "mouth": "smile",
+    "shirt": "#c2305a"
+   }
+  },
+  {
+   "id": "av16",
+   "tier": "basic",
+   "name": "Jorge",
+   "svg": {
+    "bg": [
+     "#cfe3ff",
+     "#6c9be0"
+    ],
+    "skin": "#d9a077",
+    "hair": "side",
+    "hc": "#2b1d17",
+    "eyes": "glasses",
+    "mouth": "smile",
+    "shirt": "#27447d"
+   }
+  },
+  {
+   "id": "av17",
+   "tier": "basic",
+   "name": "Ana",
+   "svg": {
+    "bg": [
+     "#fff0c9",
+     "#f2c14e"
+    ],
+    "skin": "#c68a5e",
+    "hair": "long",
+    "hc": "#1d140f",
+    "eyes": "normal",
+    "mouth": "smile",
+    "shirt": "#e07a1f"
+   }
+  },
+  {
+   "id": "av18",
+   "tier": "basic",
+   "name": "Teo",
+   "svg": {
+    "bg": [
+     "#d9f0ff",
+     "#4fb0e0"
+    ],
+    "skin": "#f1c9a1",
+    "hair": "spiky",
+    "hc": "#c9a15a",
+    "eyes": "normal",
+    "mouth": "grin",
+    "shirt": "#2a8f6b"
+   }
+  },
+  {
+   "id": "av19",
+   "tier": "basic",
+   "name": "Nuria",
+   "svg": {
+    "bg": [
+     "#ffd9cc",
+     "#ee8a6a"
+    ],
+    "skin": "#e8b88f",
+    "hair": "bun",
+    "hc": "#14110f",
+    "eyes": "glasses",
+    "mouth": "smile",
+    "shirt": "#8a3b8f"
+   }
+  },
+  {
+   "id": "av20",
+   "tier": "basic",
+   "name": "Bruno",
+   "svg": {
+    "bg": [
+     "#e3e3ea",
+     "#9aa0b4"
+    ],
+    "skin": "#f6d3b0",
+    "hair": "short",
+    "hc": "#6b3f1d",
+    "beard": "#6b3f1d",
+    "eyes": "normal",
+    "mouth": "flat",
+    "shirt": "#444b66"
+   }
+  },
+  {
+   "id": "av21",
+   "tier": "basic",
+   "name": "Camila",
+   "svg": {
+    "bg": [
+     "#d7f5ec",
+     "#6ccdb0"
+    ],
+    "skin": "#7a5238",
+    "hair": "curly",
+    "hc": "#120d0a",
+    "eyes": "normal",
+    "mouth": "red",
+    "shirt": "#f2a31f"
+   }
+  },
+  {
+   "id": "av22",
+   "tier": "basic",
+   "name": "Iván",
+   "svg": {
+    "bg": [
+     "#fbe3b5",
+     "#e6a94f"
+    ],
+    "skin": "#f6d3b0",
+    "hair": "buzz",
+    "hc": "#a8481f",
+    "eyes": "shades",
+    "mouth": "smile",
+    "shirt": "#3f5f2e"
+   }
+  },
+  {
+   "id": "av23",
+   "tier": "basic",
+   "name": "Luna",
+   "svg": {
+    "bg": [
+     "#e0e8ff",
+     "#8aa2ee"
+    ],
+    "skin": "#f3cfae",
+    "hair": "bob",
+    "hc": "#c9a15a",
+    "eyes": "normal",
+    "mouth": "o",
+    "shirt": "#4468d6"
+   }
+  },
+  {
+   "id": "av24",
+   "tier": "basic",
+   "name": "Hugo",
+   "svg": {
+    "bg": [
+     "#d8f2c9",
+     "#86c95e"
+    ],
+    "skin": "#e9bf98",
+    "hair": "side",
+    "hc": "#8a8a90",
+    "beard": "#9a9aa0",
+    "eyes": "normal",
+    "mouth": "smile",
+    "shirt": "#2f6f46"
+   }
+  },
+  {
+   "id": "av25",
+   "tier": "basic",
+   "name": "Paula",
+   "svg": {
+    "bg": [
+     "#ffe3f0",
+     "#f287ba"
+    ],
+    "skin": "#d9a077",
+    "hair": "pony",
+    "hc": "#2b1d17",
+    "eyes": "shades",
+    "mouth": "smile",
+    "shirt": "#e0457b"
+   }
+  },
+  {
+   "id": "av26",
+   "tier": "basic",
+   "name": "Marco",
+   "svg": {
+    "bg": [
+     "#cfeaf2",
+     "#5aa6c4"
+    ],
+    "skin": "#9b6b4a",
+    "hair": "spiky",
+    "hc": "#14110f",
+    "eyes": "glasses",
+    "mouth": "grin",
+    "shirt": "#c9422f"
+   }
+  },
+  {
+   "id": "av27",
+   "tier": "basic",
+   "name": "Alma",
+   "svg": {
+    "bg": [
+     "#f0e1ff",
+     "#b98aea"
+    ],
+    "skin": "#5a3a28",
+    "hair": "bun",
+    "hc": "#120d0a",
+    "eyes": "normal",
+    "mouth": "smile",
+    "shirt": "#e8c14a"
+   }
+  },
+  {
+   "id": "av28",
+   "tier": "basic",
+   "name": "Saúl",
+   "svg": {
+    "bg": [
+     "#e8edd0",
+     "#aebf62"
+    ],
+    "skin": "#c68a5e",
+    "hair": "short",
+    "hc": "#1d140f",
+    "beard": "#1d140f",
+    "eyes": "normal",
+    "mouth": "smile",
+    "shirt": "#5a6b2a"
+   }
+  },
+  {
+   "id": "av29",
+   "tier": "basic",
+   "name": "Julia",
+   "svg": {
+    "bg": [
+     "#ffe6c9",
+     "#f0a45a"
+    ],
+    "skin": "#f6d3b0",
+    "hair": "long",
+    "hc": "#a8481f",
+    "eyes": "glasses",
+    "mouth": "red",
+    "shirt": "#1f8a8f"
+   }
+  },
+  {
+   "id": "av30",
+   "tier": "basic",
+   "name": "Emilio",
+   "svg": {
+    "bg": [
+     "#d5e8ff",
+     "#79a6e8"
+    ],
+    "skin": "#e8b88f",
+    "hair": "side",
+    "hc": "#14110f",
+    "eyes": "shades",
+    "mouth": "grin",
+    "shirt": "#b2332f"
+   }
+  },
+  {
+   "id": "av31",
+   "tier": "basic",
+   "name": "Rosa",
+   "svg": {
+    "bg": [
+     "#ffd9e0",
+     "#ee7f95"
+    ],
+    "skin": "#7a5238",
+    "hair": "long",
+    "hc": "#14110f",
+    "eyes": "normal",
+    "mouth": "smile",
+    "shirt": "#6a3fd1"
+   }
+  },
+  {
+   "id": "spx1",
+   "tier": "special",
+   "name": "Exploradora espacial",
+   "price": 50,
+   "img": "b/2adccf5da3b0989fd74e81560cd0a5e0.webp",
+   "svg": null
+  },
+  {
+   "id": "spx2",
+   "tier": "special",
+   "name": "Zorro del festival",
+   "price": 50,
+   "img": "b/52a7a508c59169a03cafb6f2fabbb01a.webp",
+   "svg": null
+  },
+  {
+   "id": "spx3",
+   "tier": "special",
+   "name": "Robot amistoso",
+   "price": 50,
+   "img": "b/ca757071217c594b92aee96b78f5d0d1.webp",
+   "svg": null
+  },
+  {
+   "id": "spx4",
+   "tier": "special",
+   "name": "Explorador",
+   "price": 50,
+   "img": "b/db91192385f5f4297775a371ea49a4a1.webp",
+   "svg": null
+  },
+  {
+   "id": "spx5",
+   "tier": "special",
+   "name": "Guerrero dragón",
+   "price": 50,
+   "img": "b/41a56efa71ff3c815bab88abff6e11fd.webp",
+   "svg": null
+  },
+  {
+   "id": "spx6",
+   "tier": "special",
+   "name": "Detective",
+   "price": 50,
+   "img": "b/49dd9f9bbe0dd663aec3f4e4a6e004fd.webp",
+   "svg": null
+  },
+  {
+   "id": "spx7",
+   "tier": "special",
+   "name": "Buzo",
+   "price": 50,
+   "img": "b/1342c6d780952b3c4ff247fb87a54155.webp",
+   "svg": null
+  },
+  {
+   "id": "pa1",
+   "tier": "special",
+   "name": "Reina de Cristal",
+   "price": 99999,
+   "passOnly": true,
+   "img": "b/759af76652a27e0d2d3f776f85a8ad8c.webp",
+   "svg": null,
+   "pieces": 4
+  },
+  {
+   "id": "pa2",
+   "tier": "special",
+   "name": "Guardián del Dragón",
+   "price": 99999,
+   "passOnly": true,
+   "img": "b/f719efedcc6d336a78f1a3137450d98c.webp",
+   "svg": null,
+   "pieces": 4
+  },
+  {
+   "id": "pa3",
+   "tier": "special",
+   "name": "Hada del Bosque",
+   "price": 99999,
+   "passOnly": true,
+   "img": "b/bc65486f4989d25132642273ea489c7b.webp",
+   "svg": null,
+   "pieces": 4
+  },
+  {
+   "id": "pa4",
+   "tier": "special",
+   "name": "Capitán Estelar",
+   "price": 99999,
+   "passOnly": true,
+   "img": "b/0897d25b1d3126883f11b342664b3f66.webp",
+   "svg": null,
+   "pieces": 4
+  },
+  {
+   "id": "spx8",
+   "tier": "special",
+   "name": "Duende navideño",
+   "price": 50,
+   "img": "b/6d8559d129f81771c4b246e360ba7ffc.webp",
+   "svg": null
+  },
+  {
+   "id": "spy1",
+   "tier": "special",
+   "name": "Samurái",
+   "price": 50,
+   "img": "b/946cde7f391bd34c5cfb004bdc7acaca.webp",
+   "svg": null
+  },
+  {
+   "id": "spy2",
+   "tier": "special",
+   "name": "Faraón",
+   "price": 50,
+   "img": "b/4463624b213511f09048ec57264c962f.webp",
+   "svg": null
+  },
+  {
+   "id": "spy3",
+   "tier": "special",
+   "name": "Caballero",
+   "price": 50,
+   "img": "b/1751a999560271391d746fc64100ee43.webp",
+   "svg": null
+  },
+  {
+   "id": "spy4",
+   "tier": "special",
+   "name": "Gladiador",
+   "price": 50,
+   "img": "b/66643b2d293fa5dbe27a09f6c16b452a.webp",
+   "svg": null
+  },
+  {
+   "id": "spy5",
+   "tier": "special",
+   "name": "Arquera del bosque",
+   "price": 50,
+   "img": "b/eb4e698577f164094b755064c2234c14.webp",
+   "svg": null
+  },
+  {
+   "id": "spy6",
+   "tier": "special",
+   "name": "Hacker",
+   "price": 50,
+   "img": "b/623c0d588b4d2b6b4dd2014967ef157e.webp",
+   "svg": null
+  },
+  {
+   "id": "spy7",
+   "tier": "special",
+   "name": "Piloto de carreras",
+   "price": 50,
+   "img": "b/4fc531b11bb79fd1f3047805b65cd222.webp",
+   "svg": null
+  },
+  {
+   "id": "spy8",
+   "tier": "special",
+   "name": "Vaquero",
+   "price": 50,
+   "img": "b/4c1eaf40bb800c9ca3ba244bcfa3ad7d.webp",
+   "svg": null
+  },
+  {
+   "id": "spy9",
+   "tier": "special",
+   "name": "Tigre blanco",
+   "price": 50,
+   "img": "b/b6c6328822e936bcbaf79786fa9deda7.webp",
+   "svg": null
+  },
+  {
+   "id": "spy10",
+   "tier": "special",
+   "name": "Lobo de escarcha",
+   "price": 50,
+   "img": "b/5456ecb9e02cb79f6fa63d0dc7ae100e.webp",
+   "svg": null
+  },
+  {
+   "id": "spy11",
+   "tier": "special",
+   "name": "Alquimista",
+   "price": 50,
+   "img": "b/d43cf8cbb757497463fc73c38dbc4bd9.webp",
+   "svg": null
+  },
+  {
+   "id": "spy12",
+   "tier": "special",
+   "name": "Fénix",
+   "price": 50,
+   "img": "b/8970641e6dfe52b2a7a5dc5006577359.webp",
+   "svg": null
+  },
+  {
+   "id": "spy13",
+   "tier": "special",
+   "name": "Vikingo",
+   "price": 50,
+   "img": "b/ada06d489169434bd5b8a6e68bcfcf59.webp",
+   "svg": null
+  },
+  {
+   "id": "spy15",
+   "tier": "special",
+   "name": "Hechicera del mar",
+   "price": 50,
+   "img": "b/97efdbc6e1249578870e9813269befa5.webp",
+   "svg": null
+  },
+  {
+   "id": "spy14",
+   "tier": "special",
+   "name": "Águila dorada",
+   "price": 50,
+   "img": "b/1c0c85b42adc158d0bb8d8f2be186bfc.webp",
+   "svg": null
+  },
+  {
+   "id": "sp1",
+   "tier": "special",
+   "name": "Pirata",
+   "price": 100,
+   "img": "b/2a26c8fc910a423286ddf85cf539350d.webp",
+   "svg": {
+    "bg": [
+     "#6ec5e8",
+     "#2a7ab0"
+    ],
+    "skin": "#dca477",
+    "beard": "#a8451d",
+    "eyes": "normal",
+    "mouth": "grin",
+    "shirt": "#c9372f"
+   }
+  },
+  {
+   "id": "sp2",
+   "tier": "special",
+   "name": "Mago",
+   "price": 100,
+   "img": "b/7b6200cadebac9502c8d65afacc98155.webp",
+   "svg": {
+    "bg": [
+     "#7b5bd1",
+     "#3a2a7a"
+    ],
+    "skin": "#f0c9a0",
+    "beard": "#f4f4f6",
+    "eyes": "normal",
+    "mouth": "smile",
+    "shirt": "#5b3fa8"
+   }
+  },
+  {
+   "id": "sp3",
+   "tier": "special",
+   "name": "Robo",
+   "price": 200,
+   "img": "b/62da99ab6bfc249c40d6595b64acae9c.webp",
+   "svg": {
+    "bg": [
+     "#7fe0e0",
+     "#2a8f9a"
+    ]
+   }
+  },
+  {
+   "id": "sp4",
+   "tier": "special",
+   "name": "Astronauta",
+   "price": 200,
+   "img": "b/f856e9055cd87d76cd9fc8f67da5cb45.webp",
+   "svg": {
+    "bg": [
+     "#1b2a5e",
+     "#0a1233"
+    ],
+    "skin": "#f1c9a1",
+    "hair": "none",
+    "eyes": "normal",
+    "mouth": "smile",
+    "shirt": "#e8edf6",
+    "pre": "<circle cx=\"22\" cy=\"20\" r=\"1.3\" fill=\"#fff\"/><circle cx=\"80\" cy=\"14\" r=\"1.1\" fill=\"#fff\"/><circle cx=\"88\" cy=\"40\" r=\"1.4\" fill=\"#fff\"/><circle cx=\"12\" cy=\"52\" r=\"1\" fill=\"#fff\"/>"
+   }
+  },
+  {
+   "id": "sp5",
+   "tier": "special",
+   "name": "Ninja",
+   "price": 300,
+   "img": "b/3a649a5e78f2048f39fba8c0c0828970.webp",
+   "svg": {
+    "bg": [
+     "#b8c0cf",
+     "#5d6679"
+    ],
+    "skin": "#e9bf98",
+    "eyes": "normal",
+    "mouth": "none",
+    "shirt": "#1d1f27"
+   },
+   "pieces": 4
+  },
+  {
+   "id": "sp6",
+   "tier": "special",
+   "name": "Gatito",
+   "price": 300,
+   "img": "b/2b0d9a374c13e1c2d0d5bf9cfda35e9a.webp",
+   "svg": {
+    "bg": [
+     "#ffd6e5",
+     "#f08fb5"
+    ],
+    "skin": "#f6d3b0",
+    "hair": "none",
+    "eyes": "normal",
+    "mouth": "o",
+    "shirt": "#2fa36b",
+    "post": "<path d=\"M44 52 L56 52 L50 57Z\" fill=\"#f08fb5\"/><path d=\"M26 54 H38 M26 59 H38 M62 54 H74 M62 59 H74\" stroke=\"#3a2a1c\" stroke-width=\"1\" stroke-linecap=\"round\"/>"
+   },
+   "pieces": 4
+  },
+  {
+   "id": "sp7",
+   "tier": "special",
+   "name": "Vampiro",
+   "price": 500,
+   "img": "b/f2a4240a483d0d3f9876403d31cc1a83.webp",
+   "svg": {
+    "bg": [
+     "#6a1c3a",
+     "#24081a"
+    ],
+    "skin": "#ece7f2",
+    "hair": "side",
+    "hc": "#14121a",
+    "eyes": "normal",
+    "mouth": "grin",
+    "shirt": "#14121a",
+    "body": "<path d=\"M6 100 Q10 71 50 69 Q90 71 94 100Z\" fill=\"#14121a\"/><path d=\"M4 100 L18 62 L42 78 L42 100Z\" fill=\"#b3122c\"/><path d=\"M96 100 L82 62 L58 78 L58 100Z\" fill=\"#b3122c\"/>",
+    "post": "<path d=\"M44.5 61 L47 67 L49.5 61Z\" fill=\"#fff\"/><path d=\"M50.5 61 L53 67 L55.5 61Z\" fill=\"#fff\"/><circle cx=\"41\" cy=\"45.5\" r=\"2.6\" fill=\"#d6283d\"/><circle cx=\"59\" cy=\"45.5\" r=\"2.6\" fill=\"#d6283d\"/>"
+   },
+   "pieces": 4
+  },
+  {
+   "id": "sp8",
+   "tier": "special",
+   "name": "Rey",
+   "price": 800,
+   "img": "b/ac6e4e6274ce94f8d2b6c4be245802d5.webp",
+   "svg": {
+    "bg": [
+     "#7d1f3c",
+     "#3d0c20"
+    ],
+    "skin": "#f1c9a1",
+    "hair": "short",
+    "hc": "#5a3a1c",
+    "beard": "#5a3a1c",
+    "eyes": "normal",
+    "mouth": "smile"
+   },
+   "pieces": 4
+  },
+  {
+   "id": "sp9",
+   "tier": "special",
+   "name": "León de fuego",
+   "price": 1000,
+   "img": "b/1441aafecde32c15790d976183863158.webp",
+   "svg": {
+    "bg": [
+     "#ffcf6a",
+     "#d98a1c"
+    ]
+   },
+   "pieces": 4
+  }
+ ],
+ "FRAME_CATALOG": [
+  {
+   "id": "classic",
+   "name": "Clásico",
+   "levelReq": 1,
+   "preview": "⚪"
+  },
+  {
+   "id": "bronze",
+   "name": "Bronce",
+   "levelReq": 5,
+   "preview": "🥉"
+  },
+  {
+   "id": "fr2",
+   "name": "Remaches",
+   "levelReq": 8,
+   "preview": "💎"
+  },
+  {
+   "id": "fr3",
+   "name": "Cobre trenzado",
+   "levelReq": 12,
+   "preview": "💎"
+  },
+  {
+   "id": "fr13",
+   "name": "Oro",
+   "levelReq": 15,
+   "preview": "💎"
+  },
+  {
+   "id": "fr1",
+   "name": "Oro real",
+   "levelReq": 20,
+   "preview": "💎"
+  },
+  {
+   "id": "fr8",
+   "name": "Topacio",
+   "levelReq": 25,
+   "preview": "💎"
+  },
+  {
+   "id": "neon",
+   "name": "Neón Animado",
+   "levelReq": 30,
+   "preview": "⚡"
+  },
+  {
+   "id": "fr5",
+   "name": "Rubí",
+   "levelReq": 35,
+   "preview": "💎"
+  },
+  {
+   "id": "fr6",
+   "name": "Zafiro",
+   "levelReq": 40,
+   "preview": "💎"
+  },
+  {
+   "id": "fr4",
+   "name": "Esmeralda",
+   "levelReq": 45,
+   "preview": "💎"
+  },
+  {
+   "id": "fr7",
+   "name": "Amatista",
+   "levelReq": 50,
+   "preview": "💎"
+  },
+  {
+   "id": "fr11",
+   "name": "Hielo",
+   "levelReq": 55,
+   "preview": "💎"
+  },
+  {
+   "id": "fr10",
+   "name": "Runas",
+   "levelReq": 60,
+   "preview": "💎"
+  },
+  {
+   "id": "fr12",
+   "name": "Obsidiana",
+   "levelReq": 70,
+   "preview": "💎"
+  },
+  {
+   "id": "fr9",
+   "name": "Diamante",
+   "levelReq": 80,
+   "preview": "💎"
+  }
+ ],
+ "BOARD_CATALOG": [
+  {
+   "id": "classic",
+   "mode": "classic",
+   "name": "Clásico",
+   "cells": 84,
+   "price": 0,
+   "img": "b/598b24872b7a7e63a10ceaba08e91068.webp",
+   "desc": "Azul marino con detalles dorados."
+  },
+  {
+   "id": "sized100",
+   "mode": "mode2",
+   "name": "Fuego y Hielo",
+   "cells": 108,
+   "price": 500,
+   "img": "b/a1e591f9b86aa5b81271ed0ba12838f9.webp",
+   "desc": "Hielo de un lado y lava del otro."
+  },
+  {
+   "id": "sized125",
+   "mode": "mode3",
+   "name": "Guerra de Hierro",
+   "cells": 108,
+   "price": 500,
+   "img": "b/edd797102b23a89ca675df7196080da8.webp",
+   "desc": "Piedra y hierro forjado."
+  },
+  {
+   "id": "sized150",
+   "mode": "mode4",
+   "name": "Neón Extremo",
+   "cells": 108,
+   "price": 500,
+   "img": "b/cfd41bb6b723cfb0d9eb55573a8345eb.webp",
+   "desc": "Luces de neón en la oscuridad."
+  },
+  {
+   "id": "rd",
+   "mode": "rd",
+   "name": "República Dominicana",
+   "cells": 84,
+   "pais": true,
+   "cont": "am",
+   "price": 1500,
+   "img": "b/d9377f26f715a6f59d0455460797a821.webp",
+   "desc": "Los colores y el escudo de la bandera dominicana."
+  },
+  {
+   "id": "pk",
+   "mode": "pk",
+   "name": "Pakistán",
+   "cells": 84,
+   "pais": true,
+   "cont": "as",
+   "price": 1500,
+   "img": "b/79e0f281020496bd8354983aedc255c6.webp",
+   "desc": "Verde y blanco con la media luna y la estrella."
+  },
+  {
+   "id": "in",
+   "mode": "in",
+   "name": "India",
+   "cells": 84,
+   "pais": true,
+   "cont": "as",
+   "price": 1500,
+   "img": "b/f6551634d898594d68934bb770f5b25b.webp",
+   "desc": "Azafrán, blanco y verde con la rueda de Ashoka."
+  },
+  {
+   "id": "bd",
+   "mode": "bd",
+   "name": "Bangladesh",
+   "cells": 84,
+   "pais": true,
+   "cont": "as",
+   "price": 1500,
+   "img": "b/8ab26debf1b46839498d562ee3b01a2c.webp",
+   "desc": "Verde profundo con el disco rojo."
+  },
+  {
+   "id": "np",
+   "mode": "np",
+   "name": "Nepal",
+   "cells": 84,
+   "pais": true,
+   "cont": "as",
+   "price": 1500,
+   "img": "b/8230dede216aaee1e921d57d042666c4.webp",
+   "desc": "Carmesí con borde azul, luna y sol."
+  },
+  {
+   "id": "es",
+   "mode": "es",
+   "name": "España",
+   "cells": 84,
+   "pais": true,
+   "cont": "eu",
+   "price": 1500,
+   "img": "b/69bede39fcde71010ab0256401fc924d.webp",
+   "desc": "Rojo y gualda con el escudo de España."
+  },
+  {
+   "id": "mx",
+   "mode": "mx",
+   "name": "México",
+   "cells": 84,
+   "pais": true,
+   "cont": "am",
+   "price": 1500,
+   "img": "b/39afd286e340afc9b3b0abc1862803c1.webp",
+   "desc": "Verde, blanco y rojo con el águila de su escudo."
+  },
+  {
+   "id": "co",
+   "mode": "co",
+   "name": "Colombia",
+   "cells": 84,
+   "pais": true,
+   "cont": "am",
+   "price": 1500,
+   "img": "b/cafabc74c739ad3ae6365d1e8dfc6ca2.webp",
+   "desc": "Amarillo, azul y rojo."
+  },
+  {
+   "id": "ar",
+   "mode": "ar",
+   "name": "Argentina",
+   "cells": 84,
+   "pais": true,
+   "cont": "am",
+   "price": 1500,
+   "img": "b/2775641d9480bfbe15b307e2e78814ea.webp",
+   "desc": "Celeste y blanco con el Sol de Mayo."
+  },
+  {
+   "id": "sa",
+   "mode": "sa",
+   "name": "Arabia Saudita",
+   "cells": 84,
+   "pais": true,
+   "cont": "as",
+   "price": 1500,
+   "img": "b/2185ba222eca18cb1279bd66a27616e3.webp",
+   "desc": "Verde con detalles dorados."
+  },
+  {
+   "id": "pr",
+   "mode": "pr",
+   "name": "Puerto Rico",
+   "cells": 84,
+   "pais": true,
+   "cont": "am",
+   "price": 1500,
+   "img": "b/fe9c57ddfabca7cea499b3126811bd75.webp",
+   "desc": "Rojo y blanco con el triángulo azul de la estrella."
+  },
+  {
+   "id": "ve",
+   "mode": "ve",
+   "name": "Venezuela",
+   "cells": 84,
+   "pais": true,
+   "cont": "am",
+   "price": 1500,
+   "img": "b/d5bde7eccf30770bb086fc23f85b60cc.webp",
+   "desc": "Amarillo, azul y rojo con el arco de ocho estrellas."
+  },
+  {
+   "id": "cu",
+   "mode": "cu",
+   "name": "Cuba",
+   "cells": 84,
+   "pais": true,
+   "cont": "am",
+   "price": 1500,
+   "img": "b/550a11e63d51028e240ff09b4b956932.webp",
+   "desc": "Franjas azules y blancas con el triángulo rojo."
+  },
+  {
+   "id": "hn",
+   "mode": "hn",
+   "name": "Honduras",
+   "cells": 84,
+   "pais": true,
+   "cont": "am",
+   "price": 1500,
+   "img": "b/bbef52045f486048893cf81c1be62001.webp",
+   "desc": "Azul y blanco con las cinco estrellas."
+  },
+  {
+   "id": "ec",
+   "mode": "ec",
+   "name": "Ecuador",
+   "cells": 84,
+   "pais": true,
+   "cont": "am",
+   "price": 1500,
+   "img": "b/afa79e4c420da66cecbae8f6052af715.webp",
+   "desc": "Amarillo, azul y rojo con el escudo del cóndor."
+  },
+  {
+   "id": "pe",
+   "mode": "pe",
+   "name": "Perú",
+   "cells": 84,
+   "pais": true,
+   "cont": "am",
+   "price": 1500,
+   "img": "b/09bb80629de97de189d7b160b3e1868e.webp",
+   "desc": "Rojo y blanco con el escudo nacional."
+  },
+  {
+   "id": "cl",
+   "mode": "cl",
+   "name": "Chile",
+   "cells": 84,
+   "pais": true,
+   "cont": "am",
+   "price": 1500,
+   "img": "b/1b683b2bfa6836430f17c4a2e8eb23b3.webp",
+   "desc": "Blanco y rojo con la estrella solitaria."
+  },
+  {
+   "id": "br",
+   "mode": "br",
+   "name": "Brasil",
+   "cells": 84,
+   "pais": true,
+   "cont": "am",
+   "price": 1500,
+   "img": "b/a6f6f4ad4ba63b37c0bf1e2798b5dc1f.webp",
+   "desc": "Verde con el rombo amarillo y el círculo azul."
+  },
+  {
+   "id": "us",
+   "mode": "us",
+   "name": "Estados Unidos",
+   "cells": 84,
+   "pais": true,
+   "cont": "am",
+   "price": 1500,
+   "img": "b/2bd4d9f322856b052e8baa443b18b8d1.webp",
+   "desc": "Rayas rojas y blancas con las estrellas."
+  },
+  {
+   "id": "ht",
+   "mode": "ht",
+   "name": "Haití",
+   "cells": 84,
+   "pais": true,
+   "cont": "am",
+   "price": 1500,
+   "img": "b/d687484404ae7fb6c65eb4f247a5f637.webp",
+   "desc": "Azul y rojo con el escudo de la palma."
+  },
+  {
+   "id": "it",
+   "mode": "it",
+   "name": "Italia",
+   "cells": 84,
+   "pais": true,
+   "cont": "eu",
+   "price": 1500,
+   "img": "b/b47a69c03bd875c76f45232a3a50163a.webp",
+   "desc": "Verde, blanco y rojo de la bandera italiana."
+  },
+  {
+   "id": "fr",
+   "mode": "fr",
+   "name": "Francia",
+   "cells": 84,
+   "pais": true,
+   "cont": "eu",
+   "price": 1500,
+   "img": "b/d77386c7a5a90d7a3b68d280e4793211.webp",
+   "desc": "Azul, blanco y rojo de la bandera francesa."
+  },
+  {
+   "id": "de",
+   "mode": "de",
+   "name": "Alemania",
+   "cells": 84,
+   "pais": true,
+   "cont": "eu",
+   "price": 1500,
+   "img": "b/56650585769f7cd08a237de4f46e1e9e.webp",
+   "desc": "Negro, rojo y dorado de la bandera alemana."
+  },
+  {
+   "id": "ng",
+   "mode": "ng",
+   "name": "Nigeria",
+   "cells": 84,
+   "pais": true,
+   "cont": "af",
+   "price": 1500,
+   "img": "b/63b524ceacd9796709653584529eb616.webp",
+   "desc": "Verde y blanco de la bandera nigeriana."
+  },
+  {
+   "id": "jm",
+   "mode": "jm",
+   "name": "Jamaica",
+   "cells": 84,
+   "pais": true,
+   "cont": "am",
+   "price": 1500,
+   "img": "b/30e2d810f475134c00341dc13a82622d.webp",
+   "desc": "Verde, negro y la cruz dorada."
+  },
+  {
+   "id": "tr",
+   "mode": "tr",
+   "name": "Turquía",
+   "cells": 84,
+   "pais": true,
+   "cont": "as",
+   "price": 1500,
+   "img": "b/ddca64c4da739aeaf13f383c7e32a0af.webp",
+   "desc": "Rojo con la media luna y la estrella."
+  },
+  {
+   "id": "ph",
+   "mode": "ph",
+   "name": "Filipinas",
+   "cells": 84,
+   "pais": true,
+   "cont": "as",
+   "price": 1500,
+   "img": "b/3c8ea7664e817944c4ae8617a3f13dd3.webp",
+   "desc": "Azul y rojo con el triángulo, el sol y las estrellas."
+  },
+  {
+   "id": "eg",
+   "mode": "eg",
+   "name": "Egipto",
+   "cells": 84,
+   "pais": true,
+   "cont": "af",
+   "price": 1500,
+   "img": "b/2c1e047c98b4f9fe948a8b81b9f9c20f.webp",
+   "desc": "Rojo, blanco y negro con el águila dorada."
+  },
+  {
+   "id": "ca",
+   "mode": "ca",
+   "name": "Canadá",
+   "cells": 84,
+   "pais": true,
+   "cont": "am",
+   "price": 1500,
+   "img": "b/535b224e4d42d403cf10bc12a86faa82.webp",
+   "desc": "Rojo y blanco con la hoja de arce."
+  },
+  {
+   "id": "pt",
+   "mode": "pt",
+   "name": "Portugal",
+   "cells": 84,
+   "pais": true,
+   "cont": "eu",
+   "price": 1500,
+   "img": "b/647ea1bc3236e6e6cbe0344461475127.webp",
+   "desc": "Verde y rojo con la esfera armilar."
+  },
+  {
+   "id": "p_cr",
+   "mode": "p_cr",
+   "name": "Costa Rica",
+   "cells": 84,
+   "pais": true,
+   "cont": "am",
+   "price": 1500,
+   "img": "b/6270a29e693a97b9163d73364c60757c.webp",
+   "desc": "Los colores y el emblema de la bandera de Costa Rica."
+  },
+  {
+   "id": "p_bo",
+   "mode": "p_bo",
+   "name": "Bolivia",
+   "cells": 84,
+   "pais": true,
+   "cont": "am",
+   "price": 1500,
+   "img": "b/3ceedb1a0b220d939267a6dc53f4a456.webp",
+   "desc": "Los colores y el emblema de la bandera de Bolivia."
+  },
+  {
+   "id": "p_sr",
+   "mode": "p_sr",
+   "name": "Surinam",
+   "cells": 84,
+   "pais": true,
+   "cont": "am",
+   "price": 1500,
+   "img": "b/8c194de7be81d3dc11234850d17fbfb5.webp",
+   "desc": "Los colores y el emblema de la bandera de Surinam."
+  },
+  {
+   "id": "p_pa",
+   "mode": "p_pa",
+   "name": "Panamá",
+   "cells": 84,
+   "pais": true,
+   "cont": "am",
+   "price": 1500,
+   "img": "b/9d5b054f1ea41f48065fc24c53ed3d33.webp",
+   "desc": "Los colores y el emblema de la bandera de Panamá."
+  },
+  {
+   "id": "p_uy",
+   "mode": "p_uy",
+   "name": "Uruguay",
+   "cells": 84,
+   "pais": true,
+   "cont": "am",
+   "price": 1500,
+   "img": "b/6faf5b95517892135266bd3181618480.webp",
+   "desc": "Los colores y el emblema de la bandera de Uruguay."
+  },
+  {
+   "id": "p_gt",
+   "mode": "p_gt",
+   "name": "Guatemala",
+   "cells": 84,
+   "pais": true,
+   "cont": "am",
+   "price": 1500,
+   "img": "b/23b8afb50b7dcae31bd56d9882ce46b4.webp",
+   "desc": "Los colores y el emblema de la bandera de Guatemala."
+  },
+  {
+   "id": "p_sv",
+   "mode": "p_sv",
+   "name": "El Salvador",
+   "cells": 84,
+   "pais": true,
+   "cont": "am",
+   "price": 1500,
+   "img": "b/1699fa742f03361537d0abe12577606b.webp",
+   "desc": "Los colores y el emblema de la bandera de El Salvador."
+  },
+  {
+   "id": "p_ni",
+   "mode": "p_ni",
+   "name": "Nicaragua",
+   "cells": 84,
+   "pais": true,
+   "cont": "am",
+   "price": 1500,
+   "img": "b/ea7692fa3bafb2dcaee9fa77b68c4a4f.webp",
+   "desc": "Los colores y el emblema de la bandera de Nicaragua."
+  },
+  {
+   "id": "p_py",
+   "mode": "p_py",
+   "name": "Paraguay",
+   "cells": 84,
+   "pais": true,
+   "cont": "am",
+   "price": 1500,
+   "img": "b/3cb6c6a30c0095de68456df430b4ae91.webp",
+   "desc": "Los colores y el emblema de la bandera de Paraguay."
+  },
+  {
+   "id": "p_bz",
+   "mode": "p_bz",
+   "name": "Belice",
+   "cells": 84,
+   "pais": true,
+   "cont": "am",
+   "price": 1500,
+   "img": "b/7c14c2dfaeef67ebece4ab0112364767.webp",
+   "desc": "Los colores y el emblema de la bandera de Belice."
+  },
+  {
+   "id": "p_ie",
+   "mode": "p_ie",
+   "name": "Irlanda",
+   "cells": 84,
+   "pais": true,
+   "cont": "eu",
+   "price": 1500,
+   "img": "b/61b3518fefdfb6f8b4fa7a0e91bb347b.webp",
+   "desc": "Los colores y el emblema de la bandera de Irlanda."
+  },
+  {
+   "id": "p_be",
+   "mode": "p_be",
+   "name": "Bélgica",
+   "cells": 84,
+   "pais": true,
+   "cont": "eu",
+   "price": 1500,
+   "img": "b/d78c6c0b72739dc1bf6b6559d4985de7.webp",
+   "desc": "Los colores y el emblema de la bandera de Bélgica."
+  },
+  {
+   "id": "p_nl",
+   "mode": "p_nl",
+   "name": "Países Bajos",
+   "cells": 84,
+   "pais": true,
+   "cont": "eu",
+   "price": 1500,
+   "img": "b/afe4006b45ae0cf73228d19fa6bf1868.webp",
+   "desc": "Los colores y el emblema de la bandera de Países Bajos."
+  },
+  {
+   "id": "p_ru",
+   "mode": "p_ru",
+   "name": "Rusia",
+   "cells": 84,
+   "pais": true,
+   "cont": "eu",
+   "price": 1500,
+   "img": "b/a2cd457df09014320d8fcfa6837d15b5.webp",
+   "desc": "Los colores y el emblema de la bandera de Rusia."
+  },
+  {
+   "id": "p_pl",
+   "mode": "p_pl",
+   "name": "Polonia",
+   "cells": 84,
+   "pais": true,
+   "cont": "eu",
+   "price": 1500,
+   "img": "b/66c08931d34b8f1fa53ab561c27efd2e.webp",
+   "desc": "Los colores y el emblema de la bandera de Polonia."
+  },
+  {
+   "id": "p_ua",
+   "mode": "p_ua",
+   "name": "Ucrania",
+   "cells": 84,
+   "pais": true,
+   "cont": "eu",
+   "price": 1500,
+   "img": "b/18ce9d19ec97955bb58ac2552e968eda.webp",
+   "desc": "Los colores y el emblema de la bandera de Ucrania."
+  },
+  {
+   "id": "p_at",
+   "mode": "p_at",
+   "name": "Austria",
+   "cells": 84,
+   "pais": true,
+   "cont": "eu",
+   "price": 1500,
+   "img": "b/ae0c46514c47c2dd87f3b054d5026e3b.webp",
+   "desc": "Los colores y el emblema de la bandera de Austria."
+  },
+  {
+   "id": "p_hu",
+   "mode": "p_hu",
+   "name": "Hungría",
+   "cells": 84,
+   "pais": true,
+   "cont": "eu",
+   "price": 1500,
+   "img": "b/5e01c69dd7fd9381bfe1910ac6da8026.webp",
+   "desc": "Los colores y el emblema de la bandera de Hungría."
+  },
+  {
+   "id": "p_bg",
+   "mode": "p_bg",
+   "name": "Bulgaria",
+   "cells": 84,
+   "pais": true,
+   "cont": "eu",
+   "price": 1500,
+   "img": "b/59d7e17c76af92f593f6f9b4baf39671.webp",
+   "desc": "Los colores y el emblema de la bandera de Bulgaria."
+  },
+  {
+   "id": "p_ro",
+   "mode": "p_ro",
+   "name": "Rumanía",
+   "cells": 84,
+   "pais": true,
+   "cont": "eu",
+   "price": 1500,
+   "img": "b/e086c90cd26fa06772f7f8764f0a2312.webp",
+   "desc": "Los colores y el emblema de la bandera de Rumanía."
+  },
+  {
+   "id": "p_lt",
+   "mode": "p_lt",
+   "name": "Lituania",
+   "cells": 84,
+   "pais": true,
+   "cont": "eu",
+   "price": 1500,
+   "img": "b/a36114c808487094240d8db2895fcedb.webp",
+   "desc": "Los colores y el emblema de la bandera de Lituania."
+  },
+  {
+   "id": "p_ee",
+   "mode": "p_ee",
+   "name": "Estonia",
+   "cells": 84,
+   "pais": true,
+   "cont": "eu",
+   "price": 1500,
+   "img": "b/cee7e99a82242e52cef7f41f0aac336d.webp",
+   "desc": "Los colores y el emblema de la bandera de Estonia."
+  },
+  {
+   "id": "p_lv",
+   "mode": "p_lv",
+   "name": "Letonia",
+   "cells": 84,
+   "pais": true,
+   "cont": "eu",
+   "price": 1500,
+   "img": "b/66b900797f58ce199474e7c9e805693a.webp",
+   "desc": "Los colores y el emblema de la bandera de Letonia."
+  },
+  {
+   "id": "p_lu",
+   "mode": "p_lu",
+   "name": "Luxemburgo",
+   "cells": 84,
+   "pais": true,
+   "cont": "eu",
+   "price": 1500,
+   "img": "b/1a35994d3f3c234487aa646a7bb30536.webp",
+   "desc": "Los colores y el emblema de la bandera de Luxemburgo."
+  },
+  {
+   "id": "p_mc",
+   "mode": "p_mc",
+   "name": "Mónaco",
+   "cells": 84,
+   "pais": true,
+   "cont": "eu",
+   "price": 1500,
+   "img": "b/4e17ba8679ea32aff1eb292690ddfd40.webp",
+   "desc": "Los colores y el emblema de la bandera de Mónaco."
+  },
+  {
+   "id": "p_se",
+   "mode": "p_se",
+   "name": "Suecia",
+   "cells": 84,
+   "pais": true,
+   "cont": "eu",
+   "price": 1500,
+   "img": "b/0fa10f7f2c4e51a52df511fd80abbc27.webp",
+   "desc": "Los colores y el emblema de la bandera de Suecia."
+  },
+  {
+   "id": "p_no",
+   "mode": "p_no",
+   "name": "Noruega",
+   "cells": 84,
+   "pais": true,
+   "cont": "eu",
+   "price": 1500,
+   "img": "b/79de518159fc9af77b9eb51d4a0bb5fb.webp",
+   "desc": "Los colores y el emblema de la bandera de Noruega."
+  },
+  {
+   "id": "p_dk",
+   "mode": "p_dk",
+   "name": "Dinamarca",
+   "cells": 84,
+   "pais": true,
+   "cont": "eu",
+   "price": 1500,
+   "img": "b/f506c36b1546165a8d3bf65e549ac8c8.webp",
+   "desc": "Los colores y el emblema de la bandera de Dinamarca."
+  },
+  {
+   "id": "p_fi",
+   "mode": "p_fi",
+   "name": "Finlandia",
+   "cells": 84,
+   "pais": true,
+   "cont": "eu",
+   "price": 1500,
+   "img": "b/de47e7433cb56e165add974bbb9e2954.webp",
+   "desc": "Los colores y el emblema de la bandera de Finlandia."
+  },
+  {
+   "id": "p_is",
+   "mode": "p_is",
+   "name": "Islandia",
+   "cells": 84,
+   "pais": true,
+   "cont": "eu",
+   "price": 1500,
+   "img": "b/a27b53a07e8841f085d7c75273ab79e7.webp",
+   "desc": "Los colores y el emblema de la bandera de Islandia."
+  },
+  {
+   "id": "p_ch",
+   "mode": "p_ch",
+   "name": "Suiza",
+   "cells": 84,
+   "pais": true,
+   "cont": "eu",
+   "price": 1500,
+   "img": "b/e7ef619cee63f570ec5a3db908f43185.webp",
+   "desc": "Los colores y el emblema de la bandera de Suiza."
+  },
+  {
+   "id": "p_gr",
+   "mode": "p_gr",
+   "name": "Grecia",
+   "cells": 84,
+   "pais": true,
+   "cont": "eu",
+   "price": 1500,
+   "img": "b/c99dcdc5db162752ca08b0dae9c7cf8c.webp",
+   "desc": "Los colores y el emblema de la bandera de Grecia."
+  },
+  {
+   "id": "p_gb",
+   "mode": "p_gb",
+   "name": "Reino Unido",
+   "cells": 84,
+   "pais": true,
+   "cont": "eu",
+   "price": 1500,
+   "img": "b/47d881bdf9fb18d9096fcfc206704283.webp",
+   "desc": "Los colores y el emblema de la bandera de Reino Unido."
+  },
+  {
+   "id": "p_cz",
+   "mode": "p_cz",
+   "name": "República Checa",
+   "cells": 84,
+   "pais": true,
+   "cont": "eu",
+   "price": 1500,
+   "img": "b/5c05ee9807bb1661a05814705db912ce.webp",
+   "desc": "Los colores y el emblema de la bandera de República Checa."
+  },
+  {
+   "id": "p_rs",
+   "mode": "p_rs",
+   "name": "Serbia",
+   "cells": 84,
+   "pais": true,
+   "cont": "eu",
+   "price": 1500,
+   "img": "b/4359a2172ce99467ef47bbef9d0c3a18.webp",
+   "desc": "Los colores y el emblema de la bandera de Serbia."
+  },
+  {
+   "id": "p_hr",
+   "mode": "p_hr",
+   "name": "Croacia",
+   "cells": 84,
+   "pais": true,
+   "cont": "eu",
+   "price": 1500,
+   "img": "b/991585859ac49368ea8f75ed4e192ea7.webp",
+   "desc": "Los colores y el emblema de la bandera de Croacia."
+  },
+  {
+   "id": "p_si",
+   "mode": "p_si",
+   "name": "Eslovenia",
+   "cells": 84,
+   "pais": true,
+   "cont": "eu",
+   "price": 1500,
+   "img": "b/f35256c8892750584c56a5276dec7347.webp",
+   "desc": "Los colores y el emblema de la bandera de Eslovenia."
+  },
+  {
+   "id": "p_sk",
+   "mode": "p_sk",
+   "name": "Eslovaquia",
+   "cells": 84,
+   "pais": true,
+   "cont": "eu",
+   "price": 1500,
+   "img": "b/bdf771bf937e8d0d2c2dcdd55446e6d0.webp",
+   "desc": "Los colores y el emblema de la bandera de Eslovaquia."
+  },
+  {
+   "id": "p_th",
+   "mode": "p_th",
+   "name": "Tailandia",
+   "cells": 84,
+   "pais": true,
+   "cont": "as",
+   "price": 1500,
+   "img": "b/868f5fb48417eeddf5f2685b4baf644e.webp",
+   "desc": "Los colores y el emblema de la bandera de Tailandia."
+  },
+  {
+   "id": "p_id",
+   "mode": "p_id",
+   "name": "Indonesia",
+   "cells": 84,
+   "pais": true,
+   "cont": "as",
+   "price": 1500,
+   "img": "b/4e17ba8679ea32aff1eb292690ddfd40.webp",
+   "desc": "Los colores y el emblema de la bandera de Indonesia."
+  },
+  {
+   "id": "p_ye",
+   "mode": "p_ye",
+   "name": "Yemen",
+   "cells": 84,
+   "pais": true,
+   "cont": "as",
+   "price": 1500,
+   "img": "b/154e8aaff9593823dd8557102e8d191e.webp",
+   "desc": "Los colores y el emblema de la bandera de Yemen."
+  },
+  {
+   "id": "p_jp",
+   "mode": "p_jp",
+   "name": "Japón",
+   "cells": 84,
+   "pais": true,
+   "cont": "as",
+   "price": 1500,
+   "img": "b/2afae35a1570143f67b6d7ae5854d5cd.webp",
+   "desc": "Los colores y el emblema de la bandera de Japón."
+  },
+  {
+   "id": "p_cn",
+   "mode": "p_cn",
+   "name": "China",
+   "cells": 84,
+   "pais": true,
+   "cont": "as",
+   "price": 1500,
+   "img": "b/61eae260537688d9c41cdcb0353f2c0d.webp",
+   "desc": "Los colores y el emblema de la bandera de China."
+  },
+  {
+   "id": "p_vn",
+   "mode": "p_vn",
+   "name": "Vietnam",
+   "cells": 84,
+   "pais": true,
+   "cont": "as",
+   "price": 1500,
+   "img": "b/05b0c6bf58a7f64a740f1873b89aa098.webp",
+   "desc": "Los colores y el emblema de la bandera de Vietnam."
+  },
+  {
+   "id": "p_sg",
+   "mode": "p_sg",
+   "name": "Singapur",
+   "cells": 84,
+   "pais": true,
+   "cont": "as",
+   "price": 1500,
+   "img": "b/1cebbf670aa8243d28fc44355de0902a.webp",
+   "desc": "Los colores y el emblema de la bandera de Singapur."
+  },
+  {
+   "id": "p_jo",
+   "mode": "p_jo",
+   "name": "Jordania",
+   "cells": 84,
+   "pais": true,
+   "cont": "as",
+   "price": 1500,
+   "img": "b/e7590af2dae29a6612bc75dc67d05128.webp",
+   "desc": "Los colores y el emblema de la bandera de Jordania."
+  },
+  {
+   "id": "p_kw",
+   "mode": "p_kw",
+   "name": "Kuwait",
+   "cells": 84,
+   "pais": true,
+   "cont": "as",
+   "price": 1500,
+   "img": "b/2bee2187ba60fd7f42be7e8c27289916.webp",
+   "desc": "Los colores y el emblema de la bandera de Kuwait."
+  },
+  {
+   "id": "p_az",
+   "mode": "p_az",
+   "name": "Azerbaiyán",
+   "cells": 84,
+   "pais": true,
+   "cont": "as",
+   "price": 1500,
+   "img": "b/c947b1edb5b4cf327f664f89b6200286.webp",
+   "desc": "Los colores y el emblema de la bandera de Azerbaiyán."
+  },
+  {
+   "id": "p_am",
+   "mode": "p_am",
+   "name": "Armenia",
+   "cells": 84,
+   "pais": true,
+   "cont": "as",
+   "price": 1500,
+   "img": "b/54be072fc6d1040d5553ab7096041088.webp",
+   "desc": "Los colores y el emblema de la bandera de Armenia."
+  },
+  {
+   "id": "p_mm",
+   "mode": "p_mm",
+   "name": "Myanmar",
+   "cells": 84,
+   "pais": true,
+   "cont": "as",
+   "price": 1500,
+   "img": "b/c63b1b52d84bc72c0e9c97ff51a0f30d.webp",
+   "desc": "Los colores y el emblema de la bandera de Myanmar."
+  },
+  {
+   "id": "p_la",
+   "mode": "p_la",
+   "name": "Laos",
+   "cells": 84,
+   "pais": true,
+   "cont": "as",
+   "price": 1500,
+   "img": "b/d314e37de3a1750034104ef53b99c6f6.webp",
+   "desc": "Los colores y el emblema de la bandera de Laos."
+  },
+  {
+   "id": "p_my",
+   "mode": "p_my",
+   "name": "Malasia",
+   "cells": 84,
+   "pais": true,
+   "cont": "as",
+   "price": 1500,
+   "img": "b/364bf0290646aca5bf284e606f29f7b4.webp",
+   "desc": "Los colores y el emblema de la bandera de Malasia."
+  },
+  {
+   "id": "p_ae",
+   "mode": "p_ae",
+   "name": "Emiratos Árabes",
+   "cells": 84,
+   "pais": true,
+   "cont": "as",
+   "price": 1500,
+   "img": "b/3fe98df85446558c30f3ba6b57c2c810.webp",
+   "desc": "Los colores y el emblema de la bandera de Emiratos Árabes."
+  },
+  {
+   "id": "p_mv",
+   "mode": "p_mv",
+   "name": "Maldivas",
+   "cells": 84,
+   "pais": true,
+   "cont": "as",
+   "price": 1500,
+   "img": "b/dc01252f6a13f0a784d831ef6b1ebfa2.webp",
+   "desc": "Los colores y el emblema de la bandera de Maldivas."
+  },
+  {
+   "id": "p_kr",
+   "mode": "p_kr",
+   "name": "Corea del Sur",
+   "cells": 84,
+   "pais": true,
+   "cont": "as",
+   "price": 1500,
+   "img": "b/779821ed77ab7343d452a4e3e601a55f.webp",
+   "desc": "Los colores y el emblema de la bandera de Corea del Sur."
+  },
+  {
+   "id": "p_ge",
+   "mode": "p_ge",
+   "name": "Georgia",
+   "cells": 84,
+   "pais": true,
+   "cont": "as",
+   "price": 1500,
+   "img": "b/855cf03af19e82e9867abf5e884f7734.webp",
+   "desc": "Los colores y el emblema de la bandera de Georgia."
+  },
+  {
+   "id": "p_ir",
+   "mode": "p_ir",
+   "name": "Irán",
+   "cells": 84,
+   "pais": true,
+   "cont": "as",
+   "price": 1500,
+   "img": "b/81bd2bed2d7c553580fff12261d44574.webp",
+   "desc": "Los colores y el emblema de la bandera de Irán."
+  },
+  {
+   "id": "p_iq",
+   "mode": "p_iq",
+   "name": "Irak",
+   "cells": 84,
+   "pais": true,
+   "cont": "as",
+   "price": 1500,
+   "img": "b/8d673b3fb869d0c1a714842810300766.webp",
+   "desc": "Los colores y el emblema de la bandera de Irak."
+  },
+  {
+   "id": "p_lb",
+   "mode": "p_lb",
+   "name": "Líbano",
+   "cells": 84,
+   "pais": true,
+   "cont": "as",
+   "price": 1500,
+   "img": "b/4024c20ebe2638f0583d90f652114ec5.webp",
+   "desc": "Los colores y el emblema de la bandera de Líbano."
+  },
+  {
+   "id": "p_mn",
+   "mode": "p_mn",
+   "name": "Mongolia",
+   "cells": 84,
+   "pais": true,
+   "cont": "as",
+   "price": 1500,
+   "img": "b/bb8277298249b62f7cd1794da55bdada.webp",
+   "desc": "Los colores y el emblema de la bandera de Mongolia."
+  },
+  {
+   "id": "p_lk",
+   "mode": "p_lk",
+   "name": "Sri Lanka",
+   "cells": 84,
+   "pais": true,
+   "cont": "as",
+   "price": 1500,
+   "img": "b/c31d3170a47232fcbb2e62489f2040a5.webp",
+   "desc": "Los colores y el emblema de la bandera de Sri Lanka."
+  },
+  {
+   "id": "p_kh",
+   "mode": "p_kh",
+   "name": "Camboya",
+   "cells": 84,
+   "pais": true,
+   "cont": "as",
+   "price": 1500,
+   "img": "b/2c22f190d74df20e1fb65dc818208cbc.webp",
+   "desc": "Los colores y el emblema de la bandera de Camboya."
+  },
+  {
+   "id": "p_et",
+   "mode": "p_et",
+   "name": "Etiopía",
+   "cells": 84,
+   "pais": true,
+   "cont": "af",
+   "price": 1500,
+   "img": "b/9eca049d3c4d534fdb1db9f374bef49b.webp",
+   "desc": "Los colores y el emblema de la bandera de Etiopía."
+  },
+  {
+   "id": "p_gh",
+   "mode": "p_gh",
+   "name": "Ghana",
+   "cells": 84,
+   "pais": true,
+   "cont": "af",
+   "price": 1500,
+   "img": "b/89188e864300bb0aab78928918943777.webp",
+   "desc": "Los colores y el emblema de la bandera de Ghana."
+  },
+  {
+   "id": "p_sn",
+   "mode": "p_sn",
+   "name": "Senegal",
+   "cells": 84,
+   "pais": true,
+   "cont": "af",
+   "price": 1500,
+   "img": "b/bf9e968749c245a811e3ccf5d73d9969.webp",
+   "desc": "Los colores y el emblema de la bandera de Senegal."
+  },
+  {
+   "id": "p_ml",
+   "mode": "p_ml",
+   "name": "Malí",
+   "cells": 84,
+   "pais": true,
+   "cont": "af",
+   "price": 1500,
+   "img": "b/5153241baf32221db9b9066cddeda54c.webp",
+   "desc": "Los colores y el emblema de la bandera de Malí."
+  },
+  {
+   "id": "p_gn",
+   "mode": "p_gn",
+   "name": "Guinea",
+   "cells": 84,
+   "pais": true,
+   "cont": "af",
+   "price": 1500,
+   "img": "b/f4f927c3804364bc81b05759963df94b.webp",
+   "desc": "Los colores y el emblema de la bandera de Guinea."
+  },
+  {
+   "id": "p_ci",
+   "mode": "p_ci",
+   "name": "Costa de Marfil",
+   "cells": 84,
+   "pais": true,
+   "cont": "af",
+   "price": 1500,
+   "img": "b/888075e883135f4c80f87942b239d32b.webp",
+   "desc": "Los colores y el emblema de la bandera de Costa de Marfil."
+  },
+  {
+   "id": "p_bj",
+   "mode": "p_bj",
+   "name": "Benín",
+   "cells": 84,
+   "pais": true,
+   "cont": "af",
+   "price": 1500,
+   "img": "b/ee904b774a3beea482952189739c94dd.webp",
+   "desc": "Los colores y el emblema de la bandera de Benín."
+  },
+  {
+   "id": "p_ne",
+   "mode": "p_ne",
+   "name": "Níger",
+   "cells": 84,
+   "pais": true,
+   "cont": "af",
+   "price": 1500,
+   "img": "b/2a7da6228aad98f337cf45128ea5c341.webp",
+   "desc": "Los colores y el emblema de la bandera de Níger."
+  },
+  {
+   "id": "p_cm",
+   "mode": "p_cm",
+   "name": "Camerún",
+   "cells": 84,
+   "pais": true,
+   "cont": "af",
+   "price": 1500,
+   "img": "b/e3d959d221ab94ee7259e5b208ed7cb1.webp",
+   "desc": "Los colores y el emblema de la bandera de Camerún."
+  },
+  {
+   "id": "p_bf",
+   "mode": "p_bf",
+   "name": "Burkina Faso",
+   "cells": 84,
+   "pais": true,
+   "cont": "af",
+   "price": 1500,
+   "img": "b/86a8d7f80e6a255d18f7eaf8caa027ad.webp",
+   "desc": "Los colores y el emblema de la bandera de Burkina Faso."
+  },
+  {
+   "id": "p_td",
+   "mode": "p_td",
+   "name": "Chad",
+   "cells": 84,
+   "pais": true,
+   "cont": "af",
+   "price": 1500,
+   "img": "b/60192a75adf3e4cac8d33b80dd111d50.webp",
+   "desc": "Los colores y el emblema de la bandera de Chad."
+  },
+  {
+   "id": "p_dz",
+   "mode": "p_dz",
+   "name": "Argelia",
+   "cells": 84,
+   "pais": true,
+   "cont": "af",
+   "price": 1500,
+   "img": "b/1f8944b6751cf2b82c38d2d4bc677865.webp",
+   "desc": "Los colores y el emblema de la bandera de Argelia."
+  },
+  {
+   "id": "p_tn",
+   "mode": "p_tn",
+   "name": "Túnez",
+   "cells": 84,
+   "pais": true,
+   "cont": "af",
+   "price": 1500,
+   "img": "b/469e766c58fe5bf60d588aa308156757.webp",
+   "desc": "Los colores y el emblema de la bandera de Túnez."
+  },
+  {
+   "id": "p_ma",
+   "mode": "p_ma",
+   "name": "Marruecos",
+   "cells": 84,
+   "pais": true,
+   "cont": "af",
+   "price": 1500,
+   "img": "b/d2033cf96d6fd342b2b1ab133ba42a38.webp",
+   "desc": "Los colores y el emblema de la bandera de Marruecos."
+  },
+  {
+   "id": "p_ly",
+   "mode": "p_ly",
+   "name": "Libia",
+   "cells": 84,
+   "pais": true,
+   "cont": "af",
+   "price": 1500,
+   "img": "b/f2dc077bd94f3186e1b3c15077dca3a1.webp",
+   "desc": "Los colores y el emblema de la bandera de Libia."
+  },
+  {
+   "id": "p_rw",
+   "mode": "p_rw",
+   "name": "Ruanda",
+   "cells": 84,
+   "pais": true,
+   "cont": "af",
+   "price": 1500,
+   "img": "b/feebc185f22be9d833f2c546ee5989ee.webp",
+   "desc": "Los colores y el emblema de la bandera de Ruanda."
+  },
+  {
+   "id": "p_mg",
+   "mode": "p_mg",
+   "name": "Madagascar",
+   "cells": 84,
+   "pais": true,
+   "cont": "af",
+   "price": 1500,
+   "img": "b/72ee3e6bfe519da46b6dfeed594fbd08.webp",
+   "desc": "Los colores y el emblema de la bandera de Madagascar."
+  },
+  {
+   "id": "p_ga",
+   "mode": "p_ga",
+   "name": "Gabón",
+   "cells": 84,
+   "pais": true,
+   "cont": "af",
+   "price": 1500,
+   "img": "b/6009d119cc3a6dd61eb2def9dc7db2e6.webp",
+   "desc": "Los colores y el emblema de la bandera de Gabón."
+  },
+  {
+   "id": "p_so",
+   "mode": "p_so",
+   "name": "Somalia",
+   "cells": 84,
+   "pais": true,
+   "cont": "af",
+   "price": 1500,
+   "img": "b/e4af4ec0435d12080c8cef59f2708d0f.webp",
+   "desc": "Los colores y el emblema de la bandera de Somalia."
+  },
+  {
+   "id": "p_bw",
+   "mode": "p_bw",
+   "name": "Botsuana",
+   "cells": 84,
+   "pais": true,
+   "cont": "af",
+   "price": 1500,
+   "img": "b/f1e79417fd639f0e91d5b898a50202dc.webp",
+   "desc": "Los colores y el emblema de la bandera de Botsuana."
+  },
+  {
+   "id": "p_sd",
+   "mode": "p_sd",
+   "name": "Sudán",
+   "cells": 84,
+   "pais": true,
+   "cont": "af",
+   "price": 1500,
+   "img": "b/7eaab2965a0e4eb0b500ef850b4ca627.webp",
+   "desc": "Los colores y el emblema de la bandera de Sudán."
+  },
+  {
+   "id": "p_mr",
+   "mode": "p_mr",
+   "name": "Mauritania",
+   "cells": 84,
+   "pais": true,
+   "cont": "af",
+   "price": 1500,
+   "img": "b/ea11f902ab3f237c4c933b16f62e98cf.webp",
+   "desc": "Los colores y el emblema de la bandera de Mauritania."
+  },
+  {
+   "id": "p_cv",
+   "mode": "p_cv",
+   "name": "Cabo Verde",
+   "cells": 84,
+   "pais": true,
+   "cont": "af",
+   "price": 1500,
+   "img": "b/cfd369cbebf77a5f1e68ed3bab64dd35.webp",
+   "desc": "Los colores y el emblema de la bandera de Cabo Verde."
+  },
+  {
+   "id": "p_ke",
+   "mode": "p_ke",
+   "name": "Kenia",
+   "cells": 84,
+   "pais": true,
+   "cont": "af",
+   "price": 1500,
+   "img": "b/f57aa84ec66a3185062ba4e98a649cd4.webp",
+   "desc": "Los colores y el emblema de la bandera de Kenia."
+  },
+  {
+   "id": "p_zw",
+   "mode": "p_zw",
+   "name": "Zimbabue",
+   "cells": 84,
+   "pais": true,
+   "cont": "af",
+   "price": 1500,
+   "img": "b/e72bee2e014962ea3d65850a757f3a60.webp",
+   "desc": "Los colores y el emblema de la bandera de Zimbabue."
+  },
+  {
+   "id": "p_zm",
+   "mode": "p_zm",
+   "name": "Zambia",
+   "cells": 84,
+   "pais": true,
+   "cont": "af",
+   "price": 1500,
+   "img": "b/71b6be148b27d45d45e9faa0f1ba0fe7.webp",
+   "desc": "Los colores y el emblema de la bandera de Zambia."
+  },
+  {
+   "id": "p_ug",
+   "mode": "p_ug",
+   "name": "Uganda",
+   "cells": 84,
+   "pais": true,
+   "cont": "af",
+   "price": 1500,
+   "img": "b/cb0694061e3f74996e69e87c14c43dd0.webp",
+   "desc": "Los colores y el emblema de la bandera de Uganda."
+  },
+  {
+   "id": "p_ao",
+   "mode": "p_ao",
+   "name": "Angola",
+   "cells": 84,
+   "pais": true,
+   "cont": "af",
+   "price": 1500,
+   "img": "b/d28a192f98b598bef6d157b8bb49e205.webp",
+   "desc": "Los colores y el emblema de la bandera de Angola."
+  },
+  {
+   "id": "p_au",
+   "mode": "p_au",
+   "name": "Australia",
+   "cells": 84,
+   "pais": true,
+   "cont": "oc",
+   "price": 1500,
+   "img": "b/3f41f98f668d4adbfd345ed9263eff33.webp",
+   "desc": "Los colores y el emblema de la bandera de Australia."
+  },
+  {
+   "id": "p_nz",
+   "mode": "p_nz",
+   "name": "Nueva Zelanda",
+   "cells": 84,
+   "pais": true,
+   "cont": "oc",
+   "price": 1500,
+   "img": "b/e642483545508926c6e237e8e6dd120a.webp",
+   "desc": "Los colores y el emblema de la bandera de Nueva Zelanda."
+  },
+  {
+   "id": "muertos",
+   "mode": "muertos",
+   "name": "Día de Muertos",
+   "cells": 84,
+   "price": 1000,
+   "img": "b/eb776b82967d3cee1a8ae1a37f4ab22f.webp",
+   "desc": "Caléndulas naranjas sobre morado, para recordar y celebrar."
+  },
+  {
+   "id": "playa",
+   "mode": "playa",
+   "name": "Playa Tropical",
+   "cells": 84,
+   "price": 1000,
+   "img": "b/e0571c22ac47a69022e54dec13e8122b.webp",
+   "desc": "Arena dorada, olas turquesa, palmeras y conchas."
+  },
+  {
+   "id": "coral",
+   "mode": "coral",
+   "name": "Arrecife de Coral",
+   "cells": 84,
+   "price": 1000,
+   "img": "b/d38ff6800679b7732fd5d84aa09f6509.webp",
+   "desc": "Corales, estrellas de mar y conchas bajo el mar."
+  },
+  {
+   "id": "px_galaxia",
+   "mode": "px_galaxia",
+   "name": "Galaxia Cósmica",
+   "cells": 84,
+   "price": 99999,
+   "passOnly": true,
+   "img": "b/87b42eec41c49ece76a2b0ccd0b6c98e.webp",
+   "desc": "Marco espacial con órbitas y planetas. Exclusivo del Parche Pass."
+  },
+  {
+   "id": "px_dragon",
+   "mode": "px_dragon",
+   "name": "Dragón Imperial",
+   "cells": 84,
+   "price": 99999,
+   "passOnly": true,
+   "img": "b/31a30d2a9677c4a5ce965f1a212dceaa.webp",
+   "desc": "Laca roja con dragones dorados. Exclusivo del Parche Pass."
+  },
+  {
+   "id": "px_bosque",
+   "mode": "px_bosque",
+   "name": "Bosque Encantado",
+   "cells": 84,
+   "price": 99999,
+   "passOnly": true,
+   "img": "b/908a3d7b3a80bf161162dcaf91b628d1.webp",
+   "desc": "Enredaderas, hongos y mariposas azules. Exclusivo del Parche Pass."
+  },
+  {
+   "id": "bosque",
+   "mode": "bosque",
+   "name": "Bosque Encantado",
+   "cells": 84,
+   "price": 1000,
+   "img": "b/0e2cdcf31b6484c45965d99174d905ef.webp",
+   "desc": "Madera viva, hojas y luciérnagas."
+  },
+  {
+   "id": "galaxia",
+   "mode": "galaxia",
+   "name": "Estación Galáctica",
+   "cells": 84,
+   "price": 1000,
+   "img": "b/72614aefc9d50a7f98a8ff9917b50570.webp",
+   "desc": "Paneles de metal y luces en el espacio."
+  },
+  {
+   "id": "nieve",
+   "mode": "nieve",
+   "name": "Nieve Ártica",
+   "cells": 84,
+   "price": 1000,
+   "img": "b/69de624ed7f7dff20f92594ebd5b5af9.webp",
+   "desc": "Hielo tallado con acebo y escarcha."
+  },
+  {
+   "id": "volcan",
+   "mode": "volcan",
+   "name": "Forja de Volcán",
+   "cells": 84,
+   "price": 1000,
+   "img": "b/fe7d23278ec3cb990395dd1a1c64d1ab.webp",
+   "desc": "Piedra negra con grietas de lava."
+  },
+  {
+   "id": "cerezo",
+   "mode": "cerezo",
+   "name": "Jardín de Cerezos",
+   "cells": 84,
+   "price": 1000,
+   "img": "b/49e6246daf74f9e5f59a7012a4fe6625.webp",
+   "desc": "Laca roja y flores de cerezo."
+  },
+  {
+   "id": "caramelo",
+   "mode": "caramelo",
+   "name": "Pueblo de Caramelo",
+   "cells": 84,
+   "price": 1000,
+   "img": "b/5626692a7747c3f10def084208f1ed2f.webp",
+   "desc": "Bastones de caramelo y dulces."
+  },
+  {
+   "id": "egipto",
+   "mode": "egipto",
+   "name": "Egipto Antiguo",
+   "cells": 84,
+   "price": 1000,
+   "img": "b/da0dbd3ada9c5bc45c6a1b988b3d5523.webp",
+   "desc": "Oro y lapislázuli de un templo."
+  },
+  {
+   "id": "jardin",
+   "mode": "jardin",
+   "name": "Jardín de Flores",
+   "cells": 84,
+   "price": 1000,
+   "img": "b/5e73bff32c45a39b60f5f253d571fd82.webp",
+   "desc": "Rosas, margaritas y mariposas."
+  },
+  {
+   "id": "halloween1",
+   "mode": "halloween1",
+   "name": "Noche de Calabazas",
+   "cells": 84,
+   "price": 1000,
+   "img": "b/9cb9c2ed596b52a772323378abdad1e2.webp",
+   "desc": "Madera retorcida y calabazas."
+  },
+  {
+   "id": "halloween2",
+   "mode": "halloween2",
+   "name": "Noche de Brujas",
+   "cells": 84,
+   "price": 1000,
+   "img": "b/6be617ff5cb176210d3017420118fe62.webp",
+   "desc": "Ramas, telarañas y calabazas."
+  },
+  {
+   "id": "navidad1",
+   "mode": "navidad1",
+   "name": "Navidad",
+   "cells": 84,
+   "price": 1000,
+   "img": "b/85274464e55abe86def72dde7ab59319.webp",
+   "desc": "Guirnalda de pino, lazos y campanas."
+  },
+  {
+   "id": "navidad2",
+   "mode": "navidad2",
+   "name": "Navidad Dorada",
+   "cells": 84,
+   "price": 1000,
+   "img": "b/ce1a05ff9bfbe9c9b5cb94d37d30984a.webp",
+   "desc": "Listón rojo, acebo y campanas doradas."
+  },
+  {
+   "id": "carreras",
+   "mode": "carreras",
+   "name": "Pista de Carreras",
+   "cells": 84,
+   "price": 1000,
+   "img": "b/5f653c1da34d10e8b1a3dc0c192eeaba.webp",
+   "desc": "Bandera a cuadros y bordes rojiblancos."
+  },
+  {
+   "id": "baloncesto",
+   "mode": "baloncesto",
+   "name": "Cancha de Baloncesto",
+   "cells": 84,
+   "price": 1000,
+   "img": "b/7479d8b55d1826ccd3793b2bba2f60bb.webp",
+   "desc": "Madera pulida, aros y balones."
+  },
+  {
+   "id": "boxeo",
+   "mode": "boxeo",
+   "name": "Ring de Boxeo",
+   "cells": 84,
+   "price": 1000,
+   "img": "b/93075ba86669012ad9f0e4d4349731d9.webp",
+   "desc": "Cuerdas y esquinas de un ring."
+  },
+  {
+   "id": "billar",
+   "mode": "billar",
+   "name": "Mesa de Billar",
+   "cells": 84,
+   "price": 1000,
+   "img": "b/d23aa951b85b23a2bb185232cbdc28a3.webp",
+   "desc": "Madera, paño verde y troneras."
+  },
+  {
+   "id": "futbol",
+   "mode": "futbol",
+   "name": "Cancha de Fútbol",
+   "cells": 84,
+   "price": 1000,
+   "img": "b/d272fad0048050251935bfb30cdfbfb1.webp",
+   "desc": "Césped, porterías y balones."
+  },
+  {
+   "id": "beisbol",
+   "mode": "beisbol",
+   "name": "Campo de Béisbol",
+   "cells": 84,
+   "price": 1000,
+   "img": "b/8adfcce74ae603b015b9bc6137b9258a.webp",
+   "desc": "Tierra roja, pelotas y guantes."
+  }
+ ],
+ "PASS_TIERS": [
+  {
+   "tier": 1,
+   "points": 100,
+   "free": {
+    "gold": 500
+   },
+   "premium": {
+    "diamonds": 100
+   }
+  },
+  {
+   "tier": 2,
+   "points": 200,
+   "free": {
+    "diamonds": 5
+   },
+   "premium": {
+    "xp": 6
+   }
+  },
+  {
+   "tier": 3,
+   "points": 300,
+   "free": {
+    "gold": 800
+   },
+   "premium": {
+    "dice": "pd_galaxia"
+   }
+  },
+  {
+   "tier": 4,
+   "points": 400,
+   "free": {
+    "diamonds": 5
+   },
+   "premium": {
+    "gold": 5000
+   }
+  },
+  {
+   "tier": 5,
+   "points": 500,
+   "free": {
+    "gold": 1200
+   },
+   "premium": {
+    "diamonds": 120
+   }
+  },
+  {
+   "tier": 6,
+   "points": 600,
+   "free": {
+    "diamonds": 5
+   },
+   "premium": {
+    "diamonds": 150
+   }
+  },
+  {
+   "tier": 7,
+   "points": 700,
+   "free": {
+    "gold": 2000
+   },
+   "premium": {
+    "avatar": "pa1"
+   }
+  },
+  {
+   "tier": 8,
+   "points": 800,
+   "free": {
+    "diamonds": 10
+   },
+   "premium": {
+    "chest": "plata"
+   }
+  },
+  {
+   "tier": 9,
+   "points": 900,
+   "free": {
+    "gold": 3000
+   },
+   "premium": {
+    "xp": 24
+   }
+  },
+  {
+   "tier": 10,
+   "points": 1000,
+   "free": {
+    "diamonds": 15
+   },
+   "premium": {
+    "token": "caballo"
+   }
+  },
+  {
+   "tier": 11,
+   "points": 1100,
+   "free": {
+    "gold": 2500
+   },
+   "premium": {
+    "gold": 8000
+   }
+  },
+  {
+   "tier": 12,
+   "points": 1200,
+   "free": {
+    "diamonds": 10
+   },
+   "premium": {
+    "board": "px_galaxia"
+   }
+  },
+  {
+   "tier": 13,
+   "points": 1300,
+   "free": {
+    "gold": 3000
+   },
+   "premium": {
+    "dice": "pd_dragon"
+   }
+  },
+  {
+   "tier": 14,
+   "points": 1400,
+   "free": {
+    "diamonds": 10
+   },
+   "premium": {
+    "diamonds": 200
+   }
+  },
+  {
+   "tier": 15,
+   "points": 1500,
+   "free": {
+    "chest": "bronce"
+   },
+   "premium": {
+    "chest": "oro"
+   }
+  },
+  {
+   "tier": 16,
+   "points": 1600,
+   "free": {
+    "gold": 3500
+   },
+   "premium": {
+    "xp": 72
+   }
+  },
+  {
+   "tier": 17,
+   "points": 1700,
+   "free": {
+    "diamonds": 10
+   },
+   "premium": {
+    "avatar": "pa2"
+   }
+  },
+  {
+   "tier": 18,
+   "points": 1800,
+   "free": {
+    "gold": 4000
+   },
+   "premium": {
+    "gold": 12000
+   }
+  },
+  {
+   "tier": 19,
+   "points": 1900,
+   "free": {
+    "diamonds": 15
+   },
+   "premium": {
+    "dice": "pd_cristal"
+   }
+  },
+  {
+   "tier": 20,
+   "points": 2000,
+   "free": {
+    "token": "ancla"
+   },
+   "premium": {
+    "token": "leon"
+   }
+  },
+  {
+   "tier": 21,
+   "points": 2100,
+   "free": {
+    "gold": 4500
+   },
+   "premium": {
+    "diamonds": 250
+   }
+  },
+  {
+   "tier": 22,
+   "points": 2200,
+   "free": {
+    "diamonds": 15
+   },
+   "premium": {
+    "board": "px_dragon"
+   }
+  },
+  {
+   "tier": 23,
+   "points": 2300,
+   "free": {
+    "gold": 5000
+   },
+   "premium": {
+    "chest": "oro"
+   }
+  },
+  {
+   "tier": 24,
+   "points": 2400,
+   "free": {
+    "diamonds": 15
+   },
+   "premium": {
+    "xp": 168
+   }
+  },
+  {
+   "tier": 25,
+   "points": 2500,
+   "free": {
+    "chest": "plata"
+   },
+   "premium": {
+    "token": "aguila"
+   }
+  },
+  {
+   "tier": 26,
+   "points": 2600,
+   "free": {
+    "gold": 6000
+   },
+   "premium": {
+    "avatar": "pa3"
+   }
+  },
+  {
+   "tier": 27,
+   "points": 2700,
+   "free": {
+    "diamonds": 20
+   },
+   "premium": {
+    "diamonds": 400
+   }
+  },
+  {
+   "tier": 28,
+   "points": 2800,
+   "free": {
+    "gold": 7000
+   },
+   "premium": {
+    "avatar": "pa4"
+   }
+  },
+  {
+   "tier": 29,
+   "points": 2900,
+   "free": {
+    "diamonds": 20
+   },
+   "premium": {
+    "chest": "oro"
+   }
+  },
+  {
+   "tier": 30,
+   "points": 3000,
+   "free": {
+    "chest": "oro"
+   },
+   "premium": {
+    "board": "px_bosque"
+   }
+  }
+ ],
+ "CHEST_TYPES": {
+  "bronce": {
+   "name": "Bronce",
+   "icon": "🟫",
+   "hours": 3,
+   "gold": [
+    200,
+    600
+   ],
+   "diamonds": [
+    0,
+    2
+   ]
+  },
+  "plata": {
+   "name": "Plata",
+   "icon": "⬜",
+   "hours": 8,
+   "gold": [
+    600,
+    1800
+   ],
+   "diamonds": [
+    2,
+    6
+   ]
+  },
+  "oro": {
+   "name": "Oro Místico",
+   "icon": "🟨",
+   "hours": 12,
+   "gold": [
+    2000,
+    6000
+   ],
+   "diamonds": [
+    6,
+    15
+   ]
+  },
+  "diamante": {
+   "name": "Diamante",
+   "icon": "💎",
+   "hours": 24,
+   "gold": [
+    6000,
+    15000
+   ],
+   "diamonds": [
+    15,
+    40
+   ]
+  }
+ },
+ "CHALLENGES": [
+  {
+   "id": "play3",
+   "title": "Juega 3 partidas hoy",
+   "target": 3,
+   "track": "gamesToday",
+   "reward": {
+    "gold": 6000
+   },
+   "rewardLabel": "+6,000 🪙"
+  },
+  {
+   "id": "win1",
+   "title": "Gana 1 partida hoy",
+   "target": 1,
+   "track": "winsToday",
+   "reward": {
+    "gold": 10000
+   },
+   "rewardLabel": "+10,000 🪙"
+  },
+  {
+   "id": "bet10k",
+   "title": "Apuesta al menos 10,000 oro",
+   "target": 1,
+   "track": "bigBetToday",
+   "reward": {
+    "diamonds": 10
+   },
+   "rewardLabel": "+10 💎"
+  },
+  {
+   "id": "chest1",
+   "title": "Rompe 1 ánfora hoy",
+   "target": 1,
+   "track": "chestsToday",
+   "reward": {
+    "gold": 4000,
+    "diamonds": 5
+   },
+   "rewardLabel": "+4,000 🪙 +5 💎"
+  }
+ ],
+ "CHALLENGE_POOL": [
+  {
+   "id": "play1v1_2",
+   "title": "Juega 2 partidas 1 vs 1",
+   "target": 2,
+   "track": "games1v1Today",
+   "reward": {
+    "gold": 6000
+   },
+   "rewardLabel": "+6,000 🪙"
+  },
+  {
+   "id": "capture3",
+   "title": "Captura 3 fichas rivales",
+   "target": 3,
+   "track": "capturesToday",
+   "reward": {
+    "diamonds": 10
+   },
+   "rewardLabel": "+10 💎"
+  },
+  {
+   "id": "chest1",
+   "title": "Rompe 1 ánfora",
+   "target": 1,
+   "track": "chestsToday",
+   "reward": {
+    "gold": 4000,
+    "diamonds": 5
+   },
+   "rewardLabel": "+4,000 🪙 +5 💎"
+  },
+  {
+   "id": "win1",
+   "title": "Gana 1 partida",
+   "target": 1,
+   "track": "winsToday",
+   "reward": {
+    "gold": 10000
+   },
+   "rewardLabel": "+10,000 🪙"
+  },
+  {
+   "id": "play3",
+   "title": "Juega 3 partidas (cualquier modo)",
+   "target": 3,
+   "track": "gamesToday",
+   "reward": {
+    "gold": 6000
+   },
+   "rewardLabel": "+6,000 🪙"
+  },
+  {
+   "id": "bet10k",
+   "title": "Apuesta al menos 10,000 de oro",
+   "target": 1,
+   "track": "bigBetToday",
+   "reward": {
+    "diamonds": 10
+   },
+   "rewardLabel": "+10 💎"
+  },
+  {
+   "id": "double2",
+   "title": "Saca 2 dobles",
+   "target": 2,
+   "track": "doublesToday",
+   "reward": {
+    "diamonds": 5
+   },
+   "rewardLabel": "+5 💎"
+  },
+  {
+   "id": "play2v2_1",
+   "title": "Juega 1 partida 2 vs 2",
+   "target": 1,
+   "track": "games2v2Today",
+   "reward": {
+    "gold": 5000
+   },
+   "rewardLabel": "+5,000 🪙"
+  },
+  {
+   "id": "treasure1",
+   "title": "Encuentra 1 tesoro",
+   "target": 1,
+   "track": "treasureToday",
+   "reward": {
+    "diamonds": 5
+   },
+   "rewardLabel": "+5 💎"
+  },
+  {
+   "id": "streak1",
+   "title": "Come 2 fichas seguidas (racha)",
+   "target": 1,
+   "track": "streaksToday",
+   "reward": {
+    "diamonds": 10
+   },
+   "rewardLabel": "+10 💎"
+  }
+ ],
+ "DAILY_REWARDS": [
+  1000,
+  1600,
+  2500,
+  3500,
+  5000,
+  8000,
+  "chest"
+ ],
+ "TOURNAMENTS": [
+  {
+   "id": "bronce",
+   "name": "Copa Bronce",
+   "icon": "🥉",
+   "fee": 1000
+  },
+  {
+   "id": "plata",
+   "name": "Copa Plata",
+   "icon": "🥈",
+   "fee": 5000
+  },
+  {
+   "id": "elite",
+   "name": "Copa Élite",
+   "icon": "💎",
+   "fee": 20000
+  }
+ ],
+ "PASS_ONLY_TOKENS": [
+  "caballo",
+  "leon",
+  "aguila",
+  "ancla"
+ ],
+ "TOKEN_FREE_TEST": [
+  "canica",
+  "domo",
+  "trompo",
+  "perla",
+  "piramide",
+  "gota",
+  "campana",
+  "barril",
+  "cono",
+  "farol",
+  "caliz",
+  "anillo",
+  "nieve",
+  "peonza",
+  "gema"
+ ],
+ "RETIRED_TOKENS": [
+  "torre",
+  "corona",
+  "estrella",
+  "diamante",
+  "cohete",
+  "corazon",
+  "rayo",
+  "luna",
+  "escudo",
+  "copa"
+ ],
+ "PRICE_DICE": 500,
+ "PRICE_TOKEN": 250,
+ "PRICE_BOARD": 1000,
+ "ANIMALS": [
+  "caballo",
+  "leon",
+  "aguila",
+  "ancla",
+  "torre",
+  "corona",
+  "estrella",
+  "diamante",
+  "cohete",
+  "corazon",
+  "rayo",
+  "luna",
+  "escudo",
+  "copa",
+  "canica",
+  "domo",
+  "trompo",
+  "perla",
+  "piramide",
+  "gota",
+  "campana",
+  "barril",
+  "cono",
+  "farol",
+  "caliz",
+  "anillo",
+  "nieve",
+  "peonza",
+  "gema"
+ ]
+}
