@@ -317,7 +317,7 @@ nk.register_rpc(rpc_iap_firsts, "iap_firsts")
 local GLOBAL_BOARD = "global_weekly"
 local LIGA_RL = "liga_rl"
 local LIGA_GRANTS = "liga_grants"
-local LIGA_MIN_GAP = 60
+local LIGA_MIN_GAP = 90
 local GLOBAL_PRIZE = { gold = 500000, diamonds = 15000 }
 local GLOBAL_TOP_N = 50
 
@@ -338,19 +338,110 @@ local function board_info()
   return nil
 end
 
+-- ---------- Ligas por nivel + anti-trampa ----------
+-- El servidor lleva los puntos acumulados de cada jugador (de ahi sale su liga: cada 300 sube)
+-- y una tabla semanal por liga. SOLO cuentan partidas online contra personas reales
+-- (el telefono manda el id de los rivales y el servidor comprueba que existen), con tope
+-- por dia y tope por rival por dia, para que nadie pueda inflar puntos con partidas falsas,
+-- bots o cuentas gemelas.
+local LIGA_STATE = "liga_state"
+local LIGA_TIERS = { "bronce", "plata", "oro", "elite" }
+local LIGA_TIER_PTS = 300
+local LIGA_DAY_CAP = 40
+local LIGA_OPP_CAP = 4
+local LIGA_MIN_PLAYERS = 3
+local LIGA_MIN_SCORE = 50
+local LIGA_TOP_PRIZES = 7
+local function lg(g, d, a) return { gold = g, diamonds = d, amphora = a } end
+local LIGA_REWARDS = {
+  bronce = { lg(40000, 800, "plata"), lg(30000, 800), lg(30000, 800), lg(20000, 0), lg(20000, 0), lg(20000, 0), lg(20000, 0) },
+  plata  = { lg(80000, 1500, "oro"), lg(60000, 1500, "plata"), lg(60000, 1500, "plata"), lg(40000, 0), lg(40000, 0), lg(40000, 0), lg(40000, 0) },
+  oro    = { lg(150000, 2500, "oro"), lg(100000, 2500, "plata"), lg(100000, 2500, "plata"), lg(70000, 25), lg(70000, 25), lg(70000, 25), lg(70000, 25) },
+  elite  = { lg(300000, 5000, "diamante"), lg(200000, 5000, "oro"), lg(200000, 5000, "oro"), lg(100000, 50), lg(100000, 50), lg(100000, 50), lg(100000, 50) },
+}
+for _, t in ipairs(LIGA_TIERS) do
+  pcall(function() nk.leaderboard_create("liga_" .. t, true, "desc", "incr", "0 0 * * 1", {}) end)
+end
+
+local function tier_of_pts(pts)
+  local t = math.floor((tonumber(pts) or 0) / LIGA_TIER_PTS) + 1
+  if t > #LIGA_TIERS then t = #LIGA_TIERS end
+  if t < 1 then t = 1 end
+  return t
+end
+
+local function today_key() return os.date("!%Y%m%d") end
+
+-- Rivales validos de una partida: ids distintos al propio, que existan de verdad.
+local function match_opps(uid, d)
+  if d.online ~= true or type(d.opps) ~= "table" then return nil end
+  local seen, opps = {}, {}
+  for _, o in ipairs(d.opps) do
+    if type(o) == "string" and o ~= uid and #o > 0 and #o <= 64 and not seen[o] then
+      seen[o] = true; opps[#opps + 1] = o
+    end
+    if #opps >= 3 then break end
+  end
+  if #opps == 0 then return nil end
+  local ok, us = pcall(nk.users_get_id, opps)
+  if not ok or type(us) ~= "table" or #us ~= #opps then return nil end
+  return opps
+end
+
+-- Topes diarios (en el mismo registro `st`). Devuelve true si esta partida puede contar.
+local function farm_ok(st, opps, day_cap, opp_cap)
+  local day = today_key()
+  if st.day ~= day then st.day = day; st.n = 0; st.opp = {} end
+  if type(st.opp) ~= "table" then st.opp = {} end
+  if (st.n or 0) >= day_cap then return false end
+  local fresh = false
+  for _, o in ipairs(opps) do
+    if (st.opp[o] or 0) < opp_cap then fresh = true end
+  end
+  if not fresh then return false end
+  st.n = (st.n or 0) + 1
+  for _, o in ipairs(opps) do st.opp[o] = (st.opp[o] or 0) + 1 end
+  return true
+end
+
+local function read_liga(uid, key)
+  local r = nk.storage_read({{ collection = LIGA_STATE, key = key, user_id = uid }})
+  if r and #r > 0 and type(r[1].value) == "table" then return r[1].value end
+  return { pts = 0 }
+end
+
+local function write_liga(uid, key, st)
+  nk.storage_write({{ collection = LIGA_STATE, key = key, user_id = uid, value = st,
+                      permission_read = 0, permission_write = 0 }})
+end
+
 local function rpc_global_report(context, payload)
   local uid = context.user_id
   if not uid then return reply({ ok = false, error = "sin_sesion" }) end
   local okd, d = pcall(nk.json_decode, payload or "{}")
   if not okd or type(d) ~= "table" then return reply({ ok = false, error = "pedido_invalido" }) end
+  local st = read_liga(uid, "main")
+  local total = tonumber(st.pts) or 0
+  local opps = match_opps(uid, d)
+  if not opps then
+    -- partida sin personas reales (bots / sin conexion): no suma
+    return reply({ ok = true, counted = false, reason = "sin_rivales", total = total, tier = tier_of_pts(total) })
+  end
   local now = os.time()
   local rl = nk.storage_read({{ collection = LIGA_RL, key = "main", user_id = uid }})
   if rl and #rl > 0 and type(rl[1].value) == "table" and (now - (tonumber(rl[1].value.t) or 0)) < LIGA_MIN_GAP then
-    return reply({ ok = false, error = "muy_rapido" })
+    return reply({ ok = false, error = "muy_rapido", total = total, tier = tier_of_pts(total) })
   end
   nk.storage_write({{ collection = LIGA_RL, key = "main", user_id = uid, value = { t = now },
                       permission_read = 0, permission_write = 0 }})
+  if not farm_ok(st, opps, LIGA_DAY_CAP, LIGA_OPP_CAP) then
+    write_liga(uid, "main", st)
+    return reply({ ok = true, counted = false, reason = "tope_diario", total = total, tier = tier_of_pts(total) })
+  end
   local pts = (d.won == true) and 25 or 8
+  local tier_before = tier_of_pts(total)
+  st.pts = total + pts
+  write_liga(uid, "main", st)
   local name = clean_text(d.name, 24) or "Jugador"
   local meta = {}
   local av = clean_text(d.avatar, 200)
@@ -360,7 +451,8 @@ local function rpc_global_report(context, payload)
     nk.logger_warn("LIGA no se pudo apuntar user=" .. tostring(uid) .. " err=" .. tostring(rec))
     return reply({ ok = false, error = "no_se_pudo" })
   end
-  return reply({ ok = true, points = rec and rec.score or pts })
+  pcall(nk.leaderboard_record_write, "liga_" .. LIGA_TIERS[tier_before], uid, name, pts, 0, meta)
+  return reply({ ok = true, counted = true, points = rec and rec.score or pts, total = st.pts, tier = tier_of_pts(st.pts) })
 end
 
 local function rpc_global_top(context, payload)
@@ -378,8 +470,33 @@ local function rpc_global_top(context, payload)
   local me = nil
   if owner_recs and owner_recs[1] then me = { rank = owner_recs[1].rank, points = owner_recs[1].score } end
   local info = board_info()
+  local st = read_liga(uid, "main")
   return reply({ ok = true, rows = rows, me = me, next_reset = info and info.next_reset or nil,
-                 prize = GLOBAL_PRIZE })
+                 prize = GLOBAL_PRIZE, total = tonumber(st.pts) or 0, tier = tier_of_pts(st.pts) })
+end
+
+-- Tabla semanal de MI liga (la que me toca segun mis puntos acumulados en el servidor).
+local function rpc_liga_tier_top(context, payload)
+  local uid = context.user_id
+  if not uid then return reply({ ok = false, error = "sin_sesion" }) end
+  local st = read_liga(uid, "main")
+  local tier = tier_of_pts(st.pts)
+  local board = "liga_" .. LIGA_TIERS[tier]
+  local ok, recs, owner_recs = pcall(nk.leaderboard_records_list, board, { uid }, 20, nil, nil)
+  if not ok then return reply({ ok = false, error = "no_se_pudo" }) end
+  local rows = {}
+  for _, r in ipairs(recs or {}) do
+    local m = r.metadata
+    if type(m) == "string" then local okm, mm = pcall(nk.json_decode, m); m = okm and mm or nil end
+    rows[#rows + 1] = { rank = r.rank, name = r.username or "Jugador", points = r.score,
+                        av = type(m) == "table" and m.av or nil, me = (r.owner_id == uid) }
+  end
+  local me = nil
+  if owner_recs and owner_recs[1] then me = { rank = owner_recs[1].rank, points = owner_recs[1].score } end
+  local okb, bi = pcall(nk.leaderboards_get_id, { board })
+  local info = okb and bi and bi[1] or nil
+  return reply({ ok = true, tier = tier, total = tonumber(st.pts) or 0, rows = rows, me = me,
+                 next_reset = info and info.next_reset or nil, rewards = LIGA_REWARDS[LIGA_TIERS[tier]] })
 end
 
 -- Premio de la semana pasada: solo si fuiste el #1 y solo una vez.
@@ -402,6 +519,40 @@ local function rpc_liga_claim(context, payload)
       end
     end
   end
+  -- 1b) premios por puesto de cada liga (semana pasada): top 7, con minimo de jugadores y de puntos
+  for _, t in ipairs(LIGA_TIERS) do
+    local okb, bi = pcall(nk.leaderboards_get_id, { "liga_" .. t })
+    local binfo = okb and bi and bi[1] or nil
+    local bprev = binfo and tonumber(binfo.prev_reset) or 0
+    local bnext = binfo and tonumber(binfo.next_reset) or 0
+    if bprev <= 0 and bnext > 0 then bprev = bnext - 7 * 86400 end
+    if bprev > 0 then
+      local gkey = "tier_" .. t .. "_" .. tostring(bprev)
+      local gex = nk.storage_read({{ collection = LIGA_GRANTS, key = gkey, user_id = uid }})
+      if not (gex and #gex > 0) then
+        local okl, lrecs = pcall(nk.leaderboard_records_list, "liga_" .. t, nil, 100, nil, bprev)
+        if okl and lrecs then
+          local active, myrank, myscore = 0, nil, 0
+          for i, r in ipairs(lrecs) do
+            if (tonumber(r.score) or 0) > 0 then active = active + 1 end
+            if r.owner_id == uid then myrank = i; myscore = tonumber(r.score) or 0 end
+          end
+          if myrank then
+            if myrank <= LIGA_TOP_PRIZES and active >= LIGA_MIN_PLAYERS and myscore >= LIGA_MIN_SCORE then
+              local pz = LIGA_REWARDS[t][myrank]
+              nk.storage_write({{ collection = LIGA_GRANTS, key = gkey, user_id = uid, permission_read = 0, permission_write = 0,
+                value = { kind = "league_rank", tier = t, rank = myrank, gold = pz.gold, diamonds = pz.diamonds,
+                          amphora = pz.amphora or nil, status = "pending", credited = false, created = os.time() } }})
+              nk.logger_info("LIGA premio de liga creado user=" .. tostring(uid) .. " " .. gkey .. " puesto=" .. tostring(myrank))
+            else
+              nk.storage_write({{ collection = LIGA_GRANTS, key = gkey, user_id = uid, permission_read = 0, permission_write = 0,
+                value = { kind = "none", tier = t, gold = 0, diamonds = 0, status = "granted", credited = true, created = os.time() } }})
+            end
+          end
+        end
+      end
+    end
+  end
   -- 2) entregar lo pendiente (igual que las compras)
   local objs = nk.storage_list(uid, LIGA_GRANTS, 50, nil)
   local out = {}
@@ -413,7 +564,8 @@ local function rpc_liga_claim(context, payload)
         v.credited = true
         nk.storage_write({{ collection = LIGA_GRANTS, key = o.key, user_id = uid, value = v, permission_read = 0, permission_write = 0 }})
       end
-      out[#out + 1] = { key = o.key, kind = v.kind, gold = v.gold or 0, diamonds = v.diamonds or 0 }
+      out[#out + 1] = { key = o.key, kind = v.kind, gold = v.gold or 0, diamonds = v.diamonds or 0,
+                        tier = v.tier, rank = v.rank, amphora = v.amphora }
     end
   end
   return reply({ ok = true, grants = out, count = #out })
@@ -436,6 +588,7 @@ end
 
 nk.register_rpc(rpc_global_report, "global_report")
 nk.register_rpc(rpc_global_top, "global_top")
+nk.register_rpc(rpc_liga_tier_top, "liga_tier_top")
 nk.register_rpc(rpc_liga_claim, "liga_claim")
 nk.register_rpc(rpc_liga_ack, "liga_ack")
 
@@ -447,7 +600,7 @@ nk.register_rpc(rpc_liga_ack, "liga_ack")
 -- anota que entraste). Cada partida online ganada suma 10 puntos a las copas donde
 -- estes anotado (maximo 1 reporte por minuto). Al cerrar, el premio sale de lo
 -- recaudado: 50% al 1ro, 30% al 2do, 20% al 3ro. Con
--- menos de 3 anotados se devuelve la entrada. Cada premio se cobra
+-- menos de 5 anotados se devuelve la entrada. Cada premio se cobra
 -- UNA sola vez con tour_claim.
 -- ============================================================================
 local TOUR_CUPS = {
@@ -459,7 +612,10 @@ local TOUR_ORDER = { "bronce", "plata", "elite" }
 local TOUR_ENTRY = "tour_entry"
 local TOUR_GRANTS = "tour_grants"
 local TOUR_RL = "tour_rl"
-local TOUR_MIN_GAP = 60
+local TOUR_MIN_GAP = 90
+local TOUR_MIN_ENTRANTS = 5   -- con menos inscritos se devuelve la entrada
+local TOUR_DAY_CAP = 30
+local TOUR_OPP_CAP = 3
 local TOUR_WIN_PTS = 10
 local TOUR_SPLIT = { 0.5, 0.3, 0.2 }
 
@@ -548,6 +704,14 @@ local function rpc_tour_report(context, payload)
   local okd, d = pcall(nk.json_decode, payload or "{}")
   if not okd or type(d) ~= "table" then return reply({ ok = false, error = "pedido_invalido" }) end
   if d.won ~= true then return reply({ ok = true, added = 0 }) end
+  local opps = match_opps(uid, d)
+  if not opps then return reply({ ok = true, added = 0, reason = "sin_rivales" }) end
+  local tst = read_liga(uid, "tour")
+  if not farm_ok(tst, opps, TOUR_DAY_CAP, TOUR_OPP_CAP) then
+    write_liga(uid, "tour", tst)
+    return reply({ ok = true, added = 0, reason = "tope_diario" })
+  end
+  write_liga(uid, "tour", tst)
   local now = os.time()
   local rl = nk.storage_read({{ collection = TOUR_RL, key = "main", user_id = uid }})
   if rl and #rl > 0 and type(rl[1].value) == "table" and (now - (tonumber(rl[1].value.t) or 0)) < TOUR_MIN_GAP then
@@ -587,7 +751,7 @@ local function rpc_tour_claim(context, payload)
           local n = #recs
           local fee = TOUR_CUPS[cup].fee
           local gold, kind = 0, nil
-          if n < 3 then
+          if n < TOUR_MIN_ENTRANTS then
             gold = fee; kind = "tour_refund"
           else
             local pool = n * fee
