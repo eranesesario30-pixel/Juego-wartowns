@@ -226,10 +226,20 @@ local function rpc_iap_validate(context, payload)
         if blocked then
           nk.logger_warn("IAP oferta unica repetida user=" .. tostring(uid) .. " prod=" .. tostring(vp.product_id))
         else
+          local dia = prod.diamonds or 0
+          local first = false
+          if dia > 0 and string.sub(vp.product_id, 1, 4) == "gem_" then
+            local f = nk.storage_read({{ collection = IAP, key = "first_" .. vp.product_id, user_id = uid }})
+            if not (f and #f > 0) then first = true; dia = dia * 2 end
+          end
           local writes = {{ collection = IAP, key = key, user_id = uid, permission_read = 0, permission_write = 0,
             value = { product_id = vp.product_id, transaction_id = vp.transaction_id, store = vp.store,
-                      gold = prod.gold or 0, diamonds = prod.diamonds or 0, xp_hours = prod.xp_hours or 0,
+                      gold = prod.gold or 0, diamonds = dia, xp_hours = prod.xp_hours or 0, first = first,
                       status = "pending", credited = false, created = os.time() } }}
+          if first then
+            writes[#writes + 1] = { collection = IAP, key = "first_" .. vp.product_id, user_id = uid,
+              permission_read = 0, permission_write = 0, value = { t = os.time() } }
+          end
           if prod.once then
             writes[#writes + 1] = { collection = IAP, key = "once_" .. vp.product_id, user_id = uid,
               permission_read = 0, permission_write = 0, value = { t = os.time() } }
@@ -281,7 +291,18 @@ end
 
 nk.register_rpc(rpc_iap_validate, "iap_validate")
 nk.register_rpc(rpc_iap_claim, "iap_claim")
+local function rpc_iap_firsts(context, payload)
+  local uid = context.user_id
+  if not uid then return reply({ ok = false, error = "sin_sesion" }) end
+  local out = {}
+  for _, pid in ipairs({ "gem_150", "gem_300", "gem_700", "gem_1500", "gem_3500", "gem_10000" }) do
+    local f = nk.storage_read({{ collection = IAP, key = "first_" .. pid, user_id = uid }})
+    if f and #f > 0 then out[#out + 1] = pid end
+  end
+  return reply({ ok = true, bought = out })
+end
 nk.register_rpc(rpc_iap_ack, "iap_ack")
+nk.register_rpc(rpc_iap_firsts, "iap_firsts")
 
 
 -- ============================================================================
