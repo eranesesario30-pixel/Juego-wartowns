@@ -5899,7 +5899,7 @@ body.dice-shaking .dice-cube-wrap, body.dice-shaking .dice-sprite{ animation:dic
           <div class="pp-labels" id="ppLabels"></div>
           <div class="pp-scroll" id="ppScroll"></div>
         </div>
-        <div class="pp-hint">Gana puntos jugando: 30 por victoria y 10 por partida. Cada 100 puntos abren un nivel.</div>
+        <div class="pp-hint">Gana 30 puntos por cada victoria. Cada 100 puntos abren un nivel.</div>
       </div>
     </div>
     <div id="ppReveal" onclick="closePassReveal()">
@@ -13579,7 +13579,7 @@ const PLACE_MEDAL = ['🥇','🥈','🥉','4️⃣'];
 async function showEndGameModal(){
   try{ clearActiveMatch(); }catch(e){}
   try{ if(window._recP) await Promise.race([window._recP, new Promise(r=>setTimeout(r,8000))]); }catch(e){}   // espera a que el servidor pague
-  const summary = lastMatchSummary || { youWon: winner.color===MY_COLOR, goldWon:0, betPayout:0, chestResult:{granted:false}, xpGained:(winner.color===MY_COLOR?30:10), leaguePts:(winner.color===MY_COLOR?25:8), standings: computeStandings() };
+  const summary = lastMatchSummary || { youWon: winner.color===MY_COLOR, goldWon:0, betPayout:0, chestResult:{granted:false}, xpGained:(winner.color===MY_COLOR?30:0), leaguePts:(winner.color===MY_COLOR?25:8), standings: computeStandings() };
   const won = !!summary.youWon;
   const overlay = document.getElementById('endGameOverlay');
   const card = document.getElementById('endGameCard');
@@ -13605,12 +13605,12 @@ async function showEndGameModal(){
   const tiles = [];
   if(summary.goldWon > 0) tiles.push({ico:`<img src="${GAME_IMAGES.coin}" alt="">`, val:'+'+summary.goldWon.toLocaleString('es'), lab:'Oro'});
   if(won && summary.chestResult && summary.chestResult.granted) tiles.push({ico:amphoraIconHTML(summary.chestResult.type,34), val:CHEST_TYPES[summary.chestResult.type].name, lab:'Ánfora'});
-  tiles.push({ico:'<span class="vx-ico-emoji">⭐</span>', val:'+'+(summary.xpGained||0), lab:'Puntos de nivel'});
+  if((summary.xpGained||0) > 0) tiles.push({ico:'<span class="vx-ico-emoji">⭐</span>', val:'+'+summary.xpGained, lab:'Puntos de nivel'});
   const caps = winner.team ? matchStats.capturesTotal : matchStats.capturesByRed;
   const tilesHtml = tiles.map((t,i)=>`<div class="vx-tile" style="animation-delay:${1.0+i*.16}s"><div class="vx-tile-ico">${t.ico}</div><div class="vx-tile-val">${t.val}</div><div class="vx-tile-lab">${t.lab}</div></div>`).join('');
   const chips = `<div class="vx-chips" style="animation-delay:${1.0+tiles.length*.16+.1}s">
       <span class="vx-chip">🍽️ ${caps} ${caps===1?'ficha comida':'fichas comidas'}</span>
-      <span class="vx-chip">🏅 +${summary.leaguePts||0} liga</span>
+      ${won ? `<span class="vx-chip">🏅 +${summary.leaguePts||0} liga</span>` : ''}
       ${won && summary.chestResult && !summary.chestResult.granted ? '<span class="vx-chip warn">🏺 Sin espacio para ánfora</span>' : ''}
     </div>`;
 
@@ -14024,7 +14024,7 @@ async function _recordMatchResult(youWon){
   try{ await saveProfile(); }catch(e){}
 
   lastMatchSummary = {
-    youWon, goldWon, betPayout, chestResult, xpGained, leaguePts: (youWon?25:8),
+    youWon, goldWon, betPayout, chestResult, xpGained, leaguePts: (youWon?25:0),
     standings: computeStandings(),
   };
 }
@@ -14731,6 +14731,7 @@ function ligaApplyServer(r){
   }catch(e){}
 }
 async function ligaReport(won, ctx){
+  if(!won) return;   // regla: si no ganas la partida, no sumas nada
   if(!isOnlineAuthenticated) return;
   if(!ctx || !ctx.online) return;
   let nm = 'Jugador'; try{ nm = ensureDisplayName() || 'Jugador'; }catch(e){}

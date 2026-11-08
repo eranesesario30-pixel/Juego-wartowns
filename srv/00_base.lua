@@ -460,6 +460,11 @@ local function rpc_global_report(context, payload)
     if type(d.friends) == "table" then write_liga(uid, "main", st) end
     return reply({ ok = true, counted = false, reason = "sin_rivales", total = total, tier = tier_of_pts(total) })
   end
+  if d.won ~= true then
+    -- regla del juego: si no ganas la partida, no sumas puntos de liga
+    if type(d.friends) == "table" then write_liga(uid, "main", st) end
+    return reply({ ok = true, counted = false, reason = "no_gano", total = total, tier = tier_of_pts(total) })
+  end
   local now = os.time()
   local rl = nk.storage_read({{ collection = LIGA_RL, key = "main", user_id = uid }})
   if rl and #rl > 0 and type(rl[1].value) == "table" and (now - (tonumber(rl[1].value.t) or 0)) < LIGA_MIN_GAP then

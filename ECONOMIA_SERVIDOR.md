@@ -36,3 +36,7 @@ La solución total sería que el servidor juegue las partidas contra bots (proye
 5. Poner `ADS_LIVE=true` solo cuando se publique la versión de producción.
 Vuelta atrás: devolver `parche_v1245_respaldo.lua` a `parche.lua`, reiniciar el servicio y volver a publicar la web v1245.
 Importante: el cliente nuevo NO funciona con el servidor viejo (usa RPCs `eco_*`), y los clientes viejos NO muestran bien el oro con el servidor nuevo.
+
+
+## Regla: si no ganas, no sumas nada
+Una derrota no da puntos de liga, ni puntos de nivel, ni puntos del Pase (solo cuenta como partida jugada para los desafíos). La victoria da 30 de nivel/Pase, 25 de liga y 50 de oro.

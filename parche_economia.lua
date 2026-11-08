@@ -460,6 +460,11 @@ local function rpc_global_report(context, payload)
     if type(d.friends) == "table" then write_liga(uid, "main", st) end
     return reply({ ok = true, counted = false, reason = "sin_rivales", total = total, tier = tier_of_pts(total) })
   end
+  if d.won ~= true then
+    -- regla del juego: si no ganas la partida, no sumas puntos de liga
+    if type(d.friends) == "table" then write_liga(uid, "main", st) end
+    return reply({ ok = true, counted = false, reason = "no_gano", total = total, tier = tier_of_pts(total) })
+  end
   local now = os.time()
   local rl = nk.storage_read({{ collection = LIGA_RL, key = "main", user_id = uid }})
   if rl and #rl > 0 and type(rl[1].value) == "table" and (now - (tonumber(rl[1].value.t) or 0)) < LIGA_MIN_GAP then
@@ -1598,13 +1603,16 @@ local function rpc_match_end(context, payload)
     if mode == "1v1" then ch.prog.games1v1Today = (ch.prog.games1v1Today or 0) + 1 end
     if mode == "2v2" then ch.prog.games2v2Today = (ch.prog.games2v2Today or 0) + 1 end
     -- experiencia y pase
-    local xp = (10 + (won and 20 or 0)) * (boost_active(d) and 2 or 1)
+    -- regla del juego: si no ganas la partida, no sumas nada (ni nivel ni pase)
+    local xp = won and (30 * (boost_active(d) and 2 or 1)) or 0
     out.xp = xp
-    d.pass.pts = (tonumber(d.pass.pts) or 0) + xp
-    d.xp.lvl = (tonumber(d.xp.lvl) or 0) + xp
-    local lvl = tonumber(d.xp.level) or 1
-    while d.xp.lvl >= level_cost(lvl) do d.xp.lvl = d.xp.lvl - level_cost(lvl); lvl = lvl + 1 end
-    d.xp.level = lvl
+    if xp > 0 then
+      d.pass.pts = (tonumber(d.pass.pts) or 0) + xp
+      d.xp.lvl = (tonumber(d.xp.lvl) or 0) + xp
+      local lvl = tonumber(d.xp.level) or 1
+      while d.xp.lvl >= level_cost(lvl) do d.xp.lvl = d.xp.lvl - level_cost(lvl); lvl = lvl + 1 end
+      d.xp.level = lvl
+    end
     local bet = d.bet
     d.bet = nil
     if won then
