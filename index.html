@@ -6697,7 +6697,7 @@ window.addEventListener('error', (ev)=>{
 });
 window.addEventListener('unhandledrejection', (ev)=>{
   // Los fallos de sonido (iPhone en silencio, audio ocupado por otra app o por un video) no se avisan: solo no suena
-  try{ const m = String((ev.reason && (ev.reason.message || ev.reason.name)) || ev.reason || '');
+  try{ const m = ev.reason && typeof ev.reason==='object' ? String(ev.reason.name||'')+' '+String(ev.reason.message||'') : String(ev.reason||'');
        if(/audio|NotAllowedError|AbortError|NotSupportedError|play\(\)|media/i.test(m)){ ev.preventDefault(); return; } }catch(e){}
   try{ lobbyToast('[promesa sin atrapar] ' + (ev.reason && ev.reason.message ? ev.reason.message : ev.reason)); }catch(e){}
 });
@@ -14796,9 +14796,11 @@ async function openLeagueGlobal(){
   if(r.next_reset){ const ms = Math.max(0, r.next_reset*1000-Date.now()); document.getElementById('lgGlobalTimer').textContent = Math.floor(ms/86400000)+'d '+Math.floor((ms%86400000)/3600000)+'h'; }
   const esc = t => String(t==null?'':t).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const row = x => `<div class="lg-row ${x.me?'me':''} ${x.rank<=3?'top'+x.rank:''}"><div class="lg-rank">${x.rank}</div><div class="lg-av">${(()=>{ let u = (x.av&&/^https?:\/\//.test(x.av)) ? x.av : null; if(!u){ try{ u = x.me ? myAvatarUrl() : defaultAvatarUrl(x.name); }catch(e){} } return u ? `<img src="${esc(u)}" alt="">` : iconImgHTML('avatarBot','🙂','icon-fill'); })()}</div><div class="lg-name">${x.me?'Tú · ':''}${esc(x.name)}</div><div class="lg-pts">${x.points}</div></div>`;
-  let html = (r.rows||[]).map(row).join('');
-  if(!(r.rows||[]).length) html = msg('Todavía nadie ha sumado puntos esta semana. ¡Sé el primero!');
-  const inTop = (r.rows||[]).some(x=>x.me);
+  // El servidor manda una tabla vacía como {} (no como []): se normaliza para que no se rompa cuando nadie ha sumado puntos
+  const rowsArr = Array.isArray(r.rows) ? r.rows : (r.rows && typeof r.rows==='object' ? Object.values(r.rows) : []);
+  let html = rowsArr.map(row).join('');
+  if(!rowsArr.length) html = msg('Todavía nadie ha sumado puntos esta semana. ¡Sé el primero!');
+  const inTop = rowsArr.some(x=>x.me);
   if(!inTop && r.me){ let nm='Tú'; try{ nm = ensureDisplayName()||'Tú'; }catch(e){} html += msg('Tu puesto') + row({rank:r.me.rank, points:r.me.points, me:true, name:nm, av:(()=>{try{return myAvatarUrl();}catch(e){return null;}})()}); }
   listEl.innerHTML = html;
 }
