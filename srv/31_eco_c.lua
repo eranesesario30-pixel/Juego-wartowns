@@ -115,6 +115,32 @@ local function rpc_challenge_claim(context, payload)
   return eco_ok(doc, { reward = res })
 end
 
+-- ---- Video para acelerar un anfora: quita 1 hora (mismo ritmo y tope que los videos de recompensa) ----
+local CHEST_AD_DAILY_MAX = 12
+local function rpc_chest_ad(context, payload)
+  local uid = context.user_id
+  if not uid then return eco_fail("sin_sesion") end
+  local i = tonumber(decode(payload).slot)
+  if not i or i < 1 or i > 4 then return eco_fail("pedido_invalido") end
+  local ok, res, doc = eco_update(uid, function(d)
+    local s = d.chest[i]
+    if not s or s.state ~= "unlocking" then return false, "no_esta_abriendo" end
+    local today = eco_day()
+    d.ads = d.ads or {}
+    if d.ads.cday ~= today then d.ads.cday = today; d.ads.cn = 0 end
+    local t = os.time()
+    if (t - (tonumber(d.ads.clast) or 0)) < AD_MIN_GAP then return false, "muy_rapido" end
+    if d.ads.cn >= CHEST_AD_DAILY_MAX then return false, "tope_diario" end
+    d.ads.cn = d.ads.cn + 1; d.ads.clast = t
+    s.endsAt = (tonumber(s.endsAt) or 0) - 3600000
+    if s.endsAt <= now_ms() then s.state = "ready"; s.endsAt = 0 end
+    return true
+  end)
+  if not ok then return eco_fail(res) end
+  return eco_ok(doc)
+end
+
+nk.register_rpc(rpc_chest_ad, "eco_chest_ad")
 nk.register_rpc(rpc_chest_start, "eco_chest_start")
 nk.register_rpc(rpc_chest_gems, "eco_chest_gems")
 nk.register_rpc(rpc_chest_open, "eco_chest_open")

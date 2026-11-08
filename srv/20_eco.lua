@@ -29,10 +29,18 @@ local function eco_new_doc(uid)
       end
     end
   end
+  -- Si ya habia comprado el Pase Premium (compra validada por Google/Apple), se conserva
+  local premium = false
+  local okl, objs = pcall(nk.storage_list, uid, IAP, 100, nil)
+  if okl and type(objs) == "table" then
+    for _, o in ipairs(objs) do
+      if type(o.value) == "table" and o.value.product_id == "parche_pass_s1" and o.value.transaction_id then premium = true end
+    end
+  end
   return {
     v = 1, gold = gold, diamonds = dia, chest = chest, imported = false, created = eco_now(),
     own = { tokens = { clasico = true }, dice = { classic = true }, boards = { classic = true }, avatars = {}, frames = {} },
-    pass = { pts = 0, premium = false, cf = {}, cp = {} },
+    pass = { pts = 0, premium = premium, cf = {}, cp = {} },
     daily = { last = "", streak = 0 },
     ads = { day = "", n = 0, step = 0 },
     xp = { level = 1, lvl = 0, boost = 0 },
@@ -78,7 +86,9 @@ ECO_CREDIT = eco_credit
 
 local function eco_public(d)
   if d.ch and d.ch.day == nil then d.ch = nil end
-  return { gold = d.gold, diamonds = d.diamonds, chest = d.chest, own = d.own, pass = d.pass, daily = d.daily,
+  local chest = {}
+  for i = 1, 4 do chest[i] = d.chest[i] or false end   -- lista fija de 4 (false = hueco vacio)
+  return { gold = d.gold, diamonds = d.diamonds, chest = chest, own = d.own, pass = d.pass, daily = d.daily,
            ads = d.ads, xp = d.xp, ch = d.ch, imported = d.imported, drops = d.drops, nameChanges = d.nameChanges or 0,
            stats = d.stats, bet = d.bet, xmas = d.xmas, gifts = d.gifts, now = eco_now() }
 end
@@ -118,13 +128,41 @@ local function rpc_eco_import(context, payload)
       for _, id in ipairs(list) do
         n = n + 1; if n > 400 then break end
         local c = type(id) == "string" and catalog[id] or nil
-        if c and (allowPass or not c.pass) and not c.anfora then set[id] = true end
+        if c and (allowPass or not c.pass) then set[id] = true end
       end
     end
     take(d0.tokens, d.own.tokens, CAT.tokens, false)
     take(d0.dice, d.own.dice, CAT.dice, false)
     take(d0.boards, d.own.boards, CAT.boards, false)
     take(d0.avatars, d.own.avatars, CAT.avatars, false)
+    -- progreso de colecciones (caras de dado, colores de ficha, piezas de avatar), solo ids y valores que existen
+    local function take_drops(src, dst, catalog, vals, maxv)
+      if type(src) ~= "table" then return end
+      local n = 0
+      for id, list in pairs(src) do
+        n = n + 1; if n > 300 then break end
+        local c = type(id) == "string" and catalog[id] or nil
+        if c and not c.pass and type(list) == "table" and not (dst[id] and #dst[id] > 0) then
+          local seen, out = {}, {}
+          for _, v in ipairs(list) do
+            if vals[v] and not seen[v] and #out < maxv - 1 then seen[v] = true; out[#out + 1] = v end
+          end
+          if #out > 0 then dst[id] = out end
+        end
+      end
+    end
+    local dr = d0.drops
+    if type(dr) == "table" then
+      d.drops = d.drops or {}; d.drops.dice = d.drops.dice or {}; d.drops.tok = d.drops.tok or {}; d.drops.av = d.drops.av or {}
+      take_drops(dr.dice, d.drops.dice, CAT.dice, { true, true, true, true, true, true }, 6)
+      take_drops(dr.tok, d.drops.tok, CAT.tokens, { red = true, blue = true, yellow = true, green = true }, 4)
+      take_drops(dr.av, d.drops.av, CAT.avatars, { true, true, true, true }, 4)
+    end
+    -- nivel y puntos del pase que ya llevaba (con tope). El Pase Premium NUNCA se importa: viene de las compras.
+    local lv, lx, pts = tonumber(d0.level), tonumber(d0.lvl), tonumber(d0.pts)
+    if lv and lv >= 1 and lv <= 150 then d.xp.level = math.floor(lv) end
+    if lx and lx >= 0 and lx < 300 then d.xp.lvl = math.floor(lx) end
+    if pts and pts >= 0 and pts <= 3000 then d.pass.pts = math.floor(pts) end
     d.imported = true
     return true
   end)

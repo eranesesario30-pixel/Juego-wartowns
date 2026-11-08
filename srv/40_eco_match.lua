@@ -5,6 +5,9 @@
 local BET_TIERS = { 500, 2000, 5000, 10000, 50000, 250000, 1000000, 5000000, 15000000, 30000000 }
 local BET_STALE = 1800          -- una apuesta sin cerrar en 30 min se pierde (evita "salirme si voy perdiendo")
 local MATCH_MIN_GAP = 45        -- segundos minimos entre dos cierres de partida
+local MATCH_MIN_DUR = 20        -- una partida de verdad dura mas que esto desde que empezo
+local BET_STREAK_MAX = 8        -- tantas victorias seguidas con apuesta ya es raro: se deja de pagar ganancia ese dia
+local BET_PROFIT_DAY_CAP = 60000000  -- ganancia maxima por apuestas en un dia (el resto se devuelve como la apuesta)
 local REFUND_DAY_CAP = 3        -- devoluciones por "rival desconectado" al dia
 local TRACK_CAPS = { capturesToday = 15, doublesToday = 10, treasureToday = 5, streaksToday = 5 }
 
@@ -30,6 +33,8 @@ local function rpc_bet_hold(context, payload)
   if not idx then return eco_fail("apuesta_invalida") end
   local ok, res, doc = eco_update(uid, function(d)
     expire_bet(d)
+    -- una apuesta vieja que nunca llego a empezar se devuelve sola (por si fallo el aviso de cancelar)
+    if d.bet and not d.bet.started then d.gold = d.gold + d.bet.amount; d.bet = nil end
     if d.bet then return false, "apuesta_activa" end
     if d.gold < amount then return false, "sin_saldo" end
     d.gold = d.gold - amount
@@ -61,6 +66,7 @@ local function rpc_match_start(context, payload)
   local ok, res, doc = eco_update(uid, function(d)
     if d.bet then d.bet.started = true end
     d.stats.startedAt = os.time()
+    d.stats.dchg = 0            -- cambios de dados de esta partida (el precio sube con cada uno)
     return true
   end)
   if not ok then return eco_fail(res) end
@@ -78,7 +84,17 @@ local function rpc_match_end(context, payload)
   local refund = d0.refund == true
   local ok, res, doc = eco_update(uid, function(d)
     local now = os.time()
-    if (now - (tonumber(d.stats.lastEnd) or 0)) < MATCH_MIN_GAP then return false, "muy_rapido" end
+    if (now - (tonumber(d.stats.lastEnd) or 0)) < MATCH_MIN_GAP then
+      d.bet = nil                      -- cierre demasiado seguido: la apuesta se da por perdida y no hay premios
+      return true, { rejected = "muy_rapido", goldWon = 0, betPayout = 0, xp = 0 }
+    end
+    local st0 = tonumber(d.stats.startedAt) or 0
+    if d.bet and d.bet.started and st0 > 0 and (now - st0) < MATCH_MIN_DUR then
+      d.bet = nil                      -- cerrada antes de poder haber terminado: se pierde
+      d.stats.lastEnd = now
+      return true, { rejected = "muy_corta", goldWon = 0, betPayout = 0, xp = 0 }
+    end
+    d.stats.startedAt = 0
     d.stats.lastEnd = now
     d.stats.games = (d.stats.games or 0) + 1
     expire_bet(d)
@@ -104,7 +120,18 @@ local function rpc_match_end(context, payload)
       d.gold = d.gold + 50; out.goldWon = 50
       local tier
       if bet then
-        out.betPayout = bet.amount * 2
+        local today = eco_day()
+        if d.stats.bpDay ~= today then d.stats.bpDay = today; d.stats.bpProfit = 0; d.stats.bstreak = 0 end
+        local fair = bet.started and (d.stats.bstreak or 0) < BET_STREAK_MAX
+                     and ((d.stats.bpProfit or 0) + bet.amount) <= BET_PROFIT_DAY_CAP
+        if fair then
+          out.betPayout = bet.amount * 2
+          d.stats.bstreak = (d.stats.bstreak or 0) + 1
+          d.stats.bpProfit = (d.stats.bpProfit or 0) + bet.amount
+        else
+          out.betPayout = bet.amount     -- solo se devuelve lo apostado
+          out.betLimited = true
+        end
         d.gold = d.gold + out.betPayout
         out.goldWon = out.goldWon + out.betPayout
         tier = bet_chest_tier(bet.idx)
@@ -114,7 +141,10 @@ local function rpc_match_end(context, payload)
       end
       local slot = add_chest(d, tier)
       if slot then out.chest = { type = tier, slot = slot } end
-    elseif bet and refund and humans > 0 then
+    elseif bet and not won then
+      d.stats.bstreak = 0
+    end
+    if (not won) and bet and refund and humans > 0 then
       -- gano un jugador desconectado (su bot): se devuelve la apuesta (con tope diario)
       local today = eco_day()
       if d.stats.refDay ~= today then d.stats.refDay = today; d.stats.refN = 0 end
@@ -127,6 +157,44 @@ local function rpc_match_end(context, payload)
   end)
   if not ok then return eco_fail(res) end
   return eco_ok(doc, { result = res })
+end
+
+-- Cambiar los dados en plena partida: el precio lo pone el servidor (el primero gratis, luego sube)
+local DICE_CHANGE_COSTS = { 0, 10, 15, 20, 30, 40, 50, 75, 100 }
+local function rpc_dice_change(context, payload)
+  local uid = context.user_id
+  if not uid then return eco_fail("sin_sesion") end
+  local ok, res, doc = eco_update(uid, function(d)
+    local n = tonumber(d.stats.dchg) or 0
+    local cost = DICE_CHANGE_COSTS[n + 1]
+    if cost == nil then return false, "sin_mas_cambios" end
+    if d.diamonds < cost then return false, "sin_saldo" end
+    d.diamonds = d.diamonds - cost
+    d.stats.dchg = n + 1
+    return true, { cost = cost, count = n + 1 }
+  end)
+  if not ok then return eco_fail(res) end
+  return eco_ok(doc, { change = res })
+end
+
+-- Video dentro de la partida: +15 gemas (un ritmo minimo entre videos y un tope por dia)
+local GAME_AD_GEMS, GAME_AD_DAY_MAX = 15, 20
+local function rpc_game_ad(context, payload)
+  local uid = context.user_id
+  if not uid then return eco_fail("sin_sesion") end
+  local ok, res, doc = eco_update(uid, function(d)
+    local today = eco_day()
+    d.ads = d.ads or {}
+    if d.ads.gday ~= today then d.ads.gday = today; d.ads.gn = 0 end
+    local t = os.time()
+    if (t - (tonumber(d.ads.glast) or 0)) < AD_MIN_GAP then return false, "muy_rapido" end
+    if d.ads.gn >= GAME_AD_DAY_MAX then return false, "tope_diario" end
+    d.ads.gn = d.ads.gn + 1; d.ads.glast = t
+    d.diamonds = d.diamonds + GAME_AD_GEMS
+    return true, GAME_AD_GEMS
+  end)
+  if not ok then return eco_fail(res) end
+  return eco_ok(doc, { diamonds = res })
 end
 
 -- Eventos de partida que el servidor no puede ver (capturas, dobles, tesoros, rachas): se aceptan con tope diario
@@ -181,3 +249,5 @@ nk.register_rpc(rpc_bet_cancel, "eco_bet_cancel")
 nk.register_rpc(rpc_match_start, "eco_match_start")
 nk.register_rpc(rpc_match_end, "eco_match_end")
 nk.register_rpc(rpc_progress, "eco_progress")
+nk.register_rpc(rpc_dice_change, "eco_dice_change")
+nk.register_rpc(rpc_game_ad, "eco_game_ad")
