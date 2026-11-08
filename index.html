@@ -6425,7 +6425,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running'){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1246';
+const BUILD_VERSION = '1247';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -7010,7 +7010,7 @@ function mpPrivateWaitStop(returned){
 function mpPrivateClose(msg){
   if(multiplayerPublic || winner) return;
   mpPrivateWaitStop(false);
-  try{ if(pendingBet){ lobbyGold += pendingBet; pendingBet = 0; syncEconomy(); } }catch(e){}
+  try{ if(pendingBet){ pendingBet = 0; ECO.betCancel(); } }catch(e){}
   try{ lobbyToast(msg); }catch(e){}
   try{ clearActiveMatch(); }catch(e){}
   try{ backToLobby(); }catch(e){}
@@ -8091,9 +8091,14 @@ async function completeLogin(data, online){
     authToken = data.token;
     currentUser = data.user;
     profileStats.playerId = currentUser.playerId;
-    lobbyGold = currentUser.economy.gold;
-    lobbyDiamonds = currentUser.economy.diamonds;
-    if(currentUser.chestSlots) { chestSlotsData = normChestSlots(currentUser.chestSlots); profileStats.chestSlots = chestSlotsData; }
+    // Todo el saldo y lo desbloqueado vive en el servidor: se pide aquí. Si no se puede, no se entra (nunca se juega con un saldo inventado).
+    { let okEco = false; try{ okEco = await ECO.init(); }catch(e){}
+      if(!okEco){
+        isOnlineAuthenticated = false;
+        try{ hideAutoLoginOverlay(); }catch(e){}
+        showLoginError('No se pudo cargar tu cuenta del servidor. Revisa tu internet e inténtalo de nuevo.');
+        return;
+      } }
     MY_COLOR = 'red';
   } else {
     // Parche es solo en línea. Única excepción: la vista de diseño dentro del
@@ -8103,7 +8108,7 @@ async function completeLogin(data, online){
       return;
     }
     PREVIEW_OFFLINE = true;
-    lobbyDiamonds = 5000; lobbyGold = Math.max(lobbyGold, 5000); // solo vista previa de pruebas (nunca en el juego real)
+    await ECO.init();   // solo vista previa de pruebas: un servidor simulado (nunca en el juego real)
   }
   if(online){ try{ localStorage.setItem('pachisAutoLogin','1'); }catch(e){} }
   hideAutoLoginOverlay();
@@ -8563,12 +8568,15 @@ function backFromBet(){
   document.getElementById('boardChoiceScreen').style.display = 'flex';
 }
 
-function confirmBet(amount){
-  if(amount>lobbyGold) return;
-  lobbyGold -= amount;
+let _betBusy = false;
+async function confirmBet(amount){
+  if(_betBusy || amount>lobbyGold) return;
+  _betBusy = true;
+  let held = false;
+  try{ held = await ECO.betHold(amount); }catch(e){}   // el servidor descuenta el oro y guarda la apuesta
+  _betBusy = false;
+  if(!held){ try{ openBetScreen(); }catch(e){} return; }
   pendingBet = amount;
-  if(amount>=10000) bumpChallenge('bigBetToday', 1);
-  syncEconomy();
   document.getElementById('betScreen').style.display = 'none';
   if(pendingMultiplayerCreate){
     pendingMultiplayerCreate = false;
@@ -8579,6 +8587,7 @@ function confirmBet(amount){
 }
 
 function launchPendingGame(){
+  try{ ECO.matchReset(); }catch(e){}
   try{ rematchReset(false); }catch(e){}
   const kind = kindBase(pendingBetKind);
   isRapidoSpeed = kindFast(pendingBetKind);
@@ -8847,10 +8856,8 @@ function freshState(){
     Object.defineProperty(pl, 'diamonds', { enumerable:true, configurable:true,
       get(){ return this.color===MY_COLOR ? lobbyDiamonds : this._d; },
       set(v){
-        if(this.color===MY_COLOR){
-          lobbyDiamonds = Math.max(0, Math.floor(Number(v)||0));
-          try{ profileStats.diamonds = lobbyDiamonds; updateEconomyDisplays(); saveProfile(); }catch(e){}
-        } else this._d = v;
+        if(this.color===MY_COLOR){ /* mis diamantes los lleva el servidor: aquí no se cambian */ }
+        else this._d = v;
       } });
   });
   current = 0; dice=[null,null]; usedDie=[false,false]; winner=null; welcomeStripShownThisMatch=false;
@@ -8872,6 +8879,63 @@ function freshState(){
 // jugándose solo, trampas/ventajas) ya lo resuelve el motor del juego
 // exactamente igual que si lo hubiera tocado una persona.
 let botBusy = false;
+// Estrategia del bot (no toca los dados): si le quedan los dos dados, prueba
+// los dos órdenes y juega primero el que lo deja mejor parado (llegar justo
+// a la Meta, esquivar muros/trampas del camino, caer en casilla buena).
+function botCellScore(p, pos){
+  try{
+    if(pos>=META_INDEX) return 1000;
+    const c = path[pos]; if(!c) return 0;
+    const ti = (n)=> (numberToIndex[n]!==undefined ? numberToIndex[n] : pos) - pos;
+    const rivals = players.filter(x=>x.active && x!==p);
+    switch(c.type){
+      case 'sube': return ti(c.target);
+      case 'baja': return p.shield ? 0 : ti(c.target);
+      case 'vuelva': return -pos;
+      case 'portal': return 17;
+      case 'lava': return p.shield ? 0 : -10;
+      case 'electro': return -15;
+      case 'congelado': return p.shield ? 0 : -8;
+      case 'turno': return -8;
+      case 'reversa': return -8;
+      case 'empujon': return p.shield ? 0 : -6;
+      case 'intercambio': return p.shield ? 0 : -4;
+      case 'embargo': return -3;
+      case 'escudo': return 4;
+      case 'doble': return 6;
+      case 'rebote': return 3;
+      case 'retroceso': return 3;
+      case 'bloqueo': return 2;
+      case 'arma': return 4;
+      case 'lance': return 8;
+      case 'captura': case 'empujon3': return rivals.length ? 6 : 0;
+      case 'roba': { const l = rivals.slice().sort((a,b)=>b.position-a.position)[0]; return (l && l.position>pos) ? (l.position-pos) : 0; }
+    }
+  }catch(e){}
+  return 0;
+}
+function botSimOrder(p, order){
+  let pos = p.position, mult = p.rollMultiplier||1, bad = 0;
+  for(const di of order){
+    const val = dice[di]*mult; mult = 1;
+    let t = pos + val;
+    if(t>META_INDEX) t = pos;
+    let wall = null;
+    activeWalls.forEach(w=>{ if(w.position>pos && w.position<=t && (!wall || w.position<wall.position)) wall = w; });
+    if(wall) t = wall.position;
+    if(typeof ARMADA!=='undefined' && ARMADA){
+      for(let s=pos+1; s<=t; s++){ if(s<META_INDEX && armHazardAt(s,p)){ t = s; bad += 30; break; } }
+    }
+    pos = t;
+  }
+  return pos + botCellScore(p, pos) - bad;
+}
+function botPickDie(p){
+  const left = [0,1].filter(i=> dice[i]!==null && !usedDie[i]);
+  if(left.length<2) return left[0];
+  const a = botSimOrder(p, [left[0],left[1]]), b = botSimOrder(p, [left[1],left[0]]);
+  return b>a ? left[1] : left[0];
+}
 function botTick(){
   // Si no estás mirando el tablero (saliste al lobby, o la partida nunca
   // arrancó), este temporizador no tiene que hacer nada — antes seguía
@@ -8904,7 +8968,7 @@ function botTick(){
       if(ARMADA && p2.weapon){ try{ armaBotUse(p2); }catch(e){ console.warn('armaBot',e); } }
       rollBothDice();
     } else {
-      const idx = [0,1].find(i=> dice[i]!==null && !usedDie[i]);
+      const idx = botPickDie(p2);
       if(idx!==undefined) executeMove(idx);
     }
   }, delay);
@@ -9023,12 +9087,12 @@ function resetGameAdButton(){
 function watchAdForDiamondsInGame(){
   if(gameAdUsedThisMatch || gameAdBusy){ lobbyToast('Ya usaste el video de esta partida.'); return; }
   gameAdBusy = true;
-  playRewardedAdOrSimulate(()=>{
+  playRewardedAdOrSimulate(async ()=>{
     gameAdBusy = false;
     if(gameAdUsedThisMatch) return;
     gameAdUsedThisMatch = true;
-    const p = players.find(x=>x.color===MY_COLOR) || players[current]; // el premio es para ti, aunque el turno sea de otro
-    if(p) p.diamonds += GAME_AD_REWARD; // los diamantes en partida son por jugador, no el saldo general del lobby
+    const rg = await ECO.act('eco_game_ad', {});   // el servidor suma las gemas (con ritmo y tope por día)
+    if(!rg){ gameAdUsedThisMatch = false; return; }
     sfxCoin();
     lobbyToast('¡+' + GAME_AD_REWARD + ' 💎 por ver el video!');
     updateGameHudDiamonds();
@@ -9094,6 +9158,13 @@ function backToLobby(){
   rolling = false; animating = false; armMode = null;
   try{ stopAllGameAudio(); }catch(e){}
   releaseWakeLock();
+  try{
+    if(pendingBet>0){
+      pendingBet = 0;
+      if(!winner && ECO.matchStarted()) ECO.call('eco_match_end', {won:false, mode:gameMode, humans:0});   // se fue con la partida empezada: pierde la apuesta
+      else if(!winner) ECO.betCancel();                                                                  // no llegó a empezar: se devuelve
+    }
+  }catch(e){}
   pendingBet = 0;
   try{ voiceStop(); }catch(e){}
   if(multiplayerActive || nakamaMatchId){
@@ -10101,10 +10172,10 @@ function saveDisplayName(){
   const v = (i && i.value || '').replace(/[\u0000-\u001f<>]/g,'').trim().slice(0,16);
   if(v.length < 2){ lobbyToast('El nombre debe tener al menos 2 letras.'); return; }
   if(v === profileStats.displayName){ lobbyToast('Ese ya es tu nombre.'); return; }
-  const done = (paid)=>{
-    if(paid){ lobbyDiamonds -= cost; try{ syncEconomy(); }catch(e){} }
+  const done = async (paid)=>{
+    const rn = await ECO.act('eco_name_change', {});   // el servidor cobra los diamantes (el primero es gratis) y cuenta el cambio
+    if(!rn) return;
     profileStats.displayName = v;
-    profileStats.nameChanges = (profileStats.nameChanges||0) + 1;
     Promise.resolve(saveProfile()).catch(()=>{});
     renderLobbyName(); updateNameHint();
     lobbyToast('¡Nombre guardado!');
@@ -11984,10 +12055,11 @@ function clearDiaWindow(){
   if(ring){ ring.style.transition = 'none'; ring.style.strokeDashoffset = '106.8'; }
 }
 
-function useDiamondChange(){
+let _diaBusy = false;
+async function useDiamondChange(){
   const p = players[current];
   const cost = DIAMOND_COSTS[p.diceChangeCount];
-  if(rolling || animating || winner) return;
+  if(rolling || animating || winner || _diaBusy) return;
   if(cost!==undefined && p.diamonds<cost){
     showGameWelcomeStripOnce(); // se le acabaron los diamantes: la única vez que se muestra la oferta
     return;
@@ -11998,8 +12070,19 @@ function useDiamondChange(){
   const change1 = dice[1]!==null && !usedDie[1];
   if(!change0 && !change1) return;
 
-  p.diamonds -= cost;
-  p.diceChangeCount += 1;
+  if(p.color===MY_COLOR){
+    // Mis diamantes viven en el servidor: él cobra el cambio (y pone el precio)
+    _diaBusy = true;
+    let rc = null;
+    try{ rc = await ECO.act('eco_dice_change', {}); }catch(e){}
+    _diaBusy = false;
+    if(!rc) return;
+    if(rolling || animating || winner) return;
+    p.diceChangeCount = (rc.change && rc.change.count) || (p.diceChangeCount + 1);
+  } else {
+    p.diamonds -= cost;
+    p.diceChangeCount += 1;
+  }
   p.turnDiaUses += 1;
   armMode = null;
 
@@ -12060,6 +12143,7 @@ function handleDieTap(idx){
 function rollBothDice(){
   _turnBuzzed = false;
   const p = players[current];
+  try{ if(p.color===MY_COLOR) ECO.matchStartOnce(); }catch(e){}
   p.turnDiaUses = 0;
   clearDiaWindow();
   rolling = true;
@@ -13191,13 +13275,10 @@ async function loadProfile(){
     const raw = localStorage.getItem('pachisProfile');
     if(raw){
       profileStats = JSON.parse(raw);
-      if(typeof profileStats.diamonds === 'number') lobbyDiamonds = profileStats.diamonds;
-      if(typeof profileStats.gold === 'number') lobbyGold = profileStats.gold;
       if(typeof profileStats.adLadderStep === 'number') adLadderStep = profileStats.adLadderStep;
       if(profileStats.tokenSkins && typeof profileStats.tokenSkins==='object'){
         tokenSkins = Object.assign({red:null,blue:null,yellow:null,green:null}, profileStats.tokenSkins);
       }
-      if(lobbyGold < 1000){ lobbyGold = 1000; needsResave = true; }
     } else {
       profileStats.playerId = genPlayerId();
       profileStats.diamonds = lobbyDiamonds;
@@ -13365,6 +13446,7 @@ const PLACE_MEDAL = ['🥇','🥈','🥉','4️⃣'];
 
 async function showEndGameModal(){
   try{ clearActiveMatch(); }catch(e){}
+  try{ if(window._recP) await Promise.race([window._recP, new Promise(r=>setTimeout(r,8000))]); }catch(e){}   // espera a que el servidor pague
   const summary = lastMatchSummary || { youWon: winner.color===MY_COLOR, goldWon:0, betPayout:0, chestResult:{granted:false}, xpGained:(winner.color===MY_COLOR?30:10), leaguePts:(winner.color===MY_COLOR?25:8), standings: computeStandings() };
   const won = !!summary.youWon;
   const overlay = document.getElementById('endGameOverlay');
@@ -13511,7 +13593,7 @@ function rematchCheck(){
   rematchRefresh();
   setTimeout(rematchStart, 700); // un momento para que los últimos mensajes lleguen a todos antes de cambiar de mesa
 }
-function rematchStart(){
+async function rematchStart(){
   try{
     const peers = rematchPeers(true);
     if(!peers || !nakamaMatchId){ rmStarted = false; rmYes = new Set(); rematchRefresh(); return; }
@@ -13522,8 +13604,11 @@ function rematchStart(){
     }
     const code = 'RV' + String(nakamaMatchId).replace(/[^A-Za-z0-9]/g,'').slice(0,12).toUpperCase() + String(multiplayerRequiredCount);
     const pub = !!multiplayerPublic;
+    if(pendingBet>0 && !(await ECO.betHold(pendingBet))){
+      try{ sendMatchData(OPCODE_REMATCH, {a:0}); }catch(e){}
+      rmStarted = false; rmYes = new Set(); rematchRefresh(); return;
+    }
     document.getElementById('endGameOverlay').style.display = 'none';
-    lobbyGold -= pendingBet; syncEconomy();
     rematchReset(false);
     startPublicMatch({code, pub});
   }catch(e){ rmStarted = false; console.warn('revancha', e); }
@@ -13535,7 +13620,7 @@ function rematchGiveUp(){
   try{ sendMatchData(OPCODE_REMATCH, {a:0}); }catch(e){}
   rmTimedOut = true; rematchRefresh();
 }
-function rematchGame(){
+async function rematchGame(){
   if(rmStarted) return;
   if(rematchPeers() && !rmTimedOut){
     const me = nakamaSession.user_id;
@@ -13555,7 +13640,10 @@ function rematchGame(){
     if(typeof exitToLobby==='function') exitToLobby(); else { document.getElementById('gameScreen').style.display='none'; document.getElementById('lobbyScreen').style.display='flex'; resumeLobbyScene3D(); }
     return;
   }
-  lobbyGold -= pendingBet; syncEconomy();
+  if(pendingBet>0 && !(await ECO.betHold(pendingBet))){
+    if(typeof exitToLobby==='function') exitToLobby(); else { document.getElementById('gameScreen').style.display='none'; document.getElementById('lobbyScreen').style.display='flex'; resumeLobbyScene3D(); }
+    return;
+  }
   startPublicMatch();
 }
 
@@ -13723,16 +13811,14 @@ function liveMatchCtx(){
     return {online: opps.length>0, opps};
   }catch(e){ return {online:false, opps:[]}; }
 }
-function checkProgressAfterMatch(youWon){
+function checkProgressAfterMatch(youWon, oldLevel){
   const promos = [];
 
-  const oldLevel = profileStats.level || 1;
+  oldLevel = oldLevel || profileStats.level || 1;
   ensurePass();
   ensureLvlXp();
-  let newLevel = oldLevel;
-  while(profileStats.lvlXp >= levelCost(newLevel)){ profileStats.lvlXp -= levelCost(newLevel); newLevel++; }
+  const newLevel = profileStats.level || oldLevel;   // el servidor ya subió el nivel
   if(newLevel>oldLevel) promos.push({type:'level', from:oldLevel, to:newLevel});
-  profileStats.level = newLevel;
   updateLevelBadges(newLevel>oldLevel);
   if(newLevel>oldLevel) unlockFramesByLevel();
 
@@ -13742,7 +13828,7 @@ function checkProgressAfterMatch(youWon){
     leagueData.points = (leagueData.points||0) + (youWon?25:8);
     profileStats.weekPts = (profileStats.weekPts||0) + (youWon?25:8);
   }
-  const newTier = Math.min(LEAGUE_TIERS.length-1, Math.floor(leagueData.points/300));
+  const newTier = Math.min(LEAGUE_TIERS.length-1, Math.floor((leagueData.points||0)/300));
   if(newTier>oldTier) promos.push({type:'league', from:oldTier, to:newTier});
   leagueData.tierIdx = newTier;
   profileStats.league = leagueData;
@@ -13750,23 +13836,22 @@ function checkProgressAfterMatch(youWon){
   return promos;
 }
 
-async function recordMatchResult(youWon){
-  bumpChallenge('gamesToday', 1);
-  if(youWon) bumpChallenge('winsToday', 1);
-  if(gameMode==='1v1') bumpChallenge('games1v1Today', 1);
-  if(gameMode==='2v2') bumpChallenge('games2v2Today', 1);
-  if(matchStats.capturesByRed>0) bumpChallenge('capturesToday', matchStats.capturesByRed);
-  if(matchStats.doublesByRed>0) bumpChallenge('doublesToday', matchStats.doublesByRed);
-  // Elixir de Gloria activo = doble XP en esta partida
-  const xpGained = (10 + (youWon?20:0)) * (isXpBoostActive() ? 2 : 1);
-  bumpPassPoints(xpGained);
+function recordMatchResult(youWon){
+  lastMatchSummary = null;
+  window._recP = _recordMatchResult(youWon).catch(e=>{ console.warn('recordMatchResult', e); });
+  return window._recP;
+}
+async function _recordMatchResult(youWon){
+  // La apuesta se liquida UNA sola vez: se anota aquí y se suelta para que nada la cobre dos veces.
+  const betNow = pendingBet;
+  pendingBet = 0;
+  const oldLevel = profileStats.level || 1;
   profileStats.gamesPlayed += 1;
   const _mctx = liveMatchCtx();
   try{ ligaReport(youWon, _mctx); }catch(e){}
   try{ tourneyReport(youWon, _mctx); }catch(e){}
 
-  let goldWon = 0, betPayout = 0, chestResult = {granted:false};
-  const _refundBet = !youWon && multiplayerActive && !!winner && !!winner.isBot && winner.color!==MY_COLOR && !!colorUserId(winner.color) && pendingBet>0;
+  const _refundBet = !youWon && multiplayerActive && !!winner && !!winner.isBot && winner.color!==MY_COLOR && !!colorUserId(winner.color) && betNow>0;
   if(youWon){
     profileStats.gamesWon += 1;
     profileStats.winStreak = (profileStats.winStreak||0) + 1;
@@ -13776,32 +13861,35 @@ async function recordMatchResult(youWon){
       else if(nAct<=2) profileStats.wins2p = (profileStats.wins2p||0) + 1;
       else profileStats.wins4p = (profileStats.wins4p||0) + 1;
     }catch(e){}
-    profileStats.goldEarned += 50;
-    lobbyGold += 50;
-    goldWon += 50;
-    if(pendingBet>0){
-      betPayout = pendingBet*2;
-      lobbyGold += betPayout;
-      profileStats.goldEarned += betPayout;
-      goldWon += betPayout;
-    }
-    chestResult = await grantChestForWin(pendingBet>0 ? BET_TIERS.indexOf(pendingBet) : -1);
-  } else if(_refundBet){
-    lobbyGold += pendingBet; // ganó la máquina de un jugador desconectado: no pierdes tu apuesta
-    try{ lobbyToast('Tu rival se desconectó: te devolvimos tu apuesta.'); }catch(e){}
-  } else {
+  } else if(!_refundBet){
     profileStats.gamesLost += 1;
     profileStats.winStreak = 0;
   }
-  pendingBet = 0;
 
-  const promotions = checkProgressAfterMatch(youWon);
+  // Lo que el servidor no puede ver (capturas, dobles): se avisa con tope diario
+  try{
+    if(matchStats.capturesByRed>0) await ECO.call('eco_progress', {track:'capturesToday', n:Math.min(10, matchStats.capturesByRed)});
+    if(matchStats.doublesByRed>0) await ECO.call('eco_progress', {track:'doublesToday', n:Math.min(10, matchStats.doublesByRed)});
+  }catch(e){}
+
+  // El servidor paga: apuesta, 50 de oro, ánfora, XP y avance del pase y de los desafíos
+  let goldWon = 0, betPayout = 0, xpGained = 0, chestResult = {granted:false};
+  const r = await ECO.call('eco_match_end', { won:!!youWon, mode:gameMode, humans:_mctx.opps.length, refund:!!_refundBet });
+  if(r && r.ok && r.result){
+    const o = r.result;
+    goldWon = o.goldWon||0; betPayout = o.betPayout||0; xpGained = o.xp||0;
+    profileStats.goldEarned += goldWon;
+    if(o.chest) chestResult = {granted:true, type:o.chest.type, slotIndex:(o.chest.slot||1)-1};
+    if(o.refunded){ try{ lobbyToast('Tu rival se desconectó: te devolvimos tu apuesta.'); }catch(e){} }
+  } else {
+    try{ lobbyToast('No se pudo registrar la partida en el servidor (sin conexión). No hubo premios.'); }catch(e){}
+  }
+
+  const promotions = checkProgressAfterMatch(youWon, oldLevel);
   pendingPromotions = promotions;
 
-  profileStats.diamonds = lobbyDiamonds;
-  profileStats.gold = lobbyGold;
   updateEconomyDisplays();
-  await saveProfile();
+  try{ await saveProfile(); }catch(e){}
 
   lastMatchSummary = {
     youWon, goldWon, betPayout, chestResult, xpGained, leaguePts: (youWon?25:8),
@@ -13952,7 +14040,7 @@ function triggerRandomGameNotification(){
     );
   }
   // Solo avisos que son verdad: el premio diario solo si falta reclamarlo y el ánfora solo si hay una lista
-  const _today = new Date().toISOString().slice(0,10);
+  const _today = ECO.today();
   if(dailyRewardLastClaim !== _today){
     pool.push(()=>showGameNotification(`<img src="${GAME_IMAGES.coin}" alt="">`,'¡Premio diario listo!', 'Tu racha te espera, no la pierdas', openDailyRewardModal, {kind:'reward',action:'Reclamar'}));
   }
@@ -13980,15 +14068,7 @@ let dailyRewardStreak = 0;
 let dailyRewardLastClaim = '';
 
 async function checkDailyReward(){
-  try{
-    const raw = localStorage.getItem('pachisDailyReward');
-    const data = raw ? JSON.parse(raw) : null;
-    dailyRewardStreak = data ? data.streak : 0;
-    dailyRewardLastClaim = data ? data.lastClaim : '';
-  } catch(e){
-    dailyRewardStreak = 0;
-    dailyRewardLastClaim = '';
-  }
+  // La racha y el último premio vienen del servidor (ECO.apply los pone); aquí ya no se lee nada del teléfono.
   updateDailyChestBadge();
 }
 
@@ -14001,7 +14081,7 @@ function updateDailyChestBadge(){
   const badge = document.getElementById('dailyChestBadge');
   const btn = document.getElementById('dailyChestBtn');
   if(!badge || !btn) return;
-  const today = new Date().toISOString().slice(0,10);
+  const today = ECO.today();
   const claimedToday = dailyRewardLastClaim === today;
   const dayInCycle = (dailyRewardStreak % 7) + 1;
   if(claimedToday){
@@ -14016,7 +14096,7 @@ function updateDailyChestBadge(){
 }
 
 function openDailyRewardModal(){
-  const today = new Date().toISOString().slice(0,10);
+  const today = ECO.today();
   const claimedToday = dailyRewardLastClaim === today;
   renderDailyCalendar(dailyRewardStreak, claimedToday);
   const claimBtn = document.getElementById('dailyRewardClaimBtn');
@@ -14107,30 +14187,9 @@ function ensureChestSlots(){
 }
 
 function betChestTier(i){ return i<=3 ? 'bronce' : (i<=7 ? 'plata' : (i<=8 ? 'oro' : 'diamante')); }
-async function grantChestForWin(betIdx){
-  // Antes esto intentaba un endpoint REST propio que no existe en Nakama.
-  // Las ánforas se calculan acá mismo (como siempre) y quedan guardadas
-  // de verdad porque saveProfile() ahora sincroniza con Nakama solo.
-  ensureChestSlots();
-  const freeIdx = chestSlotsData.findIndex(s=>!s);
-  if(freeIdx===-1) return {granted:false};
-  const roll = Math.random();
-  let type = roll<0.70 ? 'bronce' : (roll<0.95 ? 'plata' : 'oro');
-  if(betIdx>=0) type = betChestTier(betIdx);
-  chestSlotsData[freeIdx] = {type, state:'idle', endsAt:0};
-  profileStats.chestSlots = chestSlotsData;
-  saveProfile();
-  renderChestSlots();
-  return {granted:true, type, slotIndex:freeIdx};
-}
-
 function renderChestSlots(){
   ensureChestSlots();
   // SOLO en la vista previa: si no hay ánforas, se ponen las 4 (Bronce, Plata, Oro, Diamante) para poder verlas abrir
-  try{ if(IN_SANDBOX_PREVIEW && chestSlotsData.every(s=>!s)){
-    ['bronce','plata','oro','diamante'].forEach((t,i)=>{ chestSlotsData[i] = {type:t, state:'ready', endsAt:0}; });
-    profileStats.chestSlots = chestSlotsData;
-  } }catch(e){}
   const box = document.getElementById('chestSlots');
   if(!box) return;
   box.innerHTML = chestSlotsData.map((s,i)=>{
@@ -14255,31 +14314,25 @@ function diamondCostFor(type){
 
 async function startChestUnlock(i){
   ensureChestSlots();
-  const alreadyUnlocking = chestSlotsData.some(s=>s && s.state==='unlocking');
-  if(alreadyUnlocking){ lobbyToast('Ya tienes una ánfora desbloqueándose. Espera a que termine.'); return; }
+  const s0 = chestSlotsData[i];
+  if(!s0) return;
+  const info = CHEST_TYPES[s0.type];
+  const r = await ECO.act('eco_chest_start', {slot:i+1});   // el servidor pone la hora en que termina
+  if(!r) return;
   const s = chestSlotsData[i];
-  const info = CHEST_TYPES[s.type];
-
-  s.state = 'unlocking';
-  s.endsAt = Date.now() + info.hours*3600000;
-  profileStats.chestSlots = chestSlotsData;
-  await saveProfile();
   renderChestSlots();
   openChestModal(i);
-  if(pushEnabled && window.NotificationBridge) NotificationBridge.scheduleChestReady(i, info.name, s.endsAt);
+  if(pushEnabled && window.NotificationBridge && s) NotificationBridge.scheduleChestReady(i, info.name, s.endsAt);
 }
 
 async function instantOpenWithDiamonds(i){
-  const s = chestSlotsData[i];
-  const cost = diamondCostFor(s.type);
-
+  const s0 = chestSlotsData[i];
+  if(!s0) return;
+  const cost = diamondCostFor(s0.type);
   if(lobbyDiamonds<cost){ lobbyToast('No te alcanzan los diamantes.'); return; }
-  lobbyDiamonds -= cost;
-  syncEconomy();
-  s.state = 'ready'; s.endsAt = 0;
+  const r = await ECO.act('eco_chest_gems', {slot:i+1});   // el servidor cobra los diamantes
+  if(!r) return;
   if(window.NotificationBridge) NotificationBridge.cancelChestNotification(i);
-  profileStats.chestSlots = chestSlotsData;
-  await saveProfile();
   openChestModal(i);
   renderChestSlots();
 }
@@ -14358,50 +14411,44 @@ function simulateAdDelay(onComplete){
   setTimeout(onComplete, 900);
 }
 
-// NOTA: este método se queda en modo local/simulado a propósito incluso
-// con sesión en línea. El servidor SÍ tiene el endpoint para acelerar por
-// anuncio (routes/game.js, method:'ad'), pero exige un token verificado
-// de verdad por AdMob (routes/ads.js), y esa verificación está
-// deliberadamente bloqueada hasta que se configuren credenciales reales
-// (ver TODO en verifySsvSignature). Llamarlo hoy solo daría un error de
-// "no se confirmó el video" — así que mientras tanto, este camino sigue
-// siendo local para que la función no se vea rota.
+// Omitir 1 hora con un video: el servidor quita la hora (con tope por día y ritmo mínimo entre videos).
 function instantOpenWithAd(i){
   playRewardedAdOrSimulate(async ()=>{
+    const s0 = chestSlotsData[i];
+    if(!s0 || s0.state!=='unlocking') return;
+    const r = await ECO.act('eco_chest_ad', {slot:i+1});
+    if(!r) return;
     const s = chestSlotsData[i];
-    if(!s || s.state!=='unlocking') return;
-    s.endsAt -= 3600000;
-    if(s.endsAt <= Date.now()){
-      s.state = 'ready'; s.endsAt = 0;
+    if(s && s.state==='ready'){
       if(window.NotificationBridge) NotificationBridge.cancelChestNotification(i);
-    } else if(pushEnabled && window.NotificationBridge){
+    } else if(s && pushEnabled && window.NotificationBridge){
       NotificationBridge.scheduleChestReady(i, CHEST_TYPES[s.type].name, s.endsAt);
     }
-    profileStats.chestSlots = chestSlotsData;
-    await saveProfile();
     openChestModal(i);
     renderChestSlots();
   });
 }
 
 async function openChestNow(i){
-  if(window.NotificationBridge) NotificationBridge.cancelChestNotification(i);
-  bumpChallenge('chestsToday', 1);
-  const s = chestSlotsData[i];
+  const s0 = chestSlotsData[i];
+  if(!s0) return;
+  const s = { type: s0.type };
   const info = CHEST_TYPES[s.type];
-
-  const goldWon = info.gold[0] + Math.floor(Math.random()*(info.gold[1]-info.gold[0]));
-  const diaWon = info.diamonds[0] + Math.floor(Math.random()*(info.diamonds[1]-info.diamonds[0]+1));
-  lobbyGold += goldWon;
-  lobbyDiamonds += diaWon;
+  const r = await ECO.act('eco_chest_open', {slot:i+1});   // el servidor sortea y entrega el contenido
+  if(!r) return;
+  if(window.NotificationBridge) NotificationBridge.cancelChestNotification(i);
+  const rw = r.rewards || {};
+  const goldWon = rw.gold || 0, diaWon = rw.diamonds || 0;
   profileStats.goldEarned += goldWon;
-  chestSlotsData[i] = null;
-  profileStats.chestSlots = chestSlotsData;
-  syncEconomy();
-  await saveProfile();
-  const faceDrop = await rollDiceFaceDrop(s.type);
-  const colorDrop = await rollTokenColorDrop(s.type);
-  const avDrop = await rollAvatarPieceDrop(s.type);
+  const faceDrop = rw.face ? { dice: DICE_CATALOG.find(d=>d.id===rw.face.id), face: rw.face.face, completed: !!rw.face.completed } : null;
+  const colorDrop = rw.color ? { token: tokenOptions().find(o=>o.id===rw.color.id), color: rw.color.color, completed: !!rw.color.completed } : null;
+  const avDrop = rw.piece ? { av: AVATAR_CATALOG.find(a=>a.id===rw.piece.id), piece: rw.piece.piece, completed: !!rw.piece.completed } : null;
+  if(faceDrop && !faceDrop.dice) rw.face = null;
+  if(colorDrop && !colorDrop.token) rw.color = null;
+  if(avDrop && !avDrop.av) rw.piece = null;
+  const fDrop = (faceDrop && faceDrop.dice) ? faceDrop : null;
+  const cDrop = (colorDrop && colorDrop.token) ? colorDrop : null;
+  const aDrop = (avDrop && avDrop.av) ? avDrop : null;
 
   const card = document.getElementById('chestModalCard');
   card.className = 'am-card tier-' + s.type;
@@ -14413,13 +14460,13 @@ async function openChestNow(i){
     <div class="am-rewards">
       <div class="am-reward"><img class="currency-img" src="${GAME_IMAGES.coin}" alt="Oro" width="34" height="34" draggable="false" style="width:34px;height:34px;"><span class="am-rv">+${goldWon.toLocaleString('es')}</span><span class="am-rl">Monedas</span></div>
       <div class="am-reward"><span style="font-size:32px;line-height:34px;">💎</span><span class="am-rv">+${diaWon}</span><span class="am-rl">Diamantes</span></div>
-      ${faceDrop ? `<div class="am-reward"><div class="dm-face dm-reward-face ${faceDrop.dice.img?'skin':'plain'}" style="${diceFaceStyle(faceDrop.dice)}">${faceDrop.face}</div><span class="am-rl">${faceDrop.dice.name}<br>cara ${faceDrop.face}</span></div>` : ''}
-      ${avDrop ? `<div class="am-reward"><div class="av-ring av-ring-mini has-puz"><img src="${avatarURL(avDrop.av.id)}" alt="" draggable="false">${avDrop.completed?'':avPuzzleHTML(avDrop.av.id, avDrop.piece)}</div><span class="am-rl">${avDrop.av.name}<br>pieza ${avDrop.piece}/4</span></div>` : ''}
-      ${colorDrop ? `<div class="am-reward"><div class="dm-tkico scb-${colorDrop.color}" style="width:52px;height:52px;flex-shrink:0;">${tk3dHTML(colorDrop.token.id, colorDrop.color, colorDrop.token.emoji, 112)}</div><span class="am-rl">Ficha ${colorDrop.token.name}<br>${NAMES[colorDrop.color]}</span></div>` : ''}
+      ${fDrop ? `<div class="am-reward"><div class="dm-face dm-reward-face ${fDrop.dice.img?'skin':'plain'}" style="${diceFaceStyle(fDrop.dice)}">${fDrop.face}</div><span class="am-rl">${fDrop.dice.name}<br>cara ${fDrop.face}</span></div>` : ''}
+      ${aDrop ? `<div class="am-reward"><div class="av-ring av-ring-mini has-puz"><img src="${avatarURL(aDrop.av.id)}" alt="" draggable="false">${aDrop.completed?'':avPuzzleHTML(aDrop.av.id, aDrop.piece)}</div><span class="am-rl">${aDrop.av.name}<br>pieza ${aDrop.piece}/4</span></div>` : ''}
+      ${cDrop ? `<div class="am-reward"><div class="dm-tkico scb-${cDrop.color}" style="width:52px;height:52px;flex-shrink:0;">${tk3dHTML(cDrop.token.id, cDrop.color, cDrop.token.emoji, 112)}</div><span class="am-rl">Ficha ${cDrop.token.name}<br>${NAMES[cDrop.color]}</span></div>` : ''}
     </div>
-    ${faceDrop && faceDrop.completed ? `<div class="am-sub" style="color:#ffd86b;font-weight:800;">🎉 ¡Completaste el dado ${faceDrop.dice.name}! Ya es tuyo.</div>` : ''}
-    ${avDrop && avDrop.completed ? `<div class="am-sub" style="color:#ffd86b;font-weight:800;">🎉 ¡Completaste el avatar ${avDrop.av.name}! Ya es tuyo.</div>` : ''}
-    ${colorDrop && colorDrop.completed ? `<div class="am-sub" style="color:#ffd86b;font-weight:800;">🎉 ¡Completaste la ficha ${colorDrop.token.name}! Ya es tuya.</div>` : ''}
+    ${fDrop && fDrop.completed ? `<div class="am-sub" style="color:#ffd86b;font-weight:800;">🎉 ¡Completaste el dado ${fDrop.dice.name}! Ya es tuyo.</div>` : ''}
+    ${aDrop && aDrop.completed ? `<div class="am-sub" style="color:#ffd86b;font-weight:800;">🎉 ¡Completaste el avatar ${aDrop.av.name}! Ya es tuyo.</div>` : ''}
+    ${cDrop && cDrop.completed ? `<div class="am-sub" style="color:#ffd86b;font-weight:800;">🎉 ¡Completaste la ficha ${cDrop.token.name}! Ya es tuya.</div>` : ''}
     <button class="am-btn" onclick="closeChestModal()">¡Genial!</button>
   `;
   try{ hydrateTokenIcons(document.body); }catch(e){}
@@ -14430,11 +14477,9 @@ async function openChestNow(i){
 
 setInterval(()=>{
   ensureChestSlots();
-  let changed = false;
   chestSlotsData.forEach(s=>{
-    if(s && s.state==='unlocking' && s.endsAt<=Date.now()){ s.state='ready'; s.endsAt=0; changed=true; }
+    if(s && s.state==='unlocking' && s.endsAt<=ECO.now()){ s.state='ready'; s.endsAt=0; }   // solo para mostrarlo; el servidor lo confirma al abrir
   });
-  if(changed){ profileStats.chestSlots = chestSlotsData; saveProfile(); }
   const lobbyVisible = document.getElementById('lobbyScreen') && document.getElementById('lobbyScreen').style.display!=='none';
   if(lobbyVisible) renderChestSlots();
   const modalOpen = document.getElementById('chestModalOverlay').style.display==='flex';
@@ -14484,7 +14529,7 @@ function ensureLeagueData(){
     if(!(leagueData.rank>=1)) leagueData.rank = 1;
     return;
   }
-  const tierIdx = profileStats.league ? leagueTierClamp(Math.min(3, profileStats.league.tierIdx)) : 0;
+  const tierIdx = profileStats.league ? Math.min(3, (profileStats.league.tierIdx||0)) : 0;
   leagueData = {
     tierIdx,
     rank: 1,
@@ -14562,14 +14607,6 @@ async function ligaReport(won, ctx){
   try{ const r = await iapRpc('global_report', { won: !!won, name: nm, avatar: av, online: true, opps: ctx.opps, friends: myFriendIds() }); ligaApplyServer(r); }catch(e){}
 }
 let ligaClaimBusy = false;
-function giveLeagueAmphora(type){
-  ensureChestSlots();
-  const i = chestSlotsData.findIndex(x=>!x);
-  if(i===-1) return false;
-  chestSlotsData[i] = {type, state:'idle', endsAt:0};
-  profileStats.chestSlots = chestSlotsData; renderChestSlots();
-  return true;
-}
 async function ligaClaimAndApply(){
   if(ligaClaimBusy || !isOnlineAuthenticated) return;
   ligaClaimBusy = true;
@@ -14582,12 +14619,10 @@ async function ligaClaimAndApply(){
         if(x.kind==='league_rank'){
           const tn = (LEAGUE_TIERS.find(t=>t.id===x.tier)||{name:'Liga'}).name;
           msgs.push('Puesto #'+x.rank+' en la '+tn);
-          if(x.amphora && !giveLeagueAmphora(x.amphora)) noSlot = true;
         } else msgs.push('#1 de la liga global');
       });
-      if(g){ lobbyGold += g; profileStats.goldEarned += g; }
-      if(d){ lobbyDiamonds += d; }
-      syncEconomy();
+      if(g){ profileStats.goldEarned += g; }
+      await ECO.refresh();   // el servidor ya sumó el oro, las gemas y el ánfora
       await saveProfile();
       for(const x of r.grants){ try{ await iapRpc('liga_ack', { key: x.key }); }catch(e){} }
       sfxCoin();
@@ -14697,6 +14732,473 @@ const IAP_PRODUCT_IDS = ['gem_150','gem_300','gem_700','gem_1500','gem_3500','ge
 let iapReady = false, iapBusy = false;
 const iapSeen = new Set();
 function iapPlatform(){ try{ return window.Capacitor.getPlatform()==='ios' ? 'apple' : 'google'; }catch(e){ return 'google'; } }
+/* ======================================================================
+   ECONOMÍA EN EL SERVIDOR (ECO)
+   El oro, los diamantes, lo desbloqueado, las ánforas, el pase, los desafíos,
+   las apuestas y todos los premios los decide y los guarda el SERVIDOR.
+   El teléfono solo muestra lo que el servidor dice y le pide acciones.
+   Cada llamada devuelve el estado nuevo completo y aquí se copia a pantalla.
+   ====================================================================== */
+const ECO = (function(){
+  const E = { st:null };
+  let tok = null, tokAt = 0, chain = Promise.resolve(), offset = 0;
+  const asObj = x => (x && typeof x==='object' && !Array.isArray(x)) ? x : {};
+  const asArr = x => Array.isArray(x) ? x : [];
+  const keys = x => Object.keys(asObj(x));
+  const ERR = {
+    sin_saldo:'No te alcanza el saldo.', sin_mas_cambios:'Ya no puedes cambiar más dados esta partida.', apuesta_invalida:'Esa apuesta no existe.', apuesta_activa:'Tienes una partida con apuesta en curso. Espera a que termine.',
+    ya_lo_tienes:'Ya lo tienes.', solo_pase:'Es exclusivo del Parche Pass.', solo_anforas:'Solo se consigue con las ánforas.', retirado:'Ya no está a la venta.',
+    no_se_vende:'No está a la venta.', no_existe:'No existe.', ya_reclamado:'Ya lo reclamaste.', faltan_puntos:'Todavía te faltan puntos.', sin_premium:'Necesitas el Parche Pass Premium.',
+    sin_completar:'Todavía no lo completas.', no_es_de_hoy:'Ese desafío ya no es de hoy.', muy_rapido:'Más despacio, inténtalo en unos segundos.', tope_diario:'Llegaste al tope de hoy.',
+    no_hay_anfora:'No hay ánfora ahí.', no_esta_lista:'El ánfora todavía no está lista.', ya_iniciada:'Esa ánfora ya empezó.', ya_hay_una:'Ya tienes una ánfora desbloqueándose.',
+    no_esta_abriendo:'Esa ánfora no se está abriendo.', todavia_no:'Todavía no es ese día.', ya_abierta:'Esa puerta ya está abierta.', ocupado:'El servidor está ocupado, inténtalo de nuevo.',
+    red:'Sin conexión con el servidor. No se cobró nada.', sin_sesion:'Tu sesión expiró. Cierra y abre el juego.', pedido_invalido:'Pedido no válido.'
+  };
+  E.errMsg = code => ERR[code] || 'No se pudo completar. Inténtalo de nuevo.';
+  /* Hora del servidor (para que cambiar la hora del teléfono no sirva de nada) */
+  E.now = ()=> Date.now() + offset;
+  E.today = ()=> new Date(E.now()).toISOString().slice(0,10);
+
+  async function token(force){
+    if(!force && tok && (Date.now()-tokAt) < 40000) return tok;
+    const auth = await fetchT(SERVER_URL + '/v2/account/authenticate/device?create=true', {
+      method:'POST', headers:{ 'Authorization':'Basic ' + btoa(NAKAMA_SERVER_KEY + ':'), 'Content-Type':'application/json' },
+      body: JSON.stringify({ id: getDeviceId() }) }, 10000);
+    if(!auth.ok) throw new Error('auth ' + auth.status);
+    tok = (await auth.json()).token; tokAt = Date.now();
+    return tok;
+  }
+  async function rpcOnline(id, obj){
+    for(let k=0; k<2; k++){
+      const t = await token(k>0);
+      const r = await fetchT(SERVER_URL + '/v2/rpc/' + id, {
+        method:'POST', headers:{ 'Authorization':'Bearer ' + t, 'Content-Type':'application/json' },
+        body: JSON.stringify(JSON.stringify(obj || {})) }, 15000);
+      if(r.status===401 && k===0){ tok = null; continue; }
+      if(!r.ok) throw new Error('rpc ' + id + ' ' + r.status);
+      const j = await r.json();
+      return j && j.payload ? JSON.parse(j.payload) : {};
+    }
+    throw new Error('rpc ' + id + ' sin sesión');
+  }
+
+  /* Copia el estado del servidor a las variables que usa el resto del juego */
+  function apply(eco){
+    if(!eco || typeof eco!=='object') return;
+    E.st = eco;
+    if(eco.now) offset = eco.now*1000 - Date.now();
+    lobbyGold = Math.floor(Number(eco.gold)||0);
+    lobbyDiamonds = Math.floor(Number(eco.diamonds)||0);
+    const ps = profileStats, own = asObj(eco.own);
+    ps.gold = lobbyGold; ps.diamonds = lobbyDiamonds;
+    ps.shopPricesV1 = true; ps.animalFixV1 = true; ps.boardsGrandfathered = true;   // ya no hay nada que migrar en el teléfono
+    ps.unlockedTokens = ['clasico'].concat(keys(own.tokens).filter(k=>k!=='clasico'));
+    ps.unlockedDice = ['classic'].concat(keys(own.dice).filter(k=>k!=='classic'));
+    ps.unlockedBoards = keys(own.boards);
+    ps.unlockedAvatars = keys(own.avatars);
+    ps.chestSlots = normChestSlots(eco.chest);
+    chestSlotsData = ps.chestSlots;
+    const p = asObj(eco.pass);
+    ps.pass = { points:Number(p.pts)||0, premium:!!p.premium, claimedFree:keys(p.cf).map(Number), claimedPremium:keys(p.cp).map(Number) };
+    const xp = asObj(eco.xp);
+    ps.level = Number(xp.level)||1; ps.lvlXp = Number(xp.lvl)||0; ps.xpBoostExpiresAt = Number(xp.boost)||0;
+    const c = asObj(eco.ch);
+    if(c.day){
+      const o = { date:c.day, activeIds:asArr(c.ids), claimed:asObj(c.claimed) };
+      ['gamesToday','winsToday','bigBetToday','chestsToday','capturesToday','doublesToday','games1v1Today','games2v2Today','treasureToday','streaksToday'].forEach(k=>{ o[k]=0; });
+      const pr = asObj(c.prog); Object.keys(pr).forEach(k=>{ o[k] = Number(pr[k])||0; });
+      ps.challenges = o;
+    }
+    const a = asObj(eco.ads);
+    ps.adsToday = { date:a.day||'', n:Number(a.n)||0 };
+    adLadderStep = Number(a.step)||0; ps.adLadderStep = adLadderStep;
+    const d = asObj(eco.daily);
+    dailyRewardLastClaim = d.last || ''; dailyRewardStreak = Number(d.streak)||0;
+    try{ localStorage.setItem('pachisDailyReward', JSON.stringify({lastClaim:dailyRewardLastClaim, streak:dailyRewardStreak})); }catch(e){}
+    const dr = asObj(eco.drops);
+    const lists = o => { const r = {}; Object.keys(asObj(o)).forEach(k=>{ r[k] = asArr(o[k]); }); return r; };
+    ps.diceFaces = lists(dr.dice); ps.tokenColors = lists(dr.tok); ps.avatarPieces = lists(dr.av);
+    ps.nameChanges = Number(eco.nameChanges)||0;
+    try{ if(typeof unlockFramesByLevel==='function') unlockFramesByLevel(); }catch(e){}
+    E.refreshUI();
+  }
+  E.refreshUI = function(){
+    [ ()=>updateEconomyDisplays(), ()=>updateLevelBadges(), ()=>renderChestSlots(), ()=>{ if(typeof renderPassUI==='function') renderPassUI(); },
+      ()=>updateDailyChestBadge(), ()=>updateEventsDot(), ()=>{ if(typeof renderXpBoostStatus==='function') renderXpBoostStatus(); },
+      ()=>{ if(typeof renderAdLadder==='function') renderAdLadder(); } ].forEach(f=>{ try{ f(); }catch(e){} });
+  };
+
+  /* Una llamada a la vez y en orden: así dos toques seguidos nunca se pisan */
+  function call(id, obj){
+    const run = async ()=>{
+      let r;
+      try{
+        r = PREVIEW_OFFLINE ? ECO_SIM.call(id, obj || {}) : await rpcOnline(id, obj);
+      }catch(e){ return { ok:false, error:'red', detail:String(e && e.message || e) }; }
+      if(r && r.eco) apply(r.eco);
+      return r || { ok:false, error:'vacio' };
+    };
+    const p = chain.then(run, run);
+    chain = p;
+    return p;
+  }
+  E.call = call;
+  E.refresh = ()=> call('eco_get', {});
+  /* Pide algo y, si falla, avisa con un mensaje claro. Devuelve la respuesta del servidor o null. */
+  E.act = async function(id, obj, quiet){
+    const r = await call(id, obj);
+    if(r && r.ok) return r;
+    if(!quiet){ try{ lobbyToast(E.errMsg(r && r.error)); }catch(e){} }
+    return null;
+  };
+
+  /* Primera carga: pide el estado; la primera vez trae lo que ya había en el teléfono (una sola vez) */
+  E.init = async function(){
+    const ps = profileStats;
+    const legacy = {
+      tokens: asArr(ps.unlockedTokens).slice(0,400), dice: asArr(ps.unlockedDice).slice(0,400),
+      boards: asArr(ps.unlockedBoards).slice(0,400), avatars: asArr(ps.unlockedAvatars).slice(0,400),
+      level: Number(ps.level)||1, lvl: Number(ps.lvlXp)||0, pts: Number(ps.pass && ps.pass.points)||0,
+      drops: { dice: asObj(ps.diceFaces), tok: asObj(ps.tokenColors), av: asObj(ps.avatarPieces) }
+    };
+    let r = await call('eco_get', {});
+    if(!(r && r.ok)) return false;
+    if(!E.st.imported){
+      r = await call('eco_import', legacy);
+      if(!(r && r.ok)) return false;
+    }
+    return true;
+  };
+
+  /* ---- Apuestas y partidas ---- */
+  E.betHold = async function(amount){
+    const r = await call('eco_bet_hold', { amount });
+    if(r && r.ok) return true;
+    try{ lobbyToast(r && r.error==='sin_saldo' ? 'No te alcanza el oro para esa apuesta.' : E.errMsg(r && r.error)); }catch(e){}
+    return false;
+  };
+  E.betCancel = ()=> call('eco_bet_cancel', {});
+  let started = false;
+  E.matchStarted = ()=> started;
+  E.matchReset = ()=>{ started = false; };
+  E.matchStartOnce = function(){
+    if(started) return; started = true;
+    call('eco_match_start', {});
+  };
+
+  return E;
+})();
+
+/* ======================================================================
+   SIMULADOR DEL SERVIDOR — SOLO para la vista previa del chat (sin internet).
+   Hace lo mismo que el servidor de verdad, para poder probar el juego aquí.
+   ====================================================================== */
+const ECO_SIM = (function(){
+  let d = null;
+  const S = {};
+  const day = ()=> new Date().toISOString().slice(0,10);
+  const nowS = ()=> Math.floor(Date.now()/1000);
+  const rnd = n => Math.floor(Math.random()*n);
+  const pickOne = a => a[rnd(a.length)];
+  const BET = [500,2000,5000,10000,50000,250000,1000000,5000000,15000000,30000000];
+  const GEM_COST = { bronce:30, plata:60, oro:100, diamante:150 };
+  const DICE_CH = { bronce:.06, plata:.10, oro:.18, diamante:.24, xmas:1 };
+  const TOK_CH = { bronce:.05, plata:.08, oro:.15, diamante:.20 };
+  const AV_CH = { bronce:.03, plata:.04, oro:.06, diamante:.08 };
+  const TRACK_CAP = { capturesToday:15, doublesToday:10, treasureToday:5, streaksToday:5 };
+  function fresh(){
+    return { gold:5000, diamonds:5000, imported:true,
+      chest:[{type:'bronce',state:'ready',endsAt:0},{type:'plata',state:'ready',endsAt:0},{type:'oro',state:'ready',endsAt:0},{type:'diamante',state:'ready',endsAt:0}],
+      own:{tokens:{clasico:true},dice:{classic:true},boards:{classic:true},avatars:{},frames:{}},
+      pass:{pts:0,premium:false,cf:{},cp:{}}, daily:{last:'',streak:0}, ads:{day:'',n:0,step:0,last:0},
+      xp:{level:1,lvl:0,boost:0}, ch:null, stats:{games:0,wins:0,lastEnd:0}, drops:{dice:{},tok:{},av:{}}, nameChanges:0, xmas:null, gifts:null, bet:null };
+  }
+  function ch(){
+    if(!d.ch || d.ch.day!==day()) d.ch = { day:day(), ids:pickDailyChallengeIds(day()), prog:{}, claimed:{} };
+    return d.ch;
+  }
+  function pub(){
+    ch();
+    const c = JSON.parse(JSON.stringify(d));
+    c.now = nowS();
+    return c;
+  }
+  const ok = (extra)=> Object.assign({ ok:true, eco:pub() }, extra||{});
+  const fail = code => ({ ok:false, error:code });
+  function addChest(t){
+    for(let i=0;i<4;i++){ if(!d.chest[i]){ d.chest[i] = {type:t,state:'idle',endsAt:0}; return i+1; } }
+    return 0;
+  }
+  const tokOwned = id => id==='clasico' || TOKEN_FREE_TEST.includes(id) || !!d.own.tokens[id];
+  const diceOwned = id => id==='classic' || !!d.own.dice[id];
+  const avOwned = id => { const a = AVATAR_CATALOG.find(x=>x.id===id); return (a && a.tier==='basic') || !!d.own.avatars[id]; };
+  function boostActive(){ return d.xp.boost > Date.now(); }
+  function addBoost(h){ d.xp.boost = Math.max(d.xp.boost, Date.now()) + h*3600000; }
+  function give(r){
+    const note = {};
+    if(r.gold) d.gold += r.gold;
+    if(r.diamonds) d.diamonds += r.diamonds;
+    if(r.token){ if(tokOwned(r.token)){ d.gold += 15000; note.dup = true; } else d.own.tokens[r.token] = true; }
+    if(r.avatar){ if(avOwned(r.avatar)){ d.gold += 5000; note.dup = true; } else d.own.avatars[r.avatar] = true; }
+    if(r.dice){ if(diceOwned(r.dice)){ d.gold += 15000; note.dup = true; } else d.own.dice[r.dice] = true; }
+    if(r.xp) addBoost(r.xp);
+    if(r.board) d.own.boards[r.board] = true;
+    if(r.chest){ if(!addChest(r.chest)){ d.gold += 20000; note.nospace = true; } }
+    return note;
+  }
+  function rollFace(t){
+    if(Math.random() >= (DICE_CH[t]!==undefined ? DICE_CH[t] : .06)) return null;
+    const cand = DICE_CATALOG.filter(x=>x.id!=='classic' && !x.exotic && !x.passOnly && !diceOwned(x.id));
+    if(!cand.length) return null;
+    const prog = x => (d.drops.dice[x.id]||[]).length;
+    const easy = cand.filter(x=>x.easy);
+    const pool = (easy.length && Math.random()<.6) ? easy : cand;
+    const best = Math.max.apply(null, pool.map(prog));
+    const x = pickOne(pool.filter(y=>prog(y)===best));
+    const have = d.drops.dice[x.id] = d.drops.dice[x.id] || [];
+    const face = pickOne([1,2,3,4,5,6].filter(n=>!have.includes(n)));
+    have.push(face);
+    let completed = false; if(have.length>=6){ completed = true; d.own.dice[x.id] = true; }
+    return { id:x.id, face, completed };
+  }
+  function rollColor(t){
+    if(Math.random() >= (TOK_CH[t]||.05)) return null;
+    const cand = Object.keys(ANIMAL_NAMES).filter(id=>id!=='clasico' && !tokOwned(id) && !PASS_ONLY_TOKENS.includes(id) && !RETIRED_TOKENS.includes(id));
+    if(!cand.length) return null;
+    const prog = id => (d.drops.tok[id]||[]).length;
+    const best = Math.max.apply(null, cand.map(prog));
+    const id = pickOne(cand.filter(y=>prog(y)===best));
+    const have = d.drops.tok[id] = d.drops.tok[id] || [];
+    const color = pickOne(['red','blue','yellow','green'].filter(c=>!have.includes(c)));
+    have.push(color);
+    let completed = false; if(have.length>=4){ completed = true; d.own.tokens[id] = true; }
+    return { id, color, completed };
+  }
+  function rollPiece(t){
+    if(Math.random() >= (AV_CH[t]||.03)) return null;
+    const cand = AVATAR_CATALOG.filter(a=>a.pieces && !avOwned(a.id));
+    if(!cand.length) return null;
+    const prog = a => (d.drops.av[a.id]||[]).length;
+    const best = Math.max.apply(null, cand.map(prog));
+    const a = pickOne(cand.filter(y=>prog(y)===best));
+    const have = d.drops.av[a.id] = d.drops.av[a.id] || [];
+    const piece = pickOne([1,2,3,4].filter(n=>!have.includes(n)));
+    have.push(piece);
+    let completed = false; if(have.length>=4){ completed = true; d.own.avatars[a.id] = true; }
+    return { id:a.id, piece, completed };
+  }
+  const lvlCost = L => L<=10 ? 100 : L<=30 ? 150 : L<=60 ? 200 : 300;
+  const betChest = i => i<=3 ? 'bronce' : (i<=7 ? 'plata' : (i<=8 ? 'oro' : 'diamante'));
+
+  const R = {
+    eco_get(){ return ok(); },
+    eco_import(){ return ok(); },
+    eco_buy(o){
+      const map = { token:['unlockedTokens',null], dice:['dice',DICE_CATALOG], board:['boards',BOARD_CATALOG], avatar:['avatars',AVATAR_CATALOG] };
+      const set = d.own[{token:'tokens',dice:'dice',board:'boards',avatar:'avatars'}[o.kind]];
+      if(!set) return fail('pedido_invalido');
+      let price;
+      if(o.kind==='token'){
+        if(!ANIMAL_NAMES[o.id]) return fail('no_existe');
+        if(PASS_ONLY_TOKENS.includes(o.id)) return fail('solo_pase');
+        if(RETIRED_TOKENS.includes(o.id)) return fail('retirado');
+        price = TOKEN_FREE_TEST.includes(o.id) ? 0 : PRICE_TOKEN;
+      } else {
+        const it = map[o.kind][1].find(x=>x.id===o.id);
+        if(!it) return fail('no_existe');
+        if(it.passOnly) return fail('solo_pase');
+        if(it.anfora) return fail('solo_anforas');
+        price = o.kind==='dice' ? dicePrice(it) : (it.price||0);
+      }
+      if(set[o.id]) return fail('ya_lo_tienes');
+      if(d.diamonds < price) return fail('sin_saldo');
+      d.diamonds -= price; set[o.id] = true;
+      return ok();
+    },
+    eco_chest_start(o){
+      const s = d.chest[(o.slot|0)-1];
+      if(!s) return fail('no_hay_anfora');
+      if(s.state!=='idle') return fail('ya_iniciada');
+      if(d.chest.some(x=>x && x.state==='unlocking')) return fail('ya_hay_una');
+      s.state = 'unlocking'; s.endsAt = Date.now() + CHEST_TYPES[s.type].hours*3600000;
+      return ok();
+    },
+    eco_chest_gems(o){
+      const s = d.chest[(o.slot|0)-1];
+      if(!s) return fail('no_hay_anfora');
+      if(s.state==='ready') return ok();
+      const c = GEM_COST[s.type];
+      if(d.diamonds < c) return fail('sin_saldo');
+      d.diamonds -= c; s.state = 'ready'; s.endsAt = 0;
+      return ok();
+    },
+    eco_chest_ad(o){
+      const s = d.chest[(o.slot|0)-1];
+      if(!s || s.state!=='unlocking') return fail('no_esta_abriendo');
+      s.endsAt -= 3600000;
+      if(s.endsAt <= Date.now()){ s.state = 'ready'; s.endsAt = 0; }
+      return ok();
+    },
+    eco_chest_open(o){
+      const i = (o.slot|0)-1, s = d.chest[i];
+      if(!s) return fail('no_hay_anfora');
+      const ready = s.state==='ready' || (s.state==='unlocking' && s.endsAt <= Date.now());
+      if(!ready) return fail('no_esta_lista');
+      const info = CHEST_TYPES[s.type];
+      const gold = info.gold[0] + rnd(info.gold[1]-info.gold[0]);
+      const dia = info.diamonds[0] + rnd(info.diamonds[1]-info.diamonds[0]+1);
+      const t = s.type;
+      d.gold += gold; d.diamonds += dia; d.chest[i] = null;
+      const rw = { gold, diamonds:dia, type:t };
+      rw.face = rollFace(t); rw.color = rollColor(t); rw.piece = rollPiece(t);
+      const c = ch(); c.prog.chestsToday = (c.prog.chestsToday||0) + 1;
+      return ok({ rewards:rw, drops:JSON.parse(JSON.stringify(d.drops)) });
+    },
+    eco_daily_claim(){
+      const t = day();
+      if(d.daily.last===t) return fail('ya_reclamado');
+      const y = new Date(Date.now()-86400000).toISOString().slice(0,10);
+      const streak = d.daily.last===y ? d.daily.streak+1 : 1;
+      const dc = ((streak-1)%7)+1, entry = DAILY_REWARDS[dc-1];
+      d.daily.last = t; d.daily.streak = streak;
+      const out = { day:dc, streak };
+      if(entry==='chest'){ if(addChest('oro')) out.chest = 'oro'; else { d.gold += 5000; out.gold = 5000; out.nospace = true; } }
+      else { d.gold += entry; out.gold = entry; }
+      return ok({ reward:out });
+    },
+    eco_ad_claim(){
+      const t = day();
+      if(d.ads.day!==t){ d.ads.day = t; d.ads.n = 0; }
+      const step = AD_LADDER[d.ads.step % AD_LADDER.length];
+      const over = d.ads.n >= AD_DAILY_DIAMOND_LIMIT;
+      const out = {};
+      if(step.type==='diamond' && !over){ d.diamonds += step.amount; out.diamonds = step.amount; }
+      else if(step.type==='diamond'){ d.gold += 100; out.gold = 100; }
+      else { d.gold += step.amount; out.gold = step.amount; }
+      d.ads.n++; d.ads.step = (d.ads.step+1) % AD_LADDER.length;
+      return ok({ reward:out });
+    },
+    eco_name_change(){
+      const n = d.nameChanges||0, cost = n<1 ? 0 : Math.min(100, n*25);
+      if(d.diamonds < cost) return fail('sin_saldo');
+      d.diamonds -= cost; d.nameChanges = n+1;
+      return ok({ cost });
+    },
+    eco_pass_claim(o){
+      const t = PASS_TIERS.find(x=>x.tier===(o.tier|0));
+      if(!t || (o.track!=='free' && o.track!=='premium')) return fail('pedido_invalido');
+      if(d.pass.pts < t.points) return fail('faltan_puntos');
+      const set = o.track==='free' ? d.pass.cf : d.pass.cp;
+      if(set[t.tier]) return fail('ya_reclamado');
+      if(o.track==='premium' && !d.pass.premium) return fail('sin_premium');
+      set[t.tier] = true;
+      const r = o.track==='free' ? t.free : t.premium;
+      const note = give(r);
+      return ok({ claim:{ reward:r, note } });
+    },
+    eco_challenge_claim(o){
+      const def = CHALLENGE_POOL.find(x=>x.id===o.id);
+      if(!def) return fail('no_existe');
+      const c = ch();
+      if(!c.ids.includes(o.id)) return fail('no_es_de_hoy');
+      if(c.claimed[o.id]) return fail('ya_reclamado');
+      if((c.prog[def.track]||0) < def.target) return fail('sin_completar');
+      c.claimed[o.id] = true;
+      if(def.reward.gold) d.gold += def.reward.gold;
+      if(def.reward.diamonds) d.diamonds += def.reward.diamonds;
+      return ok({ reward:def.reward });
+    },
+    eco_bet_hold(o){
+      const i = BET.indexOf(o.amount);
+      if(i<0) return fail('apuesta_invalida');
+      if(d.bet && !d.bet.started){ d.gold += d.bet.amount; d.bet = null; }
+      if(d.bet) return fail('apuesta_activa');
+      if(d.gold < o.amount) return fail('sin_saldo');
+      d.gold -= o.amount; d.bet = { amount:o.amount, idx:i+1, t:nowS() };
+      if(o.amount>=10000){ const c = ch(); c.prog.bigBetToday = (c.prog.bigBetToday||0)+1; }
+      return ok();
+    },
+    eco_bet_cancel(){
+      if(d.bet && !d.bet.started){ d.gold += d.bet.amount; d.bet = null; }
+      return ok();
+    },
+    eco_match_start(){ if(d.bet) d.bet.started = true; d.stats.dchg = 0; return ok(); },
+    eco_match_end(o){
+      const won = o.won===true, refund = o.refund===true, humans = Number(o.humans)||0;
+      const out = { goldWon:0, betPayout:0, xp:0 };
+      const bet = d.bet; d.bet = null;
+      const c = ch();
+      c.prog.gamesToday = (c.prog.gamesToday||0)+1;
+      if(won) c.prog.winsToday = (c.prog.winsToday||0)+1;
+      if(o.mode==='1v1') c.prog.games1v1Today = (c.prog.games1v1Today||0)+1;
+      if(o.mode==='2v2') c.prog.games2v2Today = (c.prog.games2v2Today||0)+1;
+      d.stats.games++;
+      const xp = (10 + (won?20:0)) * (boostActive()?2:1);
+      out.xp = xp; d.pass.pts += xp; d.xp.lvl += xp;
+      let lv = d.xp.level;
+      while(d.xp.lvl >= lvlCost(lv)){ d.xp.lvl -= lvlCost(lv); lv++; }
+      d.xp.level = lv;
+      if(won){
+        d.stats.wins++; d.gold += 50; out.goldWon = 50;
+        let tier;
+        if(bet){ out.betPayout = bet.amount*2; d.gold += out.betPayout; out.goldWon += out.betPayout; tier = betChest(bet.idx); }
+        else { const r = Math.random(); tier = r<.70 ? 'bronce' : (r<.95 ? 'plata' : 'oro'); }
+        const slot = addChest(tier);
+        if(slot) out.chest = { type:tier, slot };
+      } else if(bet && refund && humans>0){
+        d.gold += bet.amount; out.refunded = bet.amount;
+      }
+      return ok({ result:out });
+    },
+    eco_progress(o){
+      const cap = TRACK_CAP[o.track];
+      if(!cap) return fail('pedido_invalido');
+      const c = ch(); c.prog[o.track] = Math.min(cap, (c.prog[o.track]||0) + Math.max(1, Math.min(10, o.n|0 || 1)));
+      return ok();
+    },
+    eco_xmas_open(o){
+      const day0 = o.day|0;
+      if(day0<1 || day0>24) return fail('pedido_invalido');
+      if(day0 > xmasDay()) return fail('todavia_no');
+      d.xmas = d.xmas || { key:xmasKey(), opened:[] };
+      if(d.xmas.opened.includes(day0)) return fail('ya_abierta');
+      d.xmas.opened.push(day0);
+      const r = xmasReward(day0), out = { kind:r.kind };
+      if(r.kind==='coins'){ d.gold += r.coins; out.gold = r.coins; }
+      else if(r.kind==='chest'){ if(addChest(r.type)) out.chest = r.type; else { d.gold += 3000; out.gold = 3000; out.nospace = true; } }
+      else if(r.kind==='face'){ const g = rollFace('xmas'); if(g) out.face = g; else { d.gold += 2000; out.gold = 2000; out.alldice = true; } }
+      else { d.gold += r.coins; out.gold = r.coins; d.own.boards.navidad2 = true; d.own.dice.dep_santa = true; if(addChest('oro')) out.chest = 'oro'; }
+      return ok({ reward:out });
+    },
+    eco_gift_claim(o){
+      d.gifts = d.gifts || { day:day(), n:0, ids:{} };
+      if(d.gifts.day!==day()) d.gifts = { day:day(), n:0, ids:{} };
+      if(d.gifts.ids[o.id]) return fail('ya_reclamado');
+      if(d.gifts.n >= 5) return fail('tope_diario');
+      d.gifts.ids[o.id] = true; d.gifts.n++; d.gold += 100;
+      return ok({ gold:100 });
+    },
+    eco_dice_change(){
+      const COSTS = [0,10,15,20,30,40,50,75,100];
+      const n = d.stats.dchg||0, cost = COSTS[n];
+      if(cost===undefined) return fail('sin_mas_cambios');
+      if(d.diamonds < cost) return fail('sin_saldo');
+      d.diamonds -= cost; d.stats.dchg = n+1;
+      return ok({ change:{ cost, count:n+1 } });
+    },
+    eco_game_ad(){ d.diamonds += 15; return ok({ diamonds:15 }); },
+    sim_spend(o){ if(d.gold < o.gold) return fail('sin_saldo'); d.gold -= o.gold; return ok(); },
+    sim_credit(o){ d.gold += o.gold|0; d.diamonds += o.diamonds|0; if(o.xp_hours) addBoost(o.xp_hours); if(o.pass_premium) d.pass.premium = true; return ok(); }
+  };
+  S.call = function(id, o){
+    if(!d) d = fresh();
+    const f = R[id];
+    if(!f) return fail('pedido_invalido');
+    return f(o||{});
+  };
+  return S;
+})();
+
 async function iapRpc(id, obj){
   // token fresco cada vez (el de la sesión caduca rápido)
   const auth = await fetchT(SERVER_URL + '/v2/account/authenticate/device?create=true', {
@@ -14717,15 +15219,17 @@ async function iapApplyGrants(grants){
   for(const x of grants){
     g += x.gold||0; d += x.diamonds||0;
     if(x.first && x.product_id){ iapFirsts.add(x.product_id); }
-    if(x.pass_premium || x.product_id==='parche_pass_s1'){ ensurePass(); profileStats.pass.premium = true; parts.push('Pase Premium ✨'); }
+    if(x.pass_premium || x.product_id==='parche_pass_s1'){ parts.push('Pase Premium ✨'); }
     if(x.product_id==='welcome_offer'){ welcomeOfferClaimed = true; try{ closeWelcomeOffer(); }catch(e){} }
+    if(x.xp_hours){ parts.push('Elixir +' + x.xp_hours + 'h'); }
   }
-  if(g){ lobbyGold += g; profileStats.goldEarned += g; parts.push('+' + g.toLocaleString('en-US') + ' de oro'); }
-  if(d){ lobbyDiamonds += d; parts.push('+' + d.toLocaleString('en-US') + ' 💎'); }
-  for(const x of grants){ if(x.xp_hours){ await applyXpBoostPurchase(x.xp_hours); parts.push('Elixir +' + x.xp_hours + 'h'); } }
-  syncEconomy();
-  await saveProfile();                       // primero guardado en el perfil…
-  for(const x of grants){ try{ await iapRpc('iap_ack', { key: x.key }); }catch(e){} } // …y recién entonces se confirma
+  if(g){ profileStats.goldEarned += g; parts.push('+' + g.toLocaleString('en-US') + ' de oro'); }
+  if(d){ parts.push('+' + d.toLocaleString('en-US') + ' 💎'); }
+  // El servidor ya sumó el oro, las gemas, el elixir y el Pase al validar la compra: aquí solo se trae el saldo nuevo
+  const rr = await ECO.refresh();
+  if(!(rr && rr.ok)) return false;                      // sin saldo nuevo no se confirma: se reintenta solo
+  await saveProfile();
+  for(const x of grants){ try{ await iapRpc('iap_ack', { key: x.key }); }catch(e){} } // se confirma al final
   sfxCoin();
   try{ renderFirstBuyTags(); }catch(e){}
   lobbyToast('¡Compra confirmada! ' + parts.join(' · '));
@@ -14852,7 +15356,7 @@ let welcomeOfferTimerHandle = null;
 // si ayer no se reclamó, vuelve a empezar en el día 1; si se reclamó ayer,
 // sigue la racha. Acá solo decidimos si HAY que mostrar el aviso o no.
 function showDailyRewardIfDue(){
-  const today = new Date().toISOString().slice(0,10);
+  const today = ECO.today();
   if(dailyRewardLastClaim !== today){
     openDailyRewardModal();
   }
@@ -14918,11 +15422,7 @@ async function buyWelcomeOffer(){
   if(realPurchaseBlocked()) return;
   if(welcomeOfferClaimed) return; // seguro contra doble toque: sin esto, tocar varias veces rápido daba el premio cada vez
   welcomeOfferClaimed = true;
-  lobbyGold += 5000000;
-  lobbyDiamonds += 500;
-  profileStats.goldEarned += 5000000;
-  syncEconomy();
-  await saveProfile();
+  await ECO.call('sim_credit', {gold:5000000, diamonds:500});   // solo la vista previa llega aquí (servidor simulado)
   closeWelcomeOffer();
   sfxChestOpen();
   lobbyToast('¡Paquete de bienvenida reclamado! +5,000,000 de oro y +500 💎');
@@ -14961,24 +15461,21 @@ function pickDailyChallengeIds(dateStr){
   return picked;
 }
 
+// Los desafíos de hoy y su avance los lleva el servidor; aquí solo se pide el estado si hace falta.
+let _chAskAt = 0;
 function ensureDailyChallenges(){
-  const today = new Date().toISOString().slice(0,10);
-  if(!profileStats.challenges || profileStats.challenges.date!==today){
-    profileStats.challenges = {
-      date:today, activeIds: pickDailyChallengeIds(today),
-      gamesToday:0, winsToday:0, bigBetToday:0, chestsToday:0,
-      capturesToday:0, doublesToday:0, games1v1Today:0, games2v2Today:0,
-      claimed:{},
-    };
-    saveProfile();
+  const c = profileStats.challenges;
+  if(!c) profileStats.challenges = { date:'', activeIds:[], claimed:{} };
+  if(!c || c.date !== ECO.today()){
+    if(Date.now() - _chAskAt > 4000){
+      _chAskAt = Date.now();
+      ECO.refresh().then(()=>{ try{ renderChallenges(); updateEventsDot(); }catch(e){} });
+    }
   }
 }
 
-function bumpChallenge(track, amount){
-  ensureDailyChallenges();
-  profileStats.challenges[track] = (profileStats.challenges[track]||0) + amount;
-  saveProfile();
-}
+// El avance de partidas, victorias, ánforas y apuestas lo cuenta el servidor solo. Esto queda por compatibilidad.
+function bumpChallenge(track, amount){ /* lo cuenta el servidor */ }
 
 function openEventsScreen(){
   tourneyData = null;
@@ -15019,14 +15516,10 @@ function renderChallenges(){
 
 async function claimChallenge(id){
   const ch = CHALLENGE_POOL.find(x=>x.id===id);
-  const c = profileStats.challenges;
-  if(!ch || !c || (c[ch.track]||0) < ch.target || (c.claimed && c.claimed[id])) return;
-  if(ch.reward.gold){ lobbyGold += ch.reward.gold; profileStats.goldEarned += ch.reward.gold; }
-  if(ch.reward.diamonds){ lobbyDiamonds += ch.reward.diamonds; }
-  if(!c.claimed) c.claimed = {};
-  c.claimed[id] = true;
-  syncEconomy();
-  await saveProfile();
+  if(!ch) return;
+  const r = await ECO.act('eco_challenge_claim', {id});   // el servidor revisa que esté completo y paga
+  if(!r) return;
+  if(ch.reward.gold) profileStats.goldEarned += ch.reward.gold;
   renderChallenges();
   sfxChestOpen();
   lobbyToast(`¡Desafío completado! ${ch.rewardLabel}`);
@@ -15111,8 +15604,9 @@ async function enterTournament(id){
   const t = TOURNAMENTS.find(x=>x.id===id); if(!t) return;
   if(lobbyGold < t.fee){ lobbyToast('No te alcanza el oro para entrar a esta copa.'); return; }
   if(PREVIEW_OFFLINE){
+    const sp = await ECO.call('sim_spend', {gold:t.fee});
+    if(!(sp && sp.ok)){ lobbyToast('No te alcanza el oro para entrar a esta copa.'); return; }
     window._tSim[id].joined = true;
-    lobbyGold -= t.fee; syncEconomy();
     tourneyData = tourneySim(); renderTournaments();
     lobbyToast('Te anotaste en la ' + t.name + '. ¡Gana partidas online para sumar puntos!');
     return;
@@ -15122,10 +15616,10 @@ async function enterTournament(id){
   try{
     const r = await iapRpc('tour_join', {cup:id, name:nm});
     if(!r || !r.ok){
-      const m = {ya_anotado:'Ya estás anotado en esta copa.', cerrando:'Esta copa está por cerrar. Entra en la próxima.', no_disponible:'Torneo no disponible ahora.'}[r&&r.error] || 'No se pudo entrar. Intenta de nuevo.';
+      const m = {ya_anotado:'Ya estás anotado en esta copa.', cerrando:'Esta copa está por cerrar. Entra en la próxima.', no_disponible:'Torneo no disponible ahora.', sin_saldo:'No te alcanza el oro para entrar a esta copa.'}[r&&r.error] || 'No se pudo entrar. Intenta de nuevo.';
       lobbyToast(m); tourneyData=null; renderTournaments(); return;
     }
-    lobbyGold -= t.fee; syncEconomy(); await saveProfile();
+    await ECO.refresh();   // el servidor ya cobró la entrada
     lobbyToast('Te anotaste en la ' + t.name + '. ¡Gana partidas online para sumar puntos!');
     tourneyData=null; renderTournaments();
   }catch(e){ lobbyToast('Sin conexión. No se cobró nada.'); }
@@ -15146,8 +15640,8 @@ async function tourneyClaimAndApply(){
     if(r && r.ok && Array.isArray(r.grants) && r.grants.length){
       let g=0, msgs=[];
       r.grants.forEach(x=>{ g += x.gold||0; });
-      lobbyGold += g; profileStats.goldEarned += g;
-      syncEconomy(); await saveProfile();
+      profileStats.goldEarned += g;
+      await ECO.refresh();   // el servidor ya sumó el premio
       for(const x of r.grants){ try{ await iapRpc('tour_ack', {key:x.key}); }catch(e){} }
       sfxCoin();
       const prize = r.grants.some(x=>x.kind==='tour_prize');
@@ -15206,16 +15700,10 @@ PASS_TIERS.forEach(t=>{ t.premium = PASS_PREMIUM_REWARDS[t.tier] || t.premium; }
 function ensurePass(){
   if(!profileStats.pass){
     profileStats.pass = {points:0, premium:false, claimedFree:[], claimedPremium:[]};
-    saveProfile();
   }
 }
 
-function bumpPassPoints(amount){
-  ensurePass(); ensureLvlXp();
-  profileStats.lvlXp += amount;
-  profileStats.pass.points += amount;
-  saveProfile();
-}
+function bumpPassPoints(amount){ /* los puntos del pase y la XP los suma el servidor al cerrar la partida */ }
 
 function rewardLabel(r){
   if(r.gold) return `+${r.gold.toLocaleString('es')} 🪙`;
@@ -15236,34 +15724,6 @@ function rewardIcon(r){
   if(r.dice) return '🎲';
   if(r.xp) return '⚗️';
   return '🎁';
-}
-
-async function grantPassReward(r){
-  if(r.gold){ lobbyGold += r.gold; profileStats.goldEarned += r.gold; }
-  if(r.diamonds){ lobbyDiamonds += r.diamonds; }
-  if(r.token){
-    ensureDiceSkins();
-    if(profileStats.unlockedTokens.includes(r.token)){ lobbyGold += 15000; profileStats.goldEarned += 15000; } // ya la tenías: te devolvemos su valor en oro
-    else profileStats.unlockedTokens.push(r.token);
-  }
-  if(r.avatar){
-    if(avatarOwned(r.avatar)){ lobbyGold += 5000; profileStats.goldEarned += 5000; }
-    else profileStats.unlockedAvatars = (profileStats.unlockedAvatars||[]).concat([r.avatar]);
-  }
-  if(r.dice){
-    ensureDiceSkins();
-    if(profileStats.unlockedDice.includes(r.dice)){ lobbyGold += 15000; profileStats.goldEarned += 15000; }
-    else profileStats.unlockedDice.push(r.dice);
-  }
-  if(r.xp){ await applyXpBoostPurchase(r.xp); }
-  if(r.board){ profileStats.unlockedBoards = Array.from(new Set((profileStats.unlockedBoards||[]).concat([r.board]))); }
-  if(r.chest){
-    ensureChestSlots();
-    const freeIdx = chestSlotsData.findIndex(s=>!s);
-    if(freeIdx>-1){ chestSlotsData[freeIdx] = {type:r.chest, state:'idle', endsAt:0}; profileStats.chestSlots = chestSlotsData; renderChestSlots(); }
-    else { lobbyGold += 20000; profileStats.goldEarned += 20000; } // respaldo si no hay espacio
-  }
-  syncEconomy();
 }
 
 function passPendingCount(){
@@ -15410,27 +15870,17 @@ function passRewardsEnabled(){
 async function claimPassReward(tier, track){
   if(!passRewardsEnabled()){ lobbyToast('Los premios del Pase se cobran en la app de Android o iOS.'); return; }
   ensurePass();
-  const p = profileStats.pass;
-  const t = PASS_TIERS.find(x=>x.tier===tier);
-  if(!t || p.points<t.points) return;
-  if(track==='free'){
-    if(p.claimedFree.includes(tier)) return;
-    await grantPassReward(t.free);
-    p.claimedFree.push(tier);
-  } else {
-    if(!p.premium || p.claimedPremium.includes(tier)) return;
-    await grantPassReward(t.premium);
-    p.claimedPremium.push(tier);
-  }
-  await saveProfile();
+  const r = await ECO.act('eco_pass_claim', {tier, track});   // el servidor revisa puntos y premium, y entrega el premio
+  if(!r) return;
+  try{ const rw = (r.claim && r.claim.reward) || {}; if(rw.gold) profileStats.goldEarned += rw.gold; }catch(e){}
+  try{ renderBoardShop(); renderDiceShop(); }catch(e){}
   renderPassUI();
   lobbyToast(`¡Recompensa del Nivel ${tier} reclamada!`);
 }
 
 async function activatePassPremium(){
-  ensurePass();
-  profileStats.pass.premium = true;
-  await saveProfile();
+  // Solo la vista previa llega aquí; en la app el servidor activa el Pase al validar la compra
+  if(PREVIEW_OFFLINE) await ECO.call('sim_credit', {pass_premium:true});
   renderPassUI();
   sfxCoin();
 }
@@ -15445,47 +15895,28 @@ async function buyPassPremium(){
 }
 
 
+let _dailyBusy = false;
 async function claimDailyReward(){
-  const today = new Date().toISOString().slice(0,10);
-  if(dailyRewardLastClaim === today) return; // ya reclamado hoy (doble clic de seguridad)
-  const yesterday = new Date(Date.now()-86400000).toISOString().slice(0,10);
-  const prevStreak = dailyRewardStreak;
-  const streak = (dailyRewardLastClaim===yesterday) ? prevStreak+1 : 1;
-  const dayInCycle = ((streak-1) % 7) + 1;
-  const rewardEntry = DAILY_REWARDS[dayInCycle-1];
-
-  // Se marca como reclamado ANTES de guardar (que es asíncrono) — si no,
-  // tocar el botón dos veces muy rápido podía duplicar el premio, porque
-  // ambos toques pasaban el chequeo de arriba antes de que el primero
-  // terminara de guardar.
-  dailyRewardStreak = streak;
-  dailyRewardLastClaim = today;
+  if(_dailyBusy || dailyRewardLastClaim === ECO.today()) return; // ya reclamado hoy (doble toque)
+  _dailyBusy = true;
+  let r = null;
+  try{ r = await ECO.act('eco_daily_claim', {}); }catch(e){}   // el servidor decide el día de la racha y el premio
+  _dailyBusy = false;
+  if(!r) return;
+  const rw = r.reward || {};
   closeDailyRewardModal();
   updateDailyChestBadge();
   sfxChestOpen();
-
-  try{
-    localStorage.setItem('pachisDailyReward', JSON.stringify({lastClaim:today, streak}));
-  } catch(e){}
-
-  if(rewardEntry==='chest'){
-    ensureChestSlots();
-    const freeIdx = chestSlotsData.findIndex(s=>!s);
-    if(freeIdx>-1){
-      chestSlotsData[freeIdx] = {type:'oro', state:'idle', endsAt:0};
-      profileStats.chestSlots = chestSlotsData;
-      await saveProfile();
-      renderChestSlots();
-      lobbyToast(`¡Día 7! Ánfora de Oro añadida a tu inventario 🏺 (racha: ${streak} días)`);
-    } else {
-      lobbyGold += 5000;
-      syncEconomy();
-      lobbyToast(`¡Día 7! Tenías las 4 ánforas llenas, así que te damos +5.000 🪙 (racha: ${streak} días)`);
-    }
+  const streak = rw.streak || dailyRewardStreak, dayInCycle = rw.day || 1;
+  if(rw.chest){
+    renderChestSlots();
+    lobbyToast(`¡Día 7! Ánfora de Oro añadida a tu inventario 🏺 (racha: ${streak} días)`);
+  } else if(rw.nospace){
+    profileStats.goldEarned += rw.gold||0;
+    lobbyToast(`¡Día 7! Tenías las 4 ánforas llenas, así que te damos +5.000 🪙 (racha: ${streak} días)`);
   } else {
-    lobbyGold += rewardEntry;
-    syncEconomy();
-    lobbyToast(`¡+${rewardEntry.toLocaleString('es')} 🪙! (día ${dayInCycle}/7, racha: ${streak} día${streak===1?'':'s'})`);
+    profileStats.goldEarned += rw.gold||0;
+    lobbyToast(`¡+${(rw.gold||0).toLocaleString('es')} 🪙! (día ${dayInCycle}/7, racha: ${streak} día${streak===1?'':'s'})`);
   }
 }
 
@@ -15900,8 +16331,7 @@ function buyAvatar(id){
   const a = AVATAR_CATALOG.find(x=>x.id===id);
   if(!a || avatarOwned(id)) return;
   if(a.passOnly){ lobbyToast('Este avatar es exclusivo del Parche Pass.'); return; }
-  confirmPurchase('el avatar ' + a.name, a.price, async ()=>{
-    profileStats.unlockedAvatars = (profileStats.unlockedAvatars||[]).concat([id]);
+  confirmPurchase('el avatar ' + a.name, a.price, 'avatar', id, async ()=>{
     await equipAvatar(id);
   });
 }
@@ -16161,8 +16591,7 @@ function buyBoard(id){
   const b = BOARD_CATALOG.find(x=>x.id===id);
   if(!b || boardOwned(id)) return;
   if(b.passOnly){ lobbyToast('Este tablero es exclusivo del Parche Pass.'); return; }
-  confirmPurchase('el tablero ' + b.name, b.price, async ()=>{
-    profileStats.unlockedBoards = (profileStats.unlockedBoards||[]).concat([id]);
+  confirmPurchase('el tablero ' + b.name, b.price, 'board', id, async ()=>{
     profileStats.equippedBoard = id;
     await saveProfile();
     renderBoardShop();
@@ -16562,16 +16991,21 @@ async function equipDiceSkin(id){
 }
 
 // Compra común: confirma, revisa saldo, descuenta y guarda.
-function confirmPurchase(name, cost, onBought){
+let _buyBusy = false;
+function confirmPurchase(name, cost, kind, id, onBought){
   if(lobbyDiamonds < cost){
     lobbyToast('No te alcanzan los diamantes: ' + name + ' cuesta ' + cost + ' 💎 y tienes ' + lobbyDiamonds + ' 💎.');
     return;
   }
-  // Sin confirmación: si tienes los diamantes, se compra al instante.
+  if(_buyBusy) return;
+  // Sin confirmación: si tienes los diamantes, se compra al instante. El servidor cobra y entrega.
   (async ()=>{
-    lobbyDiamonds -= cost;
-    await syncEconomy();
-    await onBought();
+    _buyBusy = true;
+    let r = null;
+    try{ r = await ECO.act('eco_buy', {kind, id}); }catch(e){}
+    _buyBusy = false;
+    if(!r) return;
+    try{ await onBought(); }catch(e){}
     lobbyToast('¡Compraste ' + name + '! −' + cost + ' 💎');
   })();
 }
@@ -16582,8 +17016,7 @@ function buyDiceSkin(id){
   if(!d || profileStats.unlockedDice.includes(id)) return;
   if(d.passOnly){ lobbyToast('Este dado es exclusivo del Parche Pass.'); return; }
   if(d.anfora){ lobbyToast('Este dado solo se consigue con las 6 caras de las ánforas 🏺'); return; }
-  confirmPurchase('el dado ' + d.name, dicePrice(d), async ()=>{
-    profileStats.unlockedDice.push(id);
+  confirmPurchase('el dado ' + d.name, dicePrice(d), 'dice', id, async ()=>{
     profileStats.equippedDice = id;
     await saveProfile();
     renderDiceShop();
@@ -16594,8 +17027,7 @@ function buyTokenSkin(animalId){
   ensureDiceSkins();
   if(!ANIMAL_NAMES[animalId] || profileStats.unlockedTokens.includes(animalId)) return;
   if(PASS_ONLY_TOKENS.includes(animalId)){ lobbyToast('Esta ficha es exclusiva del Parche Pass.'); return; }
-  confirmPurchase('la ficha ' + ANIMAL_NAMES[animalId], PRICE_TOKEN, async ()=>{
-    profileStats.unlockedTokens.push(animalId);
+  confirmPurchase('la ficha ' + ANIMAL_NAMES[animalId], PRICE_TOKEN, 'token', animalId, async ()=>{
     tokenSkins[skinEditColor] = animalId;
     profileStats.tokenSkins = tokenSkins;
     await saveProfile();
@@ -16628,12 +17060,7 @@ async function refreshIapFirsts(){
 }
 function buyDiamonds(amount, priceLabel){
   const idMap = GEM_PACK_IDS;
-  window.onDiamondsPurchased = function(realAmount){
-    lobbyDiamonds += realAmount;
-    syncEconomy();
-    sfxCoin();
-    lobbyToast(`¡Compra confirmada! +${realAmount} 💎`);
-  };
+  window.onDiamondsPurchased = function(realAmount){ ECO.refresh(); };
   const wentNative = window.MonetizationBridge && MonetizationBridge.isNative()
     && MonetizationBridge.buyDiamondPack(idMap[amount], amount);
   if(wentNative) return; // el resultado real llega por window.onDiamondsPurchased cuando la tienda confirme
@@ -16645,29 +17072,20 @@ function buyDiamonds(amount, priceLabel){
     profileStats.firstGem = profileStats.firstGem || {}; profileStats.firstGem[idMap[amount]] = true;
     try{ saveProfile(); }catch(e){}
   }
-  lobbyDiamonds += given;
-  syncEconomy();
+  ECO.call('sim_credit', {diamonds:given});   // solo la vista previa llega aquí (servidor simulado)
   sfxCoin();
   lobbyToast(first ? `+${given} 💎 (¡doble por primera compra!)` : `+${given} 💎`);
   renderFirstBuyTags();
 }
 function buyGold(amount, priceLabel){
   const idMap = {40000:'gold_40k', 100000:'gold_100k', 250000:'gold_250k', 1000000:'gold_1m', 5000000:'gold_5m', 7000000:'gold_7m'};
-  window.onGoldPurchased = function(realAmount){
-    lobbyGold += realAmount;
-    profileStats.goldEarned += realAmount;
-    syncEconomy();
-    sfxCoin();
-    lobbyToast(`¡Compra confirmada! +${realAmount} de oro`);
-  };
+  window.onGoldPurchased = function(realAmount){ ECO.refresh(); };
   const wentNative = window.MonetizationBridge && MonetizationBridge.isNative()
     && MonetizationBridge.buyGoldPack(idMap[amount], amount);
   if(wentNative) return; // el resultado real llega por window.onGoldPurchased cuando la tienda confirme
   if(realPurchaseBlocked()) return;
 
-  lobbyGold += amount;
-  profileStats.goldEarned += amount;
-  syncEconomy();
+  ECO.call('sim_credit', {gold:amount});   // solo la vista previa llega aquí (servidor simulado)
   sfxCoin();
   lobbyToast(`+${amount} de oro`);
 }
@@ -16676,11 +17094,11 @@ function buyGold(amount, priceLabel){
    Guarda una sola fecha de vencimiento en el perfil. Si comprás otro
    paquete con uno ya activo, se SUMA a lo que queda (no se reemplaza). */
 function isXpBoostActive(){
-  return !!(profileStats.xpBoostExpiresAt && profileStats.xpBoostExpiresAt > Date.now());
+  return !!(profileStats.xpBoostExpiresAt && profileStats.xpBoostExpiresAt > ECO.now());
 }
 function xpBoostRemainingLabel(){
   if(!isXpBoostActive()) return null;
-  const ms = profileStats.xpBoostExpiresAt - Date.now();
+  const ms = profileStats.xpBoostExpiresAt - ECO.now();
   const days = Math.floor(ms/86400000);
   const hours = Math.floor((ms%86400000)/3600000);
   if(days>0) return `${days}d ${hours}h`;
@@ -16689,7 +17107,7 @@ function xpBoostRemainingLabel(){
 }
 async function buyXpBoost(hours, priceLabel){
   const idMap = {6:'xp_boost_6h', 72:'xp_boost_3d', 168:'xp_boost_7d', 720:'xp_boost_30d', 1680:'xp_boost_70d', 3600:'xp_boost_150d'};
-  window.onXpBoostPurchased = function(){ applyXpBoostPurchase(hours); };
+  window.onXpBoostPurchased = function(){ ECO.refresh(); };
   const wentNative = window.MonetizationBridge && MonetizationBridge.isNative()
     && MonetizationBridge.buyConsumable && MonetizationBridge.buyConsumable(idMap[hours]);
   if(wentNative) return; // el resultado real llega por window.onXpBoostPurchased cuando la tienda confirme
@@ -16699,10 +17117,8 @@ async function buyXpBoost(hours, priceLabel){
   lobbyToast(`Compra simulada: Elixir de Gloria +${hours}h de XP x2 (sin cobro real)`);
 }
 async function applyXpBoostPurchase(hours){
-  const now = Date.now();
-  const base = isXpBoostActive() ? profileStats.xpBoostExpiresAt : now;
-  profileStats.xpBoostExpiresAt = base + hours*3600000;
-  await saveProfile();
+  // Solo la vista previa llega aquí; en la app el servidor entrega el elixir al validar la compra
+  if(PREVIEW_OFFLINE){ await ECO.call('sim_credit', {xp_hours:hours}); }
   renderXpBoostStatus();
   sfxCoin();
 }
@@ -16760,7 +17176,7 @@ function renderAdLadder(){
 
 /* ---- Camino de premios por video: pantalla con las 8 paradas ---- */
 function adPathState(){
-  const today = new Date().toISOString().slice(0,10);
+  const today = ECO.today();
   const n = (profileStats.adsToday && profileStats.adsToday.date===today) ? profileStats.adsToday.n : 0;
   return { n, over: n >= AD_DAILY_DIAMOND_LIMIT };
 }
@@ -16810,27 +17226,22 @@ function renderAdPath(){
 function watchAdStep(){
   const step = AD_LADDER[adLadderStep];
   if(!step) return;
-  playRewardedAdOrSimulate(()=>{
+  playRewardedAdOrSimulate(async ()=>{
     sfxCoin();
-    // Tope diario: solo los primeros 8 videos del día dan diamantes; después, los pasos de diamantes dan oro
-    const _today = new Date().toISOString().slice(0,10);
-    if(!profileStats.adsToday || profileStats.adsToday.date!==_today) profileStats.adsToday = {date:_today, n:0};
-    const _overLimit = profileStats.adsToday.n >= AD_DAILY_DIAMOND_LIMIT;
-    profileStats.adsToday.n++;
-    if(step.type==='diamond' && !_overLimit){
-      lobbyDiamonds += step.amount;
-      lobbyToast(`¡+${step.amount} 💎 por ver el video! (paso ${adLadderStep+1}/8)`);
+    // El servidor lleva el paso de la escalera, el tope de diamantes del día y el ritmo mínimo entre videos
+    const r = await ECO.act('eco_ad_claim', {});
+    if(!r) return;
+    const rw = r.reward || {};
+    const N = AD_LADDER.length, shown = ((adLadderStep - 1 + N) % N) + 1;
+    if(rw.diamonds){
+      lobbyToast(`¡+${rw.diamonds} 💎 por ver el video! (paso ${shown}/8)`);
     } else if(step.type==='diamond'){
-      lobbyGold += 100; profileStats.goldEarned += 100;
+      profileStats.goldEarned += rw.gold||0;
       lobbyToast(`¡+100 de oro por ver el video! (hoy ya cobraste los diamantes de los videos)`);
     } else {
-      lobbyGold += step.amount;
-      profileStats.goldEarned += step.amount;
-      lobbyToast(`¡+${step.amount} de oro por ver el video! (paso ${adLadderStep+1}/8)`);
+      profileStats.goldEarned += rw.gold||0;
+      lobbyToast(`¡+${rw.gold||0} de oro por ver el video! (paso ${shown}/8)`);
     }
-    adLadderStep = (adLadderStep+1) % AD_LADDER.length;
-    profileStats.adLadderStep = adLadderStep;
-    syncEconomy();
     renderAdLadder();
     renderAdPath();
     adPathScrollToCurrent(true);
@@ -17237,7 +17648,7 @@ function startPublicWaitTimer(){
 async function startPublicMatch(opts){
   const fixed = (opts && opts.code) ? String(opts.code) : null; // revancha: mesa nueva con nombre fijo, solo para los mismos jugadores
   if(PREVIEW_OFFLINE){ launchPendingGame(); return; }
-  const refund = ()=>{ if(pendingBet){ lobbyGold += pendingBet; pendingBet = 0; syncEconomy(); } };
+  const refund = ()=>{ if(pendingBet){ pendingBet = 0; ECO.betCancel(); } };
   const sock = await ensureConnected();
   if(!sock){
     lobbyToast('No se pudo conectar al servidor. Revisa tu internet.');
@@ -17372,12 +17783,12 @@ async function evaluateTable(){
     final.forEach((id,i)=>{ multiplayerRoster[id] = order[i % order.length]; });
     if(multiplayerRoster[nakamaSession.user_id]) MY_COLOR = multiplayerRoster[nakamaSession.user_id];
     if(!multiplayerIsHost && pendingBet){
-      if(pendingBet > lobbyGold){
+      if(pendingBet > lobbyGold || !(await ECO.betHold(pendingBet))){
         lobbyToast('Esa mesa apuesta ' + pendingBet + ' de oro y no te alcanza.');
+        pendingBet = 0;
         cancelMultiplayerWait();
         return;
       }
-      lobbyGold -= pendingBet; syncEconomy();
     }
     multiplayerActive = true;
     stopSearchRotation();
@@ -17432,11 +17843,11 @@ function setupTeamUpMatchmakerListener(){
       }
 
       if(!multiplayerIsHost && pendingBet){
-        if(pendingBet > lobbyGold){
+        if(pendingBet > lobbyGold || !(await ECO.betHold(pendingBet))){
           lobbyToast('Esa mesa apuesta ' + pendingBet + ' de oro y no te alcanza.');
+          pendingBet = 0;
           return;
         }
-        lobbyGold -= pendingBet; syncEconomy();
       }
       multiplayerActive = true;
       closeTeamUpScreen();
@@ -17761,7 +18172,7 @@ function cancelMultiplayerWait(){
   }
   nakamaMatchId = null;
   try{ mpResetLocalState(); }catch(e){}
-  if(pendingBet){ lobbyGold += pendingBet; pendingBet = 0; syncEconomy(); } // devolver el oro apostado
+  if(pendingBet){ pendingBet = 0; ECO.betCancel(); } // el servidor devuelve la apuesta si la partida no llegó a empezar
   disposeBoard3D();
   document.getElementById('gameScreen').style.display = 'none';
   document.getElementById('lobbyScreen').style.display = 'flex';
@@ -17879,11 +18290,11 @@ async function claimAndReturnGift(idx){
   const friends = profileStats.friends || [];
   const f = friends[idx];
   if(!f || !f.pendingGift) return;
-  lobbyGold += 100;
+  const rg = await ECO.act('eco_gift_claim', {id:f.id});   // el servidor da los 100 con tope diario
+  if(!rg) return;
   profileStats.goldEarned += 100;
   f.pendingGift = false;
   f.lastSentAt = Date.now();
-  syncEconomy();
   await saveProfile();
   sfxCoin();
   lobbyToast(`¡Reclamaste 100 de oro y le devolviste el regalo a ${f.id}!`);
@@ -19104,9 +19515,9 @@ CHALLENGE_POOL.push(
   {id:'treasure1', title:'Encuentra 1 tesoro',               target:1, track:'treasureToday', reward:{diamonds:5}, rewardLabel:'+5 💎'},
   {id:'streak1',   title:'Come 2 fichas seguidas (racha)',   target:1, track:'streaksToday',  reward:{diamonds:10}, rewardLabel:'+10 💎'}
 );
-function bumpMission(track){
+async function bumpMission(track){
   try{
-    bumpChallenge(track, 1);
+    await ECO.call('eco_progress', {track, n:1});   // el servidor lo suma con tope diario
     const c = profileStats.challenges;
     const ch = (c.activeIds||[]).map(id=>CHALLENGE_POOL.find(x=>x.id===id)).filter(Boolean).find(x=>x.track===track);
     if(!ch) return;
@@ -19117,7 +19528,7 @@ function bumpMission(track){
 }
 function updateEventsDot(){
   try{
-    const c = profileStats && profileStats.challenges; if(!c || c.date!==new Date().toISOString().slice(0,10)){ document.querySelectorAll('.lobby-bottom-nav button[data-tab="events"]').forEach(b=>b.classList.remove('has-dot')); return; }
+    const c = profileStats && profileStats.challenges; if(!c || c.date!==ECO.today()){ document.querySelectorAll('.lobby-bottom-nav button[data-tab="events"]').forEach(b=>b.classList.remove('has-dot')); return; }
     const ready = (c.activeIds||[]).map(id=>CHALLENGE_POOL.find(x=>x.id===id)).filter(Boolean).some(ch=>(c[ch.track]||0)>=ch.target && !(c.claimed&&c.claimed[ch.id]));
     document.querySelectorAll('.lobby-bottom-nav button[data-tab="events"]').forEach(b=>b.classList.toggle('has-dot', !!ready));
   }catch(e){}
@@ -19493,24 +19904,24 @@ function secureInt(n){ try{ const a = new Uint32Array(1); let x; do{ crypto.getR
    El Calendario de Adviento abre una puerta por día del 1 al 24 de diciembre;
    los días que se pierda se pueden abrir después. */
 const XMAS = { ON:true, previewDay:null }; // ON:true = programada: se activa sola del 1 de diciembre al 6 de enero
-function xmasNow(){ return new Date(); }
+function xmasNow(){ try{ return new Date(ECO.now()); }catch(e){ return new Date(); } }   // hora del servidor, en UTC (igual que el servidor)
 function xmasAmbiente(){
   if(!XMAS.ON) return false;
   if(XMAS.previewDay) return true;
-  const n = xmasNow(), m = n.getMonth();
-  return m===11 || (m===0 && n.getDate()<=6); // del 1 de diciembre al 6 de enero
+  const n = xmasNow(), m = n.getUTCMonth();
+  return m===11 || (m===0 && n.getUTCDate()<=6); // del 1 de diciembre al 6 de enero
 }
 /* día del Adviento de hoy: 0 = todavía no empieza; 1-24 */
 function xmasDay(){
   if(XMAS.previewDay) return XMAS.previewDay;
-  const n = xmasNow(), m = n.getMonth(), d = n.getDate();
+  const n = xmasNow(), m = n.getUTCMonth(), d = n.getUTCDate();
   if(m===11) return Math.min(d,24);
   if(m===0) return 24;
   return 0;
 }
-function xmasKey(){ const n = xmasNow(); return 'pachisAdvent' + (n.getMonth()===0 ? n.getFullYear()-1 : n.getFullYear()); }
-function xmasOpened(){ try{ const r = JSON.parse(localStorage.getItem(xmasKey())||'{}'); return Array.isArray(r.opened)? r.opened : []; }catch(e){ return []; } }
-function xmasSaveOpened(arr){ try{ localStorage.setItem(xmasKey(), JSON.stringify({opened:arr})); }catch(e){} }
+function xmasKey(){ const n = xmasNow(); return 'adviento' + (n.getUTCMonth()===0 ? n.getUTCFullYear()-1 : n.getUTCFullYear()); }
+// Las puertas abiertas las guarda el servidor
+function xmasOpened(){ try{ const x = ECO.st && ECO.st.xmas; return (x && x.key===xmasKey() && Array.isArray(x.opened)) ? x.opened : []; }catch(e){ return []; } }
 
 /* Premio de cada puerta */
 function xmasReward(d){
@@ -19570,36 +19981,23 @@ function xmasCloseModal(){ document.getElementById('xmasOverlay').style.display 
 async function xmasOpenDoor(d){
   const today = xmasDay(), opened = xmasOpened();
   if(d>today || opened.includes(d)) return;
-  opened.push(d); xmasSaveOpened(opened);       // se marca ANTES de dar el premio (evita doble toque)
   try{ sfxChestOpen(); setTimeout(xmasJingle,260); }catch(e){}
-  const r = xmasReward(d);
+  const r = await ECO.act('eco_xmas_open', {day:d});   // el servidor decide el premio y lo entrega
+  if(!r){ xmasRenderGrid(); return; }
+  const o = r.reward || {}, def = xmasReward(d);
   try{
-    if(r.kind==='coins'){
-      lobbyGold += r.coins; syncEconomy();
-      lobbyToast(`🎄 Puerta ${d}: ¡+${r.coins.toLocaleString('es')} 🪙!`);
-    } else if(r.kind==='chest'){
-      ensureChestSlots();
-      const freeIdx = chestSlotsData.findIndex(s=>!s);
-      if(freeIdx>-1){
-        chestSlotsData[freeIdx] = {type:r.type, state:'idle', endsAt:0};
-        profileStats.chestSlots = chestSlotsData; await saveProfile(); renderChestSlots();
-        lobbyToast(`🎄 Puerta ${d}: ¡${r.label}! 🏺`);
-      } else { lobbyGold += 3000; syncEconomy(); lobbyToast(`🎄 Puerta ${d}: tus ánforas estaban llenas, ¡+3.000 🪙!`); }
-    } else if(r.kind==='face'){
-      DICE_FACE_CHANCE.xmas = 1;
-      const got = await rollDiceFaceDrop('xmas');
-      if(got) lobbyToast(`🎄 Puerta ${d}: ¡cara ${got.face} del dado ${got.dice.name}!${got.completed?' ¡Dado completo!':''}`);
-      else { lobbyGold += 2000; syncEconomy(); lobbyToast(`🎄 Puerta ${d}: ya tienes todos los dados, ¡+2.000 🪙!`); }
+    if(o.kind==='coins'){
+      profileStats.goldEarned += o.gold||0;
+      lobbyToast(`🎄 Puerta ${d}: ¡+${(o.gold||0).toLocaleString('es')} 🪙!`);
+    } else if(o.kind==='chest'){
+      if(o.chest){ renderChestSlots(); lobbyToast(`🎄 Puerta ${d}: ¡${def.label}! 🏺`); }
+      else lobbyToast(`🎄 Puerta ${d}: tus ánforas estaban llenas, ¡+3.000 🪙!`);
+    } else if(o.kind==='face'){
+      const dc = o.face && DICE_CATALOG.find(x=>x.id===o.face.id);
+      if(dc) lobbyToast(`🎄 Puerta ${d}: ¡cara ${o.face.face} del dado ${dc.name}!${o.face.completed?' ¡Dado completo!':''}`);
+      else lobbyToast(`🎄 Puerta ${d}: ya tienes todos los dados, ¡+2.000 🪙!`);
     } else { // gran regalo del 24
-      lobbyGold += r.coins; syncEconomy();
-      if(!boardOwned('navidad2')) profileStats.unlockedBoards = (profileStats.unlockedBoards||[]).concat(['navidad2']);
-      ensureDiceSkins();
-      if(!diceOwned('dep_santa')) profileStats.unlockedDice.push('dep_santa');
-      ensureChestSlots();
-      const fi = chestSlotsData.findIndex(s=>!s);
-      if(fi>-1){ chestSlotsData[fi] = {type:'oro', state:'idle', endsAt:0}; profileStats.chestSlots = chestSlotsData; renderChestSlots(); }
-      await saveProfile();
-      try{ renderBoardShop(); renderDiceShop(); }catch(e){}
+      try{ renderBoardShop(); renderDiceShop(); renderChestSlots(); }catch(e){}
       lobbyToast('🎁 ¡Gran regalo! +10.000 🪙, tablero Navidad Dorada, dado Papá Noel y un ánfora de Oro', 5000);
     }
   }catch(e){}
