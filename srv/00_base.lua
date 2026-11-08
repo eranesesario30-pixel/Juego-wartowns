@@ -13,7 +13,7 @@ local LIMITS = {
   gold_hard_cap     = 5000000000,
   diamonds_hard_cap = 1000000,
   start_gold        = 2000,      -- perfil nuevo
-  start_diamonds    = 500,
+  start_diamonds    = 50,
 }
 local GUARD = "econ_guard"
 local ECO_PROFILE = nil   -- si el jugador ya tiene saldo en el servidor, el telefono no puede cambiarlo
