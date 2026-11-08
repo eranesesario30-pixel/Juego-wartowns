@@ -6425,7 +6425,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running'){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1245';
+const BUILD_VERSION = '1246';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -9112,7 +9112,7 @@ function backToLobby(){
   document.getElementById('lobbyScreen').style.display = 'flex';
   resumeLobbyScene3D();
   initCarousel('lobbyCarousel');
-  updateLeagueWidgets();
+  try{ updateLeagueWidgets(); }catch(e){ console.warn('liga', e); }
   showPromotionToasts();
   renderChestSlots();
   updateLevelBadges();
@@ -14476,12 +14476,15 @@ function weeklyResetTimestamp(){
   return reset.getTime();
 }
 
+function leagueTierClamp(i){ i = Math.floor(Number(i)); return (i>=0) ? Math.min(LEAGUE_TIERS.length-1, i) : 0; }
 function ensureLeagueData(){
   if(profileStats.league && profileStats.league.resetAt>Date.now()){
     leagueData = profileStats.league;
+    leagueData.tierIdx = leagueTierClamp(leagueData.tierIdx);   // un valor raro (vacío o negativo) rompía el widget de la liga
+    if(!(leagueData.rank>=1)) leagueData.rank = 1;
     return;
   }
-  const tierIdx = profileStats.league ? Math.min(3, profileStats.league.tierIdx) : 0;
+  const tierIdx = profileStats.league ? leagueTierClamp(Math.min(3, profileStats.league.tierIdx)) : 0;
   leagueData = {
     tierIdx,
     rank: 1,
@@ -14543,7 +14546,7 @@ function ligaApplyServer(r){
     if(r && typeof r.total==='number'){
       ensureLeagueData();
       leagueData.points = r.total;
-      leagueData.tierIdx = Math.min(LEAGUE_TIERS.length-1, Math.floor(r.total/300));
+      leagueData.tierIdx = leagueTierClamp(Math.floor(r.total/300));
       profileStats.league = leagueData;
       saveProfile();
       updateLeagueWidgets();
@@ -14805,7 +14808,7 @@ function realPurchaseBlocked(){
 
 setInterval(()=>{
   const lobbyVisible = document.getElementById('lobbyScreen') && document.getElementById('lobbyScreen').style.display!=='none';
-  if(lobbyVisible){ updateLeagueWidgets(); }
+  if(lobbyVisible){ try{ updateLeagueWidgets(); }catch(e){} }
 }, 1000);
 
 /* ---------- Banners flotantes superiores ----------
