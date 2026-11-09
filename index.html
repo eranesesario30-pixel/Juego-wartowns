@@ -7093,7 +7093,8 @@ async function recoverAfterReconnect(){
       const props = multiplayerIsHost
         ? { code: teamUpCode, subMode: pendingSubMode, betKind: pendingBetKind, bet: String(pendingBet) }
         : { code: teamUpCode };
-      await submitMatchmakerTicket('+properties.code:"' + teamUpCode + '"', min, max, props);
+      // Sin comillas: Nakama 3.25 no empareja las búsquedas con comillas (la prueba de carga lo confirmó). El código solo tiene letras y números, así que no las necesita.
+      await submitMatchmakerTicket('+properties.code:' + teamUpCode, min, max, props);
     }
   }catch(e){
     mpLog('✗ reconectó el socket pero no pudo recuperar la mesa: ' + (e && e.message ? e.message : e));
