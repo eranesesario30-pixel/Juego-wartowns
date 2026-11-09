@@ -19,11 +19,15 @@ async function rpc(B, id, body) {
   } catch (e) { err(id + ':red'); }
 }
 async function login(B) {
-  try {
-    const r = await fetch(`http://${HOST}/v2/account/authenticate/device?create=true&username=${B.user}`, { method: 'POST', headers: { Authorization: BASIC, 'Content-Type': 'application/json' }, body: JSON.stringify({ id: B.dev }) });
-    if (!r.ok) return false;
-    B.tok = (await r.json()).token; return true;
-  } catch (e) { return false; }
+  for (let t = 0; t < 3; t++) {
+    try {
+      const r = await fetch(`http://${HOST}/v2/account/authenticate/device?create=true&username=${B.user}`, { method: 'POST', headers: { Authorization: BASIC, 'Content-Type': 'application/json' }, body: JSON.stringify({ id: B.dev }) });
+      if (r.ok) { B.tok = (await r.json()).token; if (t) err('login_ok_en_reintento_' + t); return true; }
+      err('login:' + r.status);
+    } catch (e) { err('login:red:' + (e.cause && e.cause.code || e.name)); }
+    await sleep(500 * (t + 1) + Math.random() * 500);
+  }
+  return false;
 }
 async function bot(i) {
   const run = Date.now();
