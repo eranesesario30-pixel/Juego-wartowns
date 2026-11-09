@@ -3113,6 +3113,8 @@ window.__threeReadyPromise = (async ()=>{
       en vez de comprimirse. */
   }
   .p-card-mirrored{flex-direction:row-reverse;}
+  /* El botón del diamante (cambiar tirada) es solo tuyo: en los perfiles de los rivales no se muestra (se montaba sobre su foto). */
+  .p-card.dia-other .dia-btn-wrap{display:none !important;}
   .dia-chip{
     background:linear-gradient(160deg,#2d3722,#1f2617);color:#f2ebd8;
     border-radius:10px;padding:2px 6px;
@@ -6678,7 +6680,7 @@ function gameHidden(){ const g=document.getElementById('gameScreen'); return !g 
 });
 function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
-  try{ if(audioCtx && audioCtx.state==='running'){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
+  try{ if(audioCtx && audioCtx.state==='running' && !document.hidden){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
 const BUILD_VERSION = '1247';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
@@ -6758,6 +6760,38 @@ const OPCODE_STATE_SYNC = 3; // manda el estado completo de la partida al termin
    "en silencio", y lo retomamos limpio apenas vuelve. */
 let wakeLock = null;
 let wasMidAnimationOnHide = false;
+/* Silencio total en segundo plano: ningún sonido (efectos, emojis, dados, música, voz)
+   puede sonar si la app no está a la vista (salir al inicio o bloquear pantalla). */
+let appInBackground = false;
+const _bgPaused = [];
+(function(){
+  const origPlay = HTMLMediaElement.prototype.play;
+  HTMLMediaElement.prototype.play = function(){
+    if(appInBackground){ return Promise.resolve(); }
+    return origPlay.apply(this, arguments);
+  };
+})();
+function silenceAllAudio(){
+  appInBackground = true;
+  try{
+    document.querySelectorAll('audio,video').forEach(el=>{ if(!el.paused){ _bgPaused.push(el); try{ el.pause(); }catch(e){} } });
+    [typeof diceRollAudioEl!=='undefined'?diceRollAudioEl:null].concat(Object.values(typeof _emoAud!=='undefined'?_emoAud:{})).forEach(el=>{ if(el && !el.paused){ try{ el.pause(); }catch(e){} } });
+  }catch(e){}
+  try{ if(audioCtx && audioCtx.state==='running') audioCtx.suspend(); }catch(e){}
+  try{ if(window.speechSynthesis) speechSynthesis.cancel(); }catch(e){}
+}
+function restoreAudio(){
+  appInBackground = false;
+  try{ _bgPaused.splice(0).forEach(el=>{ try{ el.play(); }catch(e){} }); }catch(e){}
+}
+try{
+  document.addEventListener('pause', silenceAllAudio, false);
+  document.addEventListener('resume', restoreAudio, false);
+  window.addEventListener('pagehide', silenceAllAudio);
+  window.addEventListener('pageshow', ()=>{ if(!document.hidden) restoreAudio(); });
+  const _capApp = window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.App;
+  if(_capApp && _capApp.addListener){ _capApp.addListener('appStateChange', st=>{ if(st && st.isActive){ restoreAudio(); try{ onAppForegrounded(); }catch(e){} } else { silenceAllAudio(); try{ onAppBackgrounded(); }catch(e){} } }); }
+}catch(e){}
 
 document.addEventListener('visibilitychange', ()=>{
   if(document.hidden){
@@ -6768,6 +6802,7 @@ document.addEventListener('visibilitychange', ()=>{
 });
 
 function onAppBackgrounded(){
+  silenceAllAudio();
   const inMatch = document.getElementById('gameScreen') && document.getElementById('gameScreen').style.display!=='none';
   if(inMatch){
     clearTurnTimer(); // no le corremos el reloj mientras no puede ver la pantalla
@@ -6777,6 +6812,7 @@ function onAppBackgrounded(){
 }
 
 function onAppForegrounded(){
+  restoreAudio();
   try{ if(isOnlineAuthenticated || multiplayerActive){ reconnectNextAt = 0; reviveConnection('volvió a la app', true); } }catch(e){}
   try{ voiceKick(); }catch(e){}
   try{ if(audioCtx && audioCtx.state==='suspended' && !isMuted) audioCtx.resume(); }catch(e){}
@@ -9752,7 +9788,7 @@ function ensureAudio(){
   if(!audioCtx){
     try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){}
   }
-  if(audioCtx && audioCtx.state==='suspended' && !isMuted) audioCtx.resume();
+  if(audioCtx && audioCtx.state==='suspended' && !isMuted && !appInBackground) audioCtx.resume();
 }
 function beep(freq, dur=0.08, type='sine', vol=0.15){
   if(isMuted) return;
@@ -10799,7 +10835,7 @@ function playerCardHTML(p,i,mirrored){
       ${cornerBadge}
     </div>`;
   return `
-    <div class="p-card p-${p.color} ${isCurrent?'current':''} ${p.skipNext?'skip':''} ${!p.active?'inactive':''} ${mirrored?'p-card-mirrored':''}">
+    <div class="p-card p-${p.color} ${isCurrent?'current':''} ${p.skipNext?'skip':''} ${!p.active?'inactive':''} ${mirrored?'p-card-mirrored':''} ${p.color!==MY_COLOR?'dia-other':''}">
       ${avatarBlock}
       <div class="p-info">
         <div class="p-info-capsule">
