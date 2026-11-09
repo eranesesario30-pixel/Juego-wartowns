@@ -342,10 +342,63 @@ local function clean_text(v, maxlen)
   return v
 end
 
+-- Cache corta en memoria (por instancia del servidor). Solo guarda datos COMPARTIDOS (tablas de
+-- posiciones, fechas de reinicio), nunca datos de un jugador. Si algo falla, se vuelve a pedir.
+local CACHE, CACHE_N = {}, 0
+local function cached(key, ttl, fn)
+  local now = os.time()
+  local e = CACHE[key]
+  if e and (now - e.t) < ttl then return e.v end
+  local v = fn()
+  if not e then
+    CACHE_N = CACHE_N + 1
+    if CACHE_N > 400 then CACHE = {}; CACHE_N = 1 end   -- tope de memoria
+  end
+  CACHE[key] = { t = now, v = v }
+  return v
+end
+
+local function board_info_of(id)
+  return cached("bi:" .. id, 5, function()
+    local ok, r = pcall(nk.leaderboards_get_id, { id })
+    if ok and r and r[1] then return r[1] end
+    return false
+  end) or nil
+end
+
 local function board_info()
-  local ok, r = pcall(nk.leaderboards_get_id, { GLOBAL_BOARD })
-  if ok and r and r[1] then return r[1] end
+  return board_info_of(GLOBAL_BOARD)
+end
+
+-- Filas de una tabla de posiciones (compartidas): rank, nombre, puntos, avatar, dueño.
+local function board_rows(board, limit, ttl)
+  return cached("rows:" .. board .. ":" .. tostring(limit), ttl, function()
+    local ok, recs = pcall(nk.leaderboard_records_list, board, nil, limit, nil, nil)
+    if not ok then return false end
+    local rows = {}
+    for _, r in ipairs(recs or {}) do
+      local m = r.metadata
+      if type(m) == "string" then local okm, mm = pcall(nk.json_decode, m); m = okm and mm or nil end
+      rows[#rows + 1] = { rank = r.rank, name = r.username or "Jugador", points = r.score,
+                          av = type(m) == "table" and m.av or nil, owner = r.owner_id }
+    end
+    return rows
+  end)
+end
+
+-- Mi posicion en una tabla (una sola consulta pequena por jugador).
+local function my_record(board, uid)
+  local ok, _, owner_recs = pcall(nk.leaderboard_records_list, board, { uid }, 1, nil, nil)
+  if ok and owner_recs and owner_recs[1] then return { rank = owner_recs[1].rank, points = owner_recs[1].score } end
   return nil
+end
+
+local function rows_for(uid, rows)
+  local out = {}
+  for i, r in ipairs(rows) do
+    out[i] = { rank = r.rank, name = r.name, points = r.points, av = r.av, me = (r.owner == uid) }
+  end
+  return out
 end
 
 -- ---------- Ligas por nivel + anti-trampa ----------
@@ -496,17 +549,10 @@ end
 local function rpc_global_top(context, payload)
   local uid = context.user_id
   if not uid then return reply({ ok = false, error = "sin_sesion" }) end
-  local ok, recs, owner_recs = pcall(nk.leaderboard_records_list, GLOBAL_BOARD, { uid }, GLOBAL_TOP_N, nil, nil)
-  if not ok then return reply({ ok = false, error = "no_se_pudo" }) end
-  local rows = {}
-  for _, r in ipairs(recs or {}) do
-    local m = r.metadata
-    if type(m) == "string" then local okm, mm = pcall(nk.json_decode, m); m = okm and mm or nil end
-    rows[#rows + 1] = { rank = r.rank, name = r.username or "Jugador", points = r.score,
-                        av = type(m) == "table" and m.av or nil, me = (r.owner_id == uid) }
-  end
-  local me = nil
-  if owner_recs and owner_recs[1] then me = { rank = owner_recs[1].rank, points = owner_recs[1].score } end
+  local shared = board_rows(GLOBAL_BOARD, GLOBAL_TOP_N, 5)
+  if not shared then return reply({ ok = false, error = "no_se_pudo" }) end
+  local rows = rows_for(uid, shared)
+  local me = my_record(GLOBAL_BOARD, uid)
   local info = board_info()
   local st = read_liga(uid, "main")
   return reply({ ok = true, rows = rows, me = me, next_reset = info and info.next_reset or nil,
@@ -520,19 +566,11 @@ local function rpc_liga_tier_top(context, payload)
   local st = read_liga(uid, "main")
   local tier = tier_of_pts(st.pts)
   local board = "liga_" .. LIGA_TIERS[tier]
-  local ok, recs, owner_recs = pcall(nk.leaderboard_records_list, board, { uid }, 20, nil, nil)
-  if not ok then return reply({ ok = false, error = "no_se_pudo" }) end
-  local rows = {}
-  for _, r in ipairs(recs or {}) do
-    local m = r.metadata
-    if type(m) == "string" then local okm, mm = pcall(nk.json_decode, m); m = okm and mm or nil end
-    rows[#rows + 1] = { rank = r.rank, name = r.username or "Jugador", points = r.score,
-                        av = type(m) == "table" and m.av or nil, me = (r.owner_id == uid) }
-  end
-  local me = nil
-  if owner_recs and owner_recs[1] then me = { rank = owner_recs[1].rank, points = owner_recs[1].score } end
-  local okb, bi = pcall(nk.leaderboards_get_id, { board })
-  local info = okb and bi and bi[1] or nil
+  local shared = board_rows(board, 20, 5)
+  if not shared then return reply({ ok = false, error = "no_se_pudo" }) end
+  local rows = rows_for(uid, shared)
+  local me = my_record(board, uid)
+  local info = board_info_of(board)
   return reply({ ok = true, tier = tier, total = tonumber(st.pts) or 0, rows = rows, me = me,
                  next_reset = info and info.next_reset or nil, rewards = LIGA_REWARDS[LIGA_TIERS[tier]] })
 end
@@ -545,7 +583,13 @@ local function rpc_liga_claim(context, payload)
   local info = board_info()
   local prev = info and tonumber(info.prev_reset) or 0
   if prev > 0 then
-    local ok, recs = pcall(nk.leaderboard_records_list, GLOBAL_BOARD, nil, 1, nil, prev)
+    -- la semana pasada ya no cambia: se guarda 5 minutos
+    local recs = cached("gp:" .. tostring(prev), 300, function()
+      local ok, r = pcall(nk.leaderboard_records_list, GLOBAL_BOARD, nil, 1, nil, prev)
+      if ok and r then return r end
+      return false
+    end)
+    local ok = recs and true or false
     if ok and recs and recs[1] and recs[1].owner_id == uid and (tonumber(recs[1].score) or 0) > 0 then
       local key = "global_" .. tostring(prev)
       local ex = nk.storage_read({{ collection = LIGA_GRANTS, key = key, user_id = uid }})
@@ -559,8 +603,7 @@ local function rpc_liga_claim(context, payload)
   end
   -- 1b) premios por puesto de cada liga (semana pasada): top 7, con minimo de jugadores y de puntos
   for _, t in ipairs(LIGA_TIERS) do
-    local okb, bi = pcall(nk.leaderboards_get_id, { "liga_" .. t })
-    local binfo = okb and bi and bi[1] or nil
+    local binfo = board_info_of("liga_" .. t)
     local bprev = binfo and tonumber(binfo.prev_reset) or 0
     local bnext = binfo and tonumber(binfo.next_reset) or 0
     if bprev <= 0 and bnext > 0 then bprev = bnext - 7 * 86400 end
@@ -568,7 +611,12 @@ local function rpc_liga_claim(context, payload)
       local gkey = "tier_" .. t .. "_" .. tostring(bprev)
       local gex = nk.storage_read({{ collection = LIGA_GRANTS, key = gkey, user_id = uid }})
       if not (gex and #gex > 0) then
-        local okl, lrecs = pcall(nk.leaderboard_records_list, "liga_" .. t, nil, 100, nil, bprev)
+        local lrecs = cached("tp:" .. t .. ":" .. tostring(bprev), 300, function()
+          local okq, r = pcall(nk.leaderboard_records_list, "liga_" .. t, nil, 100, nil, bprev)
+          if okq and r then return r end
+          return false
+        end)
+        local okl = lrecs and true or false
         if okl and lrecs then
           local active, myrank, myscore = 0, nil, 0
           for i, r in ipairs(lrecs) do
@@ -687,23 +735,33 @@ local function rpc_tour_info(context, payload)
   if not uid then return reply({ ok = false, error = "sin_sesion" }) end
   local cups = {}
   for _, cup in ipairs(TOUR_ORDER) do
-    local info = tour_info_of(cup)
+    local info = board_info_of("tour_" .. cup)
     local pid = tour_pid(info)
     local entry = { id = cup, fee = TOUR_CUPS[cup].fee, ends_at = info and info.next_reset or nil,
                     joined = false, entrants = 0, pool = 0, points = 0, rank = nil, top = {} }
     if pid then
       entry.joined = tour_joined(uid, cup, pid) and true or false
-      local ok, recs, owner_recs = pcall(nk.leaderboard_records_list, "tour_" .. cup, { uid }, 100, nil, nil)
-      if ok then
-        entry.entrants = #(recs or {})
-        entry.pool = entry.entrants * TOUR_CUPS[cup].fee
+      -- inscritos y los 3 primeros son iguales para todos: se guardan 5 segundos
+      local shared = cached("tour:" .. cup, 5, function()
+        local ok, recs = pcall(nk.leaderboard_records_list, "tour_" .. cup, nil, 100, nil, nil)
+        if not ok then return false end
+        local rows = {}
         for i, r in ipairs(recs or {}) do
-          if i <= 3 and (tonumber(r.score) or 0) > 0 then
-            entry.top[#entry.top + 1] = { rank = r.rank, name = r.username or "Jugador", points = r.score, me = (r.owner_id == uid) }
+          rows[i] = { rank = r.rank, name = r.username or "Jugador", points = r.score, owner = r.owner_id }
+        end
+        return rows
+      end)
+      if shared then
+        entry.entrants = #shared
+        entry.pool = entry.entrants * TOUR_CUPS[cup].fee
+        for i, r in ipairs(shared) do
+          if i <= 3 and (tonumber(r.points) or 0) > 0 then
+            entry.top[#entry.top + 1] = { rank = r.rank, name = r.name, points = r.points, me = (r.owner == uid) }
           end
         end
-        if entry.joined and owner_recs and owner_recs[1] then
-          entry.points = owner_recs[1].score; entry.rank = owner_recs[1].rank
+        if entry.joined then
+          local mine = my_record("tour_" .. cup, uid)
+          if mine then entry.points = mine.points; entry.rank = mine.rank end
         end
       end
     end
@@ -937,13 +995,18 @@ local function eco_read(uid)
 end
 
 -- Aplica un cambio de forma segura. fn(doc) devuelve (true, resultado) o (false, "codigo_error").
-local function eco_update(uid, fn)
+-- opts.skip_if_same: si el documento queda IGUAL despues de fn (nadie cambio nada), no se escribe
+-- en la base de datos. Una lectura (eco_get) ya no cuesta una escritura. Si hay duda, se escribe.
+local function eco_update(uid, fn, opts)
   for _ = 1, 6 do
     local doc, ver = eco_read(uid)
     local isnew = false
     if not doc then doc = eco_new_doc(uid); isnew = true; ver = "*" end
+    local before = nil
+    if opts and opts.skip_if_same and not isnew then before = nk.json_encode(doc) end
     local ok, res, extra = fn(doc)
     if not ok then return false, res end
+    if before and nk.json_encode(doc) == before then return true, res, doc, extra end
     if doc.gold < 0 or doc.diamonds < 0 then return false, "sin_saldo" end
     if doc.gold > ECO_GOLD_CAP then doc.gold = ECO_GOLD_CAP end
     if doc.diamonds > ECO_DIA_CAP then doc.diamonds = ECO_DIA_CAP end
@@ -990,7 +1053,7 @@ end
 local function rpc_eco_get(context, payload)
   local uid = context.user_id
   if not uid then return eco_fail("sin_sesion") end
-  local ok, res, doc = eco_update(uid, function(d) ensure_challenges(d); return true end)
+  local ok, res, doc = eco_update(uid, function(d) ensure_challenges(d); return true end, { skip_if_same = true })
   if not ok then return eco_fail(res) end
   return eco_ok(doc)
 end

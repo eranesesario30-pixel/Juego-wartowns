@@ -57,13 +57,18 @@ local function eco_read(uid)
 end
 
 -- Aplica un cambio de forma segura. fn(doc) devuelve (true, resultado) o (false, "codigo_error").
-local function eco_update(uid, fn)
+-- opts.skip_if_same: si el documento queda IGUAL despues de fn (nadie cambio nada), no se escribe
+-- en la base de datos. Una lectura (eco_get) ya no cuesta una escritura. Si hay duda, se escribe.
+local function eco_update(uid, fn, opts)
   for _ = 1, 6 do
     local doc, ver = eco_read(uid)
     local isnew = false
     if not doc then doc = eco_new_doc(uid); isnew = true; ver = "*" end
+    local before = nil
+    if opts and opts.skip_if_same and not isnew then before = nk.json_encode(doc) end
     local ok, res, extra = fn(doc)
     if not ok then return false, res end
+    if before and nk.json_encode(doc) == before then return true, res, doc, extra end
     if doc.gold < 0 or doc.diamonds < 0 then return false, "sin_saldo" end
     if doc.gold > ECO_GOLD_CAP then doc.gold = ECO_GOLD_CAP end
     if doc.diamonds > ECO_DIA_CAP then doc.diamonds = ECO_DIA_CAP end
@@ -110,7 +115,7 @@ end
 local function rpc_eco_get(context, payload)
   local uid = context.user_id
   if not uid then return eco_fail("sin_sesion") end
-  local ok, res, doc = eco_update(uid, function(d) ensure_challenges(d); return true end)
+  local ok, res, doc = eco_update(uid, function(d) ensure_challenges(d); return true end, { skip_if_same = true })
   if not ok then return eco_fail(res) end
   return eco_ok(doc)
 end
