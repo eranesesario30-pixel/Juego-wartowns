@@ -9390,6 +9390,19 @@ function toggleGameMenu(){
 }
 function confirmExitMatch(){
   toggleGameMenu();
+  // Si la partida ya empezó y no ha terminado, avisamos qué se pierde antes de salir
+  const searching = multiplayerActive && !tableLaunched;
+  if(!searching && !winner){
+    let bet = Number(pendingBet)||0; try{ if(!bet && ECO.st && ECO.st.bet) bet = Number(ECO.st.bet.amount)||0; }catch(e){}
+    let msg = '¿Seguro que quieres salir? Pierdes esta partida: sin experiencia, sin puntos del pase y sin cofre.';
+    if(bet > 0) msg = '¿Seguro que quieres salir? Pierdes la partida y tu apuesta de ' + bet + ' de oro, y no ganas experiencia, puntos del pase ni cofre.';
+    try{ if(multiplayerActive && players && players.filter(x=>x.active).length===2) msg += ' Tu rival gana.'; }catch(e){}
+    showConfirmDialog(msg, doExitMatch);
+    return;
+  }
+  doExitMatch();
+}
+function doExitMatch(){
   if(multiplayerActive && !tableLaunched){ cancelMultiplayerWait(); return; } // todavía buscando rival: se devuelve la apuesta
   try{ clearActiveMatch(); }catch(e){} // salí a propósito: no me vuelven a meter
   if(multiplayerActive){
@@ -9499,9 +9512,10 @@ function backToLobby(){
   try{ stopAllGameAudio(); }catch(e){}
   releaseWakeLock();
   try{
-    if(pendingBet>0){
+    const _srvBet = (ECO.st && ECO.st.bet) || null;   // lo que el servidor tiene anotado: así la apuesta se cierra aunque la pantalla ya no la recuerde
+    if(pendingBet>0 || _srvBet){
       pendingBet = 0;
-      if(!winner && ECO.matchStarted()) ECO.call('eco_match_end', {won:false, mode:gameMode, humans:0});   // se fue con la partida empezada: pierde la apuesta
+      if(!winner && (ECO.matchStarted() || (_srvBet && _srvBet.started))) ECO.call('eco_match_end', {won:false, mode:gameMode, humans:0});   // se fue con la partida empezada: pierde la apuesta
       else if(!winner) ECO.betCancel();                                                                  // no llegó a empezar: se devuelve
     }
   }catch(e){}
@@ -15315,8 +15329,19 @@ const ECO = (function(){
 
   /* ---- Apuestas y partidas ---- */
   E.betHold = async function(amount){
-    const r = await call('eco_bet_hold', { amount });
+    let r = await call('eco_bet_hold', { amount });
     if(r && r.ok) return true;
+    // Quedó una apuesta vieja abierta (saliste de la partida o cerraste la app sin que se cerrara): si ya no estás jugando, se da por perdida
+    // (igual que al salirte de una partida empezada) y se destraba para poder apostar de nuevo.
+    try{
+      const gs = document.getElementById('gameScreen');
+      const playing = gs && gs.style.display!=='none' && gs.style.display!=='';
+      if(r && r.error==='apuesta_activa' && !playing){
+        await call('eco_match_end', { won:false, mode:(typeof gameMode!=='undefined'?gameMode:'ffa'), humans:0 });
+        r = await call('eco_bet_hold', { amount });
+        if(r && r.ok) return true;
+      }
+    }catch(e){}
     try{ lobbyToast(r && r.error==='sin_saldo' ? 'No te alcanza el oro para esa apuesta.' : E.errMsg(r && r.error)); }catch(e){}
     return false;
   };
