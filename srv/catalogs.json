@@ -3715,9 +3715,9 @@
    "target": 2,
    "track": "games1v1Today",
    "reward": {
-    "gold": 6000
+    "gold": 600
    },
-   "rewardLabel": "+6,000 🪙"
+   "rewardLabel": "+600 🪙"
   },
   {
    "id": "capture3",
@@ -3735,10 +3735,10 @@
    "target": 1,
    "track": "chestsToday",
    "reward": {
-    "gold": 4000,
+    "gold": 400,
     "diamonds": 5
    },
-   "rewardLabel": "+4,000 🪙 +5 💎"
+   "rewardLabel": "+400 🪙 +5 💎"
   },
   {
    "id": "win1",
@@ -3746,9 +3746,9 @@
    "target": 1,
    "track": "winsToday",
    "reward": {
-    "gold": 10000
+    "gold": 1000
    },
-   "rewardLabel": "+10,000 🪙"
+   "rewardLabel": "+1,000 🪙"
   },
   {
    "id": "play3",
@@ -3756,9 +3756,9 @@
    "target": 3,
    "track": "gamesToday",
    "reward": {
-    "gold": 6000
+    "gold": 600
    },
-   "rewardLabel": "+6,000 🪙"
+   "rewardLabel": "+600 🪙"
   },
   {
    "id": "bet10k",
@@ -3786,9 +3786,9 @@
    "target": 1,
    "track": "games2v2Today",
    "reward": {
-    "gold": 5000
+    "gold": 500
    },
-   "rewardLabel": "+5,000 🪙"
+   "rewardLabel": "+500 🪙"
   },
   {
    "id": "treasure1",
