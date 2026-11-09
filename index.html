@@ -4413,6 +4413,7 @@ window.__threeReadyPromise = (async ()=>{
   #bottomRow{margin-top:84px !important;}
   #boardOuter{border-width:clamp(16px,5.6vw,30px) !important;}
   #topRow .p-name,#bottomRow .p-name{font-size:9px;}
+  @media (max-width:385px){ #topRow,#bottomRow{zoom:1.04;} #topRow{margin-top:30px !important;} #bottomRow{margin-top:70px !important;} }   /* pantallas angostas: perfiles un poco más chicos para que los dados no toquen las fotos */
   #topRow .p-mini-btn,#topRow .p-mic-btn,#bottomRow .p-mini-btn,#bottomRow .p-mic-btn{zoom:.78;}
   #topRow .p-info-capsule,#bottomRow .p-info-capsule{gap:3px;}
 }
@@ -8193,6 +8194,7 @@ async function ggApplyProfile(){
   if(!GG_PROFILE) return;
   const gp = GG_PROFILE; GG_PROFILE = null;
   try{
+    if(/^https?:/.test(profileStats.photoUrl||'')) delete profileStats.photoUrl;   // link remoto roto de versiones anteriores: se descarta y se vuelve a bajar la foto
     if(profileStats.ggApplied && profileStats.photoUrl) return;
     if(profileStats.fbApplied && profileStats.photoUrl && profileStats.profileSrc!=='gg') return; // la cuenta ya tiene nombre y foto de Facebook: no se pisan
     if(gp.name){ profileStats.displayName = gp.name.replace(/[\u0000-\u001f<>]/g,'').trim().slice(0,16); }
@@ -8204,7 +8206,10 @@ async function ggApplyProfile(){
         const side=Math.min(img.width,img.height);
         cv.getContext('2d').drawImage(img,(img.width-side)/2,(img.height-side)/2,side,side,0,0,size,size);
         profileStats.photoUrl = cv.toDataURL('image/jpeg',0.75); profileStats.avatarId = null;
-      }catch(e2){ profileStats.photoUrl = url; profileStats.avatarId = null; }
+      }catch(e2){
+        // No se pudo bajar la foto: NO se guarda el link de Google (en el juego salía como círculo rojo vacío); se queda el avatar y se reintenta en el próximo ingreso.
+        if(/^https?:/.test(profileStats.photoUrl||'')) delete profileStats.photoUrl;
+      }
     }
     profileStats.ggApplied = !!gp.name; profileStats.profileSrc = 'gg';
     await saveProfile();
@@ -11874,12 +11879,16 @@ function fitBoardFrame(){
     el.style.borderWidth = bw+'px'; el.style.borderImageWidth = bw+'px';
   }catch(e){}
 }
+/* Celulares largos (Android altos): el tablero se alarga ~10% hacia abajo para aprovechar el espacio libre antes de los perfiles de abajo.
+   La cuadrícula se re-ajusta sola al marco (on3DBoardResize), así los números quedan dentro en todos los tableros. */
+function boardTallFactor(){ try{ return window.matchMedia('(min-height:780px) and (max-aspect-ratio:9/17)').matches ? 1.10 : 1; }catch(e){ return 1; } }
+try{ window.matchMedia('(min-height:780px) and (max-aspect-ratio:9/17)').addEventListener('change', ()=>{ try{ const c=document.getElementById('board'); if(c && b3d){ c.style.aspectRatio=`10 / ${BOARD_ROWS*boardTallFactor()}`; on3DBoardResize(); } }catch(e){} }); }catch(e){}
 function buildBoardOnce(){
   const container = document.getElementById('board');
   disposeBoard3D();
   container.innerHTML = '';
   container.style.gridTemplateRows = '';
-  container.style.aspectRatio = `10 / ${BOARD_ROWS}`;
+  container.style.aspectRatio = `10 / ${BOARD_ROWS*boardTallFactor()}`;
   void container.offsetHeight; // fuerza al navegador a aplicar el aspect-ratio nuevo YA, antes de medir — si no, clientWidth/clientHeight de abajo pueden leer todavía el tamaño del modo anterior
 
   // Las tarjetas de jugador (arriba/abajo del tablero) cambian de color
@@ -12031,7 +12040,7 @@ function on3DBoardResize(){
   const aspect = width/height;
   const viewH0 = BOARD_ROWS * 1.05 * 0.93;
   const baseH = viewH0 / (boardKeepsOriginalSize() ? 1 : BOARD_VSTRETCH);   // la cámara está inclinada y la cuadrícula se ve más baja que ancha: se estira para que llene el marco (sin franja oscura arriba y abajo)
-  const baseW = viewH0 * aspect;
+  const baseW = viewH0 * aspect * boardTallFactor();   // el tablero largo se estira hacia abajo, no se ensancha
   const apply = (zx, zy)=>{
     const viewH = baseH / zy, viewW = baseW / zx;
     b3d.camera.left = -viewW/2 - BOARD_SIDE_ROOM; b3d.camera.right = viewW/2 + BOARD_SIDE_ROOM;
