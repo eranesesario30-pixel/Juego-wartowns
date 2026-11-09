@@ -4401,6 +4401,22 @@ window.__threeReadyPromise = (async ()=>{
   .settings-link-btn.danger{border-color:#c4453d;color:#ff9a8a;}
 
   #bottomRow{position:relative;z-index:15;}
+  /* Pantallas largas (Android altos): perfiles/dados más grandes, marco más fino, lobby repartido */
+@media (min-height:780px) and (max-aspect-ratio:9/17){
+  #topRow,#bottomRow{zoom:1.2;}
+  #topRow{margin-top:26px !important;}
+  #bottomRow{margin-top:84px !important;}
+  #boardOuter{border-width:clamp(16px,5.6vw,30px) !important;}
+  #topRow .p-name,#bottomRow .p-name{font-size:9px;}
+  #topRow .p-mini-btn,#topRow .p-mic-btn,#bottomRow .p-mini-btn,#bottomRow .p-mic-btn{zoom:.78;}
+  #topRow .p-info-capsule,#bottomRow .p-info-capsule{gap:3px;}
+}
+@media (min-height:780px) and (max-aspect-ratio:9/17){
+  .mode-card{width:min(236px,58vw) !important;aspect-ratio:3/4.1 !important;transform:rotateX(9deg) translateZ(14px) !important;}
+  .mode-grid{padding-top:14px !important;}
+  #lobbyScreen .chest-section-title{margin-top:7vh !important;}
+  #lobbyScreen .chest-slots{margin-bottom:3vh;}
+}
   .bottom-actions{display:flex;justify-content:center;gap:6px;margin:4px 0 2px;}
   .bottom-actions .chat-toggle{padding:5px 10px;font-size:9px;flex:1;max-width:110px;}
   .chat-toggle{
