@@ -82,6 +82,9 @@ local function rpc_match_end(context, payload)
   local mode = d0.mode
   local humans = tonumber(d0.humans) or 0
   local refund = d0.refund == true
+  local payers = math.floor(tonumber(d0.payers) or 2)   -- jugadores reales que apostaron (pozo = apuesta x pagadores)
+  if payers < 2 then payers = 2 end
+  if payers > 4 then payers = 4 end
   local ok, res, doc = eco_update(uid, function(d)
     local now = os.time()
     if (now - (tonumber(d.stats.lastEnd) or 0)) < MATCH_MIN_GAP then
@@ -128,9 +131,13 @@ local function rpc_match_end(context, payload)
         local fair = bet.started and (d.stats.bstreak or 0) < BET_STREAK_MAX
                      and ((d.stats.bpProfit or 0) + bet.amount) <= BET_PROFIT_DAY_CAP
         if fair then
-          out.betPayout = bet.amount * 2
+          -- 4 jugadores todos contra todos: el ganador se lleva el pozo completo (apuesta x 4).
+          -- 1 vs 1 y 2 vs 2 (cada ganador cobra la mitad del pozo): apuesta x 2.
+          local mult = 2
+          if mode ~= "1v1" and mode ~= "2v2" then mult = payers end
+          out.betPayout = bet.amount * mult
           d.stats.bstreak = (d.stats.bstreak or 0) + 1
-          d.stats.bpProfit = (d.stats.bpProfit or 0) + bet.amount
+          d.stats.bpProfit = (d.stats.bpProfit or 0) + (out.betPayout - bet.amount)
         else
           out.betPayout = bet.amount     -- solo se devuelve lo apostado
           out.betLimited = true
