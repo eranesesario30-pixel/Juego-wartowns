@@ -5,6 +5,7 @@ const N = parseInt(process.argv[2] || '40', 10);
 const SECS = parseInt(process.argv[3] || '120', 10);
 const HOST = process.argv[4] || 'localhost:7350';
 const DUR = parseFloat(process.argv[5] || '45');
+const MODE = process.argv[7] || 'quoted'; // any | plain | quoted
 const CODES = parseInt(process.argv[6] || '20', 10); // cuantas mesas publicas distintas (modo+apuesta) hay; el juego real busca por codigo de mesa
 const BASIC = 'Basic ' + Buffer.from('defaultkey:').toString('base64');
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -55,7 +56,7 @@ async function bot(i) {
       const w0 = Date.now();
       const matched = new Promise(r => { onMatched = r; });
       const code = 'Pc' + (i % CODES) + 'A4';
-      await send({ matchmaker_add: { query: '+properties.code:"' + code + '"', min_count: 4, max_count: 4, string_properties: { code }, numeric_properties: {} } });
+      await send({ matchmaker_add: { query: MODE === 'any' ? '*' : MODE === 'plain' ? '+properties.code:' + code : '+properties.code:"' + code + '"', min_count: 4, max_count: 4, string_properties: { code }, numeric_properties: {} } });
       S.tickets++;
       const mm = await Promise.race([matched, sleep(60000).then(() => null)]);
       onMatched = null;
