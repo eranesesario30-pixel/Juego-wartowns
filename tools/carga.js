@@ -5,36 +5,40 @@ const SECS = parseInt(process.argv[3] || '60', 10);
 const HOST = process.argv[4] || 'localhost:7350';
 const KEY = 'defaultkey';
 const BASIC = 'Basic ' + Buffer.from(KEY + ':').toString('base64');
-const lat = [], errs = {}; let ok = 0, wsOpen = 0, authFail = 0, stop = false;
+const lat = [], errs = {}; let relogin = 0, ok = 0, wsOpen = 0, authFail = 0, stop = false;
 const rnd = (a, b) => a + Math.random() * (b - a);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 function err(k) { errs[k] = (errs[k] || 0) + 1; }
-async function rpc(tok, id, body) {
+async function rpc(B, id, body) {
   const t0 = performance.now();
   try {
-    const r = await fetch(`http://${HOST}/v2/rpc/${id}?unwrap`, { method: 'POST', headers: { Authorization: 'Bearer ' + tok, 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
+    const r = await fetch(`http://${HOST}/v2/rpc/${id}?unwrap`, { method: 'POST', headers: { Authorization: 'Bearer ' + B.tok, 'Content-Type': 'application/json' }, body: JSON.stringify(body || {}) });
     lat.push(performance.now() - t0);
-    if (r.ok) ok++; else err(id + ':' + r.status);
+    if (r.ok) ok++; else if (r.status === 401) { relogin++; await login(B); } else err(id + ':' + r.status);
   } catch (e) { err(id + ':red'); }
+}
+async function login(B) {
+  try {
+    const r = await fetch(`http://${HOST}/v2/account/authenticate/device?create=true&username=${B.user}`, { method: 'POST', headers: { Authorization: BASIC, 'Content-Type': 'application/json' }, body: JSON.stringify({ id: B.dev }) });
+    if (!r.ok) return false;
+    B.tok = (await r.json()).token; return true;
+  } catch (e) { return false; }
 }
 async function bot(i) {
   const run = Date.now();
-  let tok;
-  try {
-    const r = await fetch(`http://${HOST}/v2/account/authenticate/device?create=true&username=carga_${run % 100000}_${i}`, { method: 'POST', headers: { Authorization: BASIC, 'Content-Type': 'application/json' }, body: JSON.stringify({ id: `carga-test-${run}-${i}-xxxxxxxx` }) });
-    if (!r.ok) { authFail++; return; }
-    tok = (await r.json()).token;
-  } catch (e) { authFail++; return; }
+  const B = { tok: null, user: `carga_${run % 100000}_${i}`, dev: `carga-test-${run}-${i}-xxxxxxxx` };
+  if (!(await login(B))) { authFail++; return; }
+  const tok = B.tok;
   let ws = null;
   if (typeof WebSocket !== 'undefined') {
-    try { ws = new WebSocket(`ws://${HOST}/ws?token=${tok}&format=json`); ws.onopen = () => wsOpen++; ws.onclose = () => { if (!stop) wsOpen--; }; ws.onerror = () => {}; } catch (e) {}
+    try { ws = new WebSocket(`ws://${HOST}/ws?token=${B.tok}&format=json`); ws.onopen = () => wsOpen++; ws.onclose = () => { if (!stop) wsOpen--; }; ws.onerror = () => {}; } catch (e) {}
   }
   const calls = ['eco_get', 'liga_tier_top', 'global_top', 'tour_info', 'eco_get'];
-  await rpc(tok, 'eco_get');
+  await rpc(B, 'eco_get');
   while (!stop) {
     await sleep(rnd(1500, 4000));
     const c = calls[Math.floor(Math.random() * calls.length)];
-    await rpc(tok, c, c === 'liga_tier_top' ? { tier: 'bronce' } : {});
+    await rpc(B, c, c === 'liga_tier_top' ? { tier: 'bronce' } : {});
   }
   try { ws && ws.close(); } catch (e) {}
 }
@@ -44,7 +48,7 @@ const pct = (a, p) => a.length ? a.slice().sort((x, y) => x - y)[Math.min(a.leng
   const t0 = Date.now();
   const rep = setInterval(() => {
     const e = Object.keys(errs).length ? JSON.stringify(errs) : 'ninguno';
-    console.log(`[${Math.round((Date.now() - t0) / 1000)}s] conexiones=${wsOpen} ok=${ok} lat(ms) p50=${pct(lat, .5)} p95=${pct(lat, .95)} max=${pct(lat, 1)} fallos_login=${authFail} errores=${e}`);
+    console.log(`[${Math.round((Date.now() - t0) / 1000)}s] conexiones=${wsOpen} ok=${ok} lat(ms) p50=${pct(lat, .5)} p95=${pct(lat, .95)} max=${pct(lat, 1)} fallos_login=${authFail} renovaciones=${relogin} errores=${e}`);
   }, 10000);
   const rampMs = Math.min(SECS * 400, 20000);
   const ps = [];
