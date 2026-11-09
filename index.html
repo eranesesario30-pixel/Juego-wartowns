@@ -4401,6 +4401,9 @@ window.__threeReadyPromise = (async ()=>{
   .settings-link-btn.danger{border-color:#c4453d;color:#ff9a8a;}
 
   #bottomRow{position:relative;z-index:15;}
+  /* Como una app: sin selección de texto ni menú de copiar al mantener apretado (los campos de escribir siguen normales) */
+  html,body,body *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;}
+  input,textarea,[contenteditable="true"]{-webkit-user-select:text !important;user-select:text !important;}
   /* Pantallas largas (Android altos): perfiles/dados más grandes, marco más fino, lobby repartido */
 @media (min-height:780px) and (max-aspect-ratio:9/17){
   #topRow,#bottomRow{zoom:1.2;}
@@ -20634,5 +20637,6 @@ setInterval(()=>{ try{ if(document.body.classList.contains('hallo-on')) xmasPlac
    Se mueven al nivel principal para que se abran encima de la partida. */
 (function(){ try{ ['playerInfoOverlay','profileOverlay'].forEach(function(id){ var e=document.getElementById(id); if(e && e.parentElement!==document.body) document.body.appendChild(e); }); }catch(e){} })();
 </script>
+<script>document.addEventListener('contextmenu',function(e){var t=e.target;if(t&&t.closest&&t.closest('input,textarea,[contenteditable="true"]'))return;e.preventDefault();});</script>
 </body>
 </html>
