@@ -3115,6 +3115,8 @@ window.__threeReadyPromise = (async ()=>{
   .p-card-mirrored{flex-direction:row-reverse;}
   /* Tarjetas del lado derecho: el diamante va a la IZQUIERDA de los dados (antes caía encima de la foto de perfil) */
   .p-card-mirrored .p-dice .dia-btn-wrap{order:-1;margin-left:-44px;}
+  /* El botón de cambiar dado con diamantes solo lo ve el jugador al que le toca, en su propia pantalla */
+  .p-card.dia-other .dia-btn-wrap{display:none !important;}
   /* El botón del diamante (cambiar tirada) es solo tuyo: en los perfiles de los rivales no se muestra (se montaba sobre su foto). */
   .dia-chip{
     background:linear-gradient(160deg,#2d3722,#1f2617);color:#f2ebd8;
@@ -10855,7 +10857,7 @@ function playerCardHTML(p,i,mirrored){
       ${cornerBadge}
     </div>`;
   return `
-    <div class="p-card p-${p.color} ${isCurrent?'current':''} ${p.skipNext?'skip':''} ${!p.active?'inactive':''} ${mirrored?'p-card-mirrored':''}">
+    <div class="p-card p-${p.color} ${isCurrent?'current':''} ${p.skipNext?'skip':''} ${!p.active?'inactive':''} ${mirrored?'p-card-mirrored':''} ${p.color!==MY_COLOR?'dia-other':''}">
       ${avatarBlock}
       <div class="p-info">
         <div class="p-info-capsule">
