@@ -4570,9 +4570,10 @@ window.__threeReadyPromise = (async ()=>{
   .emo-bubble-face{width:76px;height:76px;padding:7px;border-radius:22px;
     background:linear-gradient(180deg,rgba(33,58,122,.97),rgba(10,20,48,.97));border:2.5px solid #f0c64a;
     box-shadow:0 6px 16px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.25);}
-  .emo-bubble-text{max-width:min(150px,38vw);padding:8px 12px;border-radius:16px;font:800 14px/1.2 system-ui,sans-serif;color:#fff;
+  .emo-bubble-text{max-width:min(220px,60vw);padding:8px 12px;border-radius:16px;font:800 14px/1.2 system-ui,sans-serif;color:#fff;
     background:linear-gradient(180deg,rgba(33,58,122,.97),rgba(10,20,48,.97));border:2.5px solid #f0c64a;box-shadow:0 6px 16px rgba(0,0,0,.5);}
   .emo-bubble::after{content:"";position:absolute;top:50%;width:12px;height:12px;margin-top:-6px;background:#0f1d44;border:2.5px solid #f0c64a;transform:rotate(45deg);}
+  .emo-bubble.tail-down::after{top:auto;bottom:-8px;left:50%;margin-top:0;margin-left:-6px;border-left:0;border-top:0;}
   .emo-bubble.tail-right::after{left:-8px;border-right:0;border-top:0;}
   .emo-bubble.tail-left::after{right:-8px;border-left:0;border-bottom:0;}
   @keyframes emoBubbleIn{0%{transform:scale(.2);opacity:0;}100%{transform:scale(1);opacity:1;}}
@@ -13535,8 +13536,15 @@ function spawnFloatingReaction(playerColor, type, content){
       let left, top, side;
       if(ok){
         side = (r.left + r.width/2) < W/2 ? 'right' : 'left';
-        left = side==='right' ? r.right + gap : r.left - bw - gap;
-        top = r.top + r.height/2 - bh/2;
+        if((r.top + r.height/2) > H/2){
+          // jugadores de abajo: la burbuja sube encima de la foto para no tapar los dados
+          side = 'down';
+          left = r.left + r.width/2 - bw/2;
+          top = r.top - bh - gap - 4;
+        } else {
+          left = side==='right' ? r.right + gap : r.left - bw - gap;
+          top = r.top + r.height/2 - bh/2;
+        }
       } else { side='right'; left = W/2 - bw/2; top = H*0.7; }
       left = Math.min(Math.max(left, 6), W - bw - 6);
       top = Math.min(Math.max(top, 6), H - bh - 6);
