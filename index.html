@@ -14056,7 +14056,7 @@ async function _recordMatchResult(youWon){
 
   // El servidor paga: apuesta, 50 de oro, ánfora, XP y avance del pase y de los desafíos
   let goldWon = 0, betPayout = 0, xpGained = 0, chestResult = {granted:false};
-  const r = await ECO.call('eco_match_end', { won:!!youWon, mode:gameMode, humans:_mctx.opps.length, refund:!!_refundBet });
+  const r = await ECO.call('eco_match_end', { won:!!youWon, mode:gameMode, humans:_mctx.opps.length, refund:!!_refundBet, payers:(()=>{ try{ return players.filter(x=>x.active && (x.color===MY_COLOR || colorUserId(x.color))).length; }catch(e){ return 2; } })() });
   if(r && r.ok && r.result){
     const o = r.result;
     goldWon = o.goldWon||0; betPayout = o.betPayout||0; xpGained = o.xp||0;
