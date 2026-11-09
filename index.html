@@ -3113,8 +3113,9 @@ window.__threeReadyPromise = (async ()=>{
       en vez de comprimirse. */
   }
   .p-card-mirrored{flex-direction:row-reverse;}
+  /* Tarjetas del lado derecho: el diamante va a la IZQUIERDA de los dados (antes caía encima de la foto de perfil) */
+  .p-card-mirrored .p-dice .dia-btn-wrap{order:-1;margin-left:-44px;}
   /* El botón del diamante (cambiar tirada) es solo tuyo: en los perfiles de los rivales no se muestra (se montaba sobre su foto). */
-  .p-card.dia-other .dia-btn-wrap{display:none !important;}
   .dia-chip{
     background:linear-gradient(160deg,#2d3722,#1f2617);color:#f2ebd8;
     border-radius:10px;padding:2px 6px;
@@ -4411,7 +4412,7 @@ window.__threeReadyPromise = (async ()=>{
   #topRow,#bottomRow{zoom:1.2;}
   #topRow{margin-top:26px !important;}
   #bottomRow{margin-top:84px !important;}
-  #boardOuter{border-width:clamp(16px,5.6vw,30px) !important;}
+  @media (max-height:845px){ #bottomRow{margin-top:56px !important;} }
   #topRow .p-name,#bottomRow .p-name{font-size:9px;}
   @media (max-width:385px){ #topRow,#bottomRow{zoom:1.04;} #topRow{margin-top:30px !important;} #bottomRow{margin-top:70px !important;} }   /* pantallas angostas: perfiles un poco más chicos para que los dados no toquen las fotos */
   #topRow .p-mini-btn,#topRow .p-mic-btn,#bottomRow .p-mini-btn,#bottomRow .p-mic-btn{zoom:.78;}
@@ -10840,7 +10841,7 @@ function playerCardHTML(p,i,mirrored){
       ${cornerBadge}
     </div>`;
   return `
-    <div class="p-card p-${p.color} ${isCurrent?'current':''} ${p.skipNext?'skip':''} ${!p.active?'inactive':''} ${mirrored?'p-card-mirrored':''} ${p.color!==MY_COLOR?'dia-other':''}">
+    <div class="p-card p-${p.color} ${isCurrent?'current':''} ${p.skipNext?'skip':''} ${!p.active?'inactive':''} ${mirrored?'p-card-mirrored':''}">
       ${avatarBlock}
       <div class="p-info">
         <div class="p-info-capsule">
@@ -11881,7 +11882,12 @@ function fitBoardFrame(){
 }
 /* Celulares largos (Android altos): el tablero se alarga ~10% hacia abajo para aprovechar el espacio libre antes de los perfiles de abajo.
    La cuadrícula se re-ajusta sola al marco (on3DBoardResize), así los números quedan dentro en todos los tableros. */
-function boardTallFactor(){ try{ return window.matchMedia('(min-height:780px) and (max-aspect-ratio:9/17)').matches ? 1.10 : 1; }catch(e){ return 1; } }
+function boardTallFactor(){ try{
+  if(!window.matchMedia('(min-height:780px) and (max-aspect-ratio:9/17)').matches) return 1;
+  // Solo se alarga si sobra alto: en 800 px (Chrome con barras) queda normal; llega al +10% desde ~815 px, así los perfiles de abajo nunca se cortan.
+  return 1 + Math.max(0, Math.min(0.10, (window.innerHeight-775)/415));
+}catch(e){ return 1; } }
+let _tallRz=0; window.addEventListener('resize', ()=>{ clearTimeout(_tallRz); _tallRz=setTimeout(()=>{ try{ const c=document.getElementById('board'); if(c && b3d){ c.style.aspectRatio=`10 / ${BOARD_ROWS*boardTallFactor()}`; on3DBoardResize(); } }catch(e){} },150); });
 try{ window.matchMedia('(min-height:780px) and (max-aspect-ratio:9/17)').addEventListener('change', ()=>{ try{ const c=document.getElementById('board'); if(c && b3d){ c.style.aspectRatio=`10 / ${BOARD_ROWS*boardTallFactor()}`; on3DBoardResize(); } }catch(e){} }); }catch(e){}
 function buildBoardOnce(){
   const container = document.getElementById('board');
