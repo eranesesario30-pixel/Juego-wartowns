@@ -3,6 +3,7 @@
 const N = parseInt(process.argv[2] || '100', 10);
 const SECS = parseInt(process.argv[3] || '60', 10);
 const HOST = process.argv[4] || 'localhost:7350';
+const PAUSE = parseFloat(process.argv[5] || '0'); // segundos promedio entre peticiones de cada jugador (0 = muy seguido, como estres)
 const KEY = 'defaultkey';
 const BASIC = 'Basic ' + Buffer.from(KEY + ':').toString('base64');
 const lat = [], errs = {}; let relogin = 0, ok = 0, wsOpen = 0, authFail = 0, stop = false;
@@ -36,7 +37,7 @@ async function bot(i) {
   const calls = ['eco_get', 'liga_tier_top', 'global_top', 'tour_info', 'eco_get'];
   await rpc(B, 'eco_get');
   while (!stop) {
-    await sleep(rnd(1500, 4000));
+    await sleep(PAUSE > 0 ? rnd(PAUSE * 500, PAUSE * 1500) : rnd(1500, 4000));
     const c = calls[Math.floor(Math.random() * calls.length)];
     await rpc(B, c, c === 'liga_tier_top' ? { tier: 'bronce' } : {});
   }
@@ -50,7 +51,7 @@ const pct = (a, p) => a.length ? a.slice().sort((x, y) => x - y)[Math.min(a.leng
     const e = Object.keys(errs).length ? JSON.stringify(errs) : 'ninguno';
     console.log(`[${Math.round((Date.now() - t0) / 1000)}s] conexiones=${wsOpen} ok=${ok} lat(ms) p50=${pct(lat, .5)} p95=${pct(lat, .95)} max=${pct(lat, 1)} fallos_login=${authFail} renovaciones=${relogin} errores=${e}`);
   }, 10000);
-  const rampMs = Math.min(SECS * 400, 20000);
+  const rampMs = Math.min(SECS * 400, Math.max(20000, N * 60));
   const ps = [];
   for (let i = 0; i < N; i++) { ps.push(bot(i)); await sleep(rampMs / N); }
   await sleep(Math.max(0, SECS * 1000 - (Date.now() - t0)));
