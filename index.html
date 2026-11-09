@@ -4563,6 +4563,80 @@ window.__threeReadyPromise = (async ()=>{
     75%{transform:translate(-50%, calc(-50% - 200px)) scale(1.05);opacity:1;}
     100%{transform:translate(-50%, calc(-50% - 260px)) scale(1);opacity:0;}
   }
+  /* ===== Caritas animadas de Parche ===== */
+  .emo-svg{display:block;width:100%;height:100%;overflow:visible;}
+  .emo-bubble{position:fixed;z-index:9999;pointer-events:none;box-sizing:border-box;
+    animation:emoBubbleIn .38s cubic-bezier(.2,1.5,.4,1) both, emoBubbleOut .35s ease-in 2.9s forwards;}
+  .emo-bubble-face{width:76px;height:76px;padding:7px;border-radius:22px;
+    background:linear-gradient(180deg,rgba(33,58,122,.97),rgba(10,20,48,.97));border:2.5px solid #f0c64a;
+    box-shadow:0 6px 16px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.25);}
+  .emo-bubble-text{max-width:min(150px,38vw);padding:8px 12px;border-radius:16px;font:800 14px/1.2 system-ui,sans-serif;color:#fff;
+    background:linear-gradient(180deg,rgba(33,58,122,.97),rgba(10,20,48,.97));border:2.5px solid #f0c64a;box-shadow:0 6px 16px rgba(0,0,0,.5);}
+  .emo-bubble::after{content:"";position:absolute;top:50%;width:12px;height:12px;margin-top:-6px;background:#0f1d44;border:2.5px solid #f0c64a;transform:rotate(45deg);}
+  .emo-bubble.tail-right::after{left:-8px;border-right:0;border-top:0;}
+  .emo-bubble.tail-left::after{right:-8px;border-left:0;border-bottom:0;}
+  @keyframes emoBubbleIn{0%{transform:scale(.2);opacity:0;}100%{transform:scale(1);opacity:1;}}
+  @keyframes emoBubbleOut{to{transform:scale(.85) translateY(-6px);opacity:0;}}
+  /* gestos */
+  .emo-laugh{animation:emoBounce .42s ease-in-out infinite;transform-origin:50% 90%;}
+  .emo-laugh .e-mouth{animation:emoMouthLaugh .21s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:50% 0;}
+  .emo-laugh .e-tear{animation:emoTearSide .8s ease-in infinite;transform-box:fill-box;}
+  .emo-laugh .t2{animation-delay:.3s;}
+  .emo-cool .e-shades{animation:emoShadesDrop .55s cubic-bezier(.3,1.6,.5,1) both;transform-box:fill-box;}
+  .emo-cool .e-glint{animation:emoGlint 1.4s ease-in-out .6s infinite;transform-box:fill-box;transform-origin:center;}
+  .emo-cool{animation:emoNod 1.4s ease-in-out .6s infinite;transform-origin:50% 80%;}
+  .emo-cry{animation:emoSob .7s ease-in-out infinite;transform-origin:50% 90%;}
+  .emo-cry .e-tear{animation:emoTearFall .9s ease-in infinite;transform-box:fill-box;}
+  .emo-cry .t2{animation-delay:.25s;} .emo-cry .t3{animation-delay:.55s;}
+  .emo-cry .e-mouth{animation:emoWobble .35s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:center;}
+  .emo-angry{animation:emoShake .18s linear infinite;}
+  .emo-angry .e-mouth{animation:emoGrowl .36s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:50% 100%;}
+  .emo-angry .e-steam .s1{animation:emoSteam 1s ease-out infinite;transform-box:fill-box;}
+  .emo-angry .e-steam .s2{animation:emoSteam 1s ease-out .4s infinite;transform-box:fill-box;}
+  .emo-love .e-heart{animation:emoBeat .6s ease-in-out infinite;transform-box:fill-box;transform-origin:center;}
+  .emo-love .e-hearts g{animation:emoRise 1.4s ease-out infinite;transform-box:fill-box;}
+  .emo-love .e-hearts .h2{animation-delay:.45s;} .emo-love .e-hearts .h3{animation-delay:.9s;}
+  .emo-wow{animation:emoJump .9s cubic-bezier(.3,1.4,.5,1) infinite;transform-origin:50% 90%;}
+  .emo-wow .e-pup{animation:emoPupil .9s ease-in-out infinite;transform-box:fill-box;transform-origin:center;}
+  .emo-wow .e-mouth{animation:emoMouthO .9s ease-in-out infinite;transform-box:fill-box;transform-origin:center;}
+  .emo-wow .e-shock{animation:emoShock .9s ease-out infinite;transform-box:fill-box;transform-origin:center;}
+  .emo-sleep{animation:emoSway 1.8s ease-in-out infinite;transform-origin:50% 100%;}
+  .emo-sleep .e-bubble{animation:emoBubbleBreath 1.8s ease-in-out infinite;transform-box:fill-box;transform-origin:left center;}
+  .emo-sleep .e-z text{animation:emoZ 1.8s ease-out infinite;transform-box:fill-box;}
+  .emo-sleep .z2{animation-delay:.6s;}
+  .emo-party{animation:emoWiggle .5s ease-in-out infinite;transform-origin:50% 90%;}
+  .emo-party .e-hat{animation:emoHat .5s ease-in-out infinite alternate;transform-box:fill-box;transform-origin:50% 100%;}
+  .emo-party .e-conf rect{animation:emoConfetti 1.2s linear infinite;transform-box:fill-box;}
+  .emo-party .c2{animation-delay:.3s;} .emo-party .c3{animation-delay:.6s;} .emo-party .c4{animation-delay:.9s;}
+  @keyframes emoBounce{0%,100%{transform:translateY(0) scale(1,1);}50%{transform:translateY(-6px) scale(1.04,.96);}}
+  @keyframes emoMouthLaugh{to{transform:scaleY(.72);}}
+  @keyframes emoTearSide{0%{transform:translateY(0);opacity:1;}100%{transform:translateY(14px);opacity:0;}}
+  @keyframes emoShadesDrop{0%{transform:translateY(-34px);opacity:0;}100%{transform:translateY(0);opacity:1;}}
+  @keyframes emoGlint{0%,60%,100%{transform:scale(0);opacity:0;}75%{transform:scale(1);opacity:1;}}
+  @keyframes emoNod{0%,100%{transform:rotate(0);}50%{transform:rotate(-5deg);}}
+  @keyframes emoSob{0%,100%{transform:translateY(0) scale(1);}30%{transform:translateY(3px) scale(1,.96);}60%{transform:translateY(-1px) scale(1.01);}}
+  @keyframes emoTearFall{0%{transform:translateY(-4px);opacity:0;}20%{opacity:1;}100%{transform:translateY(30px);opacity:0;}}
+  @keyframes emoWobble{to{transform:scale(1.08,.8);}}
+  @keyframes emoShake{0%{transform:translate(1.5px,0) rotate(.6deg);}25%{transform:translate(-1.5px,1px) rotate(-.6deg);}50%{transform:translate(1px,-1px) rotate(.4deg);}75%{transform:translate(-1px,0) rotate(-.4deg);}100%{transform:translate(1.5px,0) rotate(.6deg);}}
+  @keyframes emoGrowl{to{transform:scaleY(1.22);}}
+  @keyframes emoSteam{0%{transform:translateY(8px) scale(.4);opacity:0;}30%{opacity:.9;}100%{transform:translateY(-14px) scale(1.5);opacity:0;}}
+  @keyframes emoBeat{0%,100%{transform:scale(1);}35%{transform:scale(1.22);}}
+  @keyframes emoRise{0%{transform:translateY(14px) scale(.5);opacity:0;}25%{opacity:1;}100%{transform:translateY(-14px) scale(1.1);opacity:0;}}
+  @keyframes emoJump{0%,100%{transform:translateY(0) scale(1);}15%{transform:translateY(-10px) scale(1.1,1.06);}35%{transform:translateY(0) scale(1.04,.94);}}
+  @keyframes emoPupil{0%,100%{transform:scale(1);}15%{transform:scale(.55);}}
+  @keyframes emoMouthO{0%,100%{transform:scale(1);}15%{transform:scale(1.25,1.35);}}
+  @keyframes emoShock{0%,100%{transform:scale(.8);opacity:0;}15%{transform:scale(1.15);opacity:1;}60%{opacity:1;}}
+  @keyframes emoSway{0%,100%{transform:rotate(-4deg);}50%{transform:rotate(4deg);}}
+  @keyframes emoBubbleBreath{0%,100%{transform:scale(.55);}50%{transform:scale(1.5);}}
+  @keyframes emoZ{0%{transform:translate(-6px,8px) scale(.5);opacity:0;}30%{opacity:1;}100%{transform:translate(4px,-10px) scale(1.15);opacity:0;}}
+  @keyframes emoWiggle{0%,100%{transform:rotate(-5deg);}50%{transform:rotate(5deg);}}
+  @keyframes emoHat{to{transform:rotate(8deg);}}
+  @keyframes emoConfetti{0%{transform:translateY(-12px) rotate(0);opacity:0;}15%{opacity:1;}100%{transform:translateY(40px) rotate(360deg);opacity:0;}}
+  @media (prefers-reduced-motion:reduce){ .emo-svg, .emo-svg *{animation:none !important;} }
+  /* panel de reacciones con las caritas */
+  .emote-reactions{flex-wrap:wrap;justify-content:center;}
+  .emote-reactions button.emo-pick{width:60px;height:60px;max-height:none;flex:0 0 60px;padding:6px;}
+  #reactBar button .emo-svg{width:34px;height:34px;}
   /* ==== SIN marco dorado ni gemas/esferas en las tarjetas (pedido del dueño) ====
      Las tarjetas (elegí tablero, apuestas, lobby) ya no llevan clases gem-frame-*.
      Este bloque es un seguro extra: apaga el efecto de CUALQUIER gem-frame-*,
@@ -6366,14 +6440,7 @@ body.dice-shaking .dice-cube-wrap, body.dice-shaking .dice-sprite{ animation:dic
           <button class="phrase-pill" onclick="sendQuickPhrase('Gracias')">Gracias</button>
         </div>
         <div class="emote-card-title">Reacciones</div>
-        <div class="emote-reactions">
-          <button onclick="sendQuickEmote('😂')">😂</button>
-          <button onclick="sendQuickEmote('😎')">😎</button>
-          <button onclick="sendQuickEmote('😭')">😭</button>
-          <button onclick="sendQuickEmote('😡')">😡</button>
-          <button onclick="sendQuickEmote('👏')">👏</button>
-          <button class="chat-go" title="Abrir el chat" onclick="toggleEmotes();toggleChat();">💬</button>
-        </div>
+        <div class="emote-reactions" id="emoteReactions"></div>
       </div>
     </div>
 
@@ -13323,6 +13390,8 @@ function toggleChat(){
 
 function toggleEmotes(){
   const overlay = document.getElementById('emoteOverlay');
+  const _er = document.getElementById('emoteReactions');
+  if(_er && !_er.dataset.ready){ _er.dataset.ready='1'; _er.innerHTML = EMO_IDS.map(id=>`<button class="emo-pick" title="${EMO_NAMES[id]}" onclick="sendQuickEmote('${id}')">${emoFaceSVG(id)}</button>`).join('') + '<button class="chat-go" title="Abrir el chat" onclick="toggleEmotes();toggleChat();">💬</button>'; }
   const open = overlay.style.display !== 'none';
   overlay.style.display = open ? 'none' : 'flex';
 }
@@ -13353,68 +13422,132 @@ function sendQuickPhrase(text){
   document.getElementById('emoteOverlay').style.display = 'none';
 }
 
-// Contenedor flotante que sube desde la foto del jugador emisor y se desvanece.
+/* ======== Caritas animadas de Parche (dibujos y sonidos propios, hechos con código) ======== */
+const EMO_IDS = ['laugh','cool','cry','angry','love','wow','sleep','party'];
+const EMO_NAMES = {laugh:'Risa',cool:'Fresco',cry:'Llanto',angry:'Enojo',love:'Amor',wow:'Sorpresa',sleep:'Sueño',party:'Fiesta'};
+function emoFaceSVG(id){
+  const O='#0a1430', G='#ffd34d', GD='#f0a21c';
+  const base = (fill)=>`<circle cx="50" cy="52" r="42" fill="${fill||G}" stroke="${O}" stroke-width="4"/><ellipse cx="50" cy="74" rx="30" ry="14" fill="${GD}" opacity=".35"/><ellipse cx="34" cy="28" rx="14" ry="7" fill="#fff" opacity=".45" transform="rotate(-25 34 28)"/>`;
+  const eyeOpen = (x)=>`<ellipse cx="${x}" cy="46" rx="7" ry="9" fill="#fff" stroke="${O}" stroke-width="2.5"/><circle class="e-pup" cx="${x}" cy="48" r="4" fill="${O}"/>`;
+  const arc = (x,up)=>`<path d="M${x-8} ${up?46:42} Q${x} ${up?36:52} ${x+8} ${up?46:42}" fill="none" stroke="${O}" stroke-width="4.5" stroke-linecap="round"/>`;
+  const heart = (x,y,s,col)=>`<path d="M${x} ${y+8*s} C${x-14*s} ${y-2*s} ${x-8*s} ${y-12*s} ${x} ${y-4*s} C${x+8*s} ${y-12*s} ${x+14*s} ${y-2*s} ${x} ${y+8*s}Z" fill="${col||'#ff3d5e'}" stroke="${O}" stroke-width="2"/>`;
+  let body='', cls='emo-'+id;
+  if(id==='laugh'){
+    body = base()+arc(33,true)+arc(67,true)
+      +`<g class="e-mouth"><path d="M26 58 Q50 98 74 58 Z" fill="#5a1220" stroke="${O}" stroke-width="3.5" stroke-linejoin="round"/><ellipse cx="50" cy="76" rx="13" ry="7" fill="#ff6b7a"/></g>`
+      +`<path class="e-tear t1" d="M16 52 q-5 9 0 12 q5 -3 0 -12z" fill="#5ec8ff" stroke="${O}" stroke-width="1.5"/><path class="e-tear t2" d="M84 52 q-5 9 0 12 q5 -3 0 -12z" fill="#5ec8ff" stroke="${O}" stroke-width="1.5"/>`;
+  } else if(id==='cool'){
+    body = base()
+      +`<g class="e-shades"><path d="M16 40 H84 V50 Q84 66 68 66 Q54 66 52 52 H48 Q46 66 32 66 Q16 66 16 50Z" fill="${O}"/><path d="M22 44 l10 0 l-6 10z M58 44 l10 0 l-6 10z" fill="#fff" opacity=".35"/></g>`
+      +`<path d="M36 78 Q54 88 70 72" fill="none" stroke="${O}" stroke-width="4.5" stroke-linecap="round"/>`
+      +`<path class="e-glint" d="M82 30 l3 8 l8 3 l-8 3 l-3 8 l-3 -8 l-8 -3 l8 -3z" fill="#fff"/>`;
+  } else if(id==='cry'){
+    body = base()+eyeOpen(34)+eyeOpen(66)
+      +`<path d="M22 32 L44 38 M78 32 L56 38" stroke="${O}" stroke-width="4" stroke-linecap="round"/>`
+      +`<path class="e-mouth" d="M34 78 Q50 62 66 78" fill="none" stroke="${O}" stroke-width="5" stroke-linecap="round"/>`
+      +`<path class="e-tear t1" d="M28 58 q-6 12 0 16 q6 -4 0 -16z" fill="#5ec8ff" stroke="${O}" stroke-width="2"/><path class="e-tear t2" d="M72 58 q-6 12 0 16 q6 -4 0 -16z" fill="#5ec8ff" stroke="${O}" stroke-width="2"/>`
+      +`<path class="e-tear t3" d="M34 60 q-4 8 0 11 q4 -3 0 -11z" fill="#8fdcff" stroke="${O}" stroke-width="1.5"/>`;
+  } else if(id==='angry'){
+    body = `<g class="e-steam"><circle class="s1" cx="30" cy="12" r="6" fill="#fff" opacity=".85"/><circle class="s2" cx="70" cy="12" r="6" fill="#fff" opacity=".85"/></g>`
+      +base('#ff6a3d')
+      +`<path d="M20 34 L44 44 M80 34 L56 44" stroke="${O}" stroke-width="6" stroke-linecap="round"/>`
+      +`<circle cx="35" cy="52" r="5.5" fill="#fff" stroke="${O}" stroke-width="2.5"/><circle cx="35" cy="53" r="2.5" fill="${O}"/><circle cx="65" cy="52" r="5.5" fill="#fff" stroke="${O}" stroke-width="2.5"/><circle cx="65" cy="53" r="2.5" fill="${O}"/>`
+      +`<g class="e-mouth"><path d="M30 80 Q50 62 70 80 Z" fill="#5a1220" stroke="${O}" stroke-width="3.5" stroke-linejoin="round"/><path d="M38 74 h6 v5 h-6z M47 71 h6 v5 h-6z M56 74 h6 v5 h-6z" fill="#fff"/></g>`;
+  } else if(id==='love'){
+    body = base()+`<g class="e-heart">${heart(34,48,1.05)}${heart(66,48,1.05)}</g>`
+      +`<path d="M32 70 Q50 90 68 70" fill="none" stroke="${O}" stroke-width="4.5" stroke-linecap="round"/>`
+      +`<g class="e-hearts"><g class="h1">${heart(14,18,.55,'#ff7a95')}</g><g class="h2">${heart(86,22,.5,'#ff3d5e')}</g><g class="h3">${heart(50,8,.45,'#ff7a95')}</g></g>`;
+  } else if(id==='wow'){
+    body = base()+`<g class="e-eyes"><circle cx="34" cy="46" r="11" fill="#fff" stroke="${O}" stroke-width="3"/><circle class="e-pup" cx="34" cy="46" r="4" fill="${O}"/><circle cx="66" cy="46" r="11" fill="#fff" stroke="${O}" stroke-width="3"/><circle class="e-pup" cx="66" cy="46" r="4" fill="${O}"/></g>`
+      +`<path d="M22 26 Q34 18 46 26 M54 26 Q66 18 78 26" fill="none" stroke="${O}" stroke-width="4" stroke-linecap="round"/>`
+      +`<ellipse class="e-mouth" cx="50" cy="76" rx="9" ry="12" fill="#5a1220" stroke="${O}" stroke-width="3.5"/>`
+      +`<g class="e-shock" stroke="${O}" stroke-width="4" stroke-linecap="round"><path d="M6 20 l8 6 M94 20 l-8 6 M50 2 v8"/></g>`;
+  } else if(id==='sleep'){
+    body = base()+`<path d="M24 46 Q34 54 44 46 M56 46 Q66 54 76 46" fill="none" stroke="${O}" stroke-width="4.5" stroke-linecap="round"/>`
+      +`<ellipse class="e-mouth" cx="50" cy="72" rx="6" ry="4" fill="#5a1220" stroke="${O}" stroke-width="3"/>`
+      +`<circle class="e-bubble" cx="63" cy="64" r="6" fill="#bfe8ff" stroke="${O}" stroke-width="2" opacity=".9"/>`
+      +`<g class="e-z" font-family="Arial Black,Arial,sans-serif" font-weight="900" fill="#fff" stroke="${O}" stroke-width="1.5"><text class="z1" x="70" y="26" font-size="18">Z</text><text class="z2" x="82" y="14" font-size="13">z</text></g>`;
+  } else { // party
+    body = base()+arc(34,true)+arc(66,true)
+      +`<path class="e-mouth" d="M30 62 Q50 92 70 62 Z" fill="#5a1220" stroke="${O}" stroke-width="3.5" stroke-linejoin="round"/>`
+      +`<g class="e-hat"><path d="M50 -6 L32 24 H68Z" fill="#3d7bff" stroke="${O}" stroke-width="3" stroke-linejoin="round"/><path d="M42 10 l16 0 M37 18 l26 0" stroke="#ffd34d" stroke-width="3.5"/><circle cx="50" cy="-6" r="5" fill="#ff3d5e" stroke="${O}" stroke-width="2"/></g>`
+      +`<g class="e-conf"><rect class="c1" x="8" y="30" width="6" height="6" fill="#ff3d5e"/><rect class="c2" x="88" y="38" width="6" height="6" fill="#5ec8ff"/><rect class="c3" x="14" y="60" width="5" height="5" fill="#6bf08a"/><rect class="c4" x="84" y="66" width="5" height="5" fill="#ff9a3c"/></g>`;
+  }
+  return `<svg class="emo-svg ${cls}" viewBox="-4 -12 108 116" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${body}</svg>`;
+}
+
+/* Sonidos propios (se crean con el audio del navegador, sin archivos de nadie) */
+function emoTone(f0,f1,dur,type,vol,delay){
+  try{
+    if(isMuted) return; ensureAudio(); if(!audioCtx) return;
+    const t0 = audioCtx.currentTime + (delay||0);
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = type||'sine'; o.frequency.setValueAtTime(f0,t0); o.frequency.linearRampToValueAtTime(f1,t0+dur);
+    g.gain.setValueAtTime(0.0001,t0); g.gain.linearRampToValueAtTime(vol||0.14,t0+0.02); g.gain.exponentialRampToValueAtTime(0.001,t0+dur);
+    o.connect(g); g.connect(audioCtx.destination); o.start(t0); o.stop(t0+dur+0.02);
+    o.onended = ()=>{ try{ o.disconnect(); g.disconnect(); }catch(e){} };
+  }catch(e){}
+}
+function emoNoise(dur,vol,freq,delay){
+  try{
+    if(isMuted) return; ensureAudio(); if(!audioCtx) return;
+    const t0 = audioCtx.currentTime + (delay||0), size = Math.floor(audioCtx.sampleRate*dur);
+    const buf = audioCtx.createBuffer(1,size,audioCtx.sampleRate), d = buf.getChannelData(0);
+    for(let i=0;i<size;i++) d[i] = (Math.random()*2-1)*(1-i/size);
+    const s = audioCtx.createBufferSource(); s.buffer = buf;
+    const f = audioCtx.createBiquadFilter(); f.type='bandpass'; f.frequency.value = freq||900; f.Q.value = 1.2;
+    const g = audioCtx.createGain(); g.gain.setValueAtTime(vol||0.12,t0); g.gain.exponentialRampToValueAtTime(0.001,t0+dur);
+    s.connect(f); f.connect(g); g.connect(audioCtx.destination); s.start(t0); s.stop(t0+dur);
+    s.onended = ()=>{ try{ s.disconnect(); f.disconnect(); g.disconnect(); }catch(e){} };
+  }catch(e){}
+}
+function sfxFace(id){
+  if(id==='laugh'){ [0,.13,.26,.39].forEach((d,i)=>{ emoTone(620-i*25,520-i*25,.1,'triangle',.15,d); emoNoise(.06,.05,1800,d); }); }
+  else if(id==='cry'){ emoTone(520,330,.5,'sine',.16,0); emoTone(500,300,.5,'sine',.15,.6); emoTone(470,260,.7,'sine',.14,1.2);
+    [0.05,0.65,1.25].forEach(d=>emoTone(7,7,.01,'sine',0,d)); }
+  else if(id==='angry'){ emoTone(150,105,.5,'sawtooth',.13,0); emoTone(155,95,.35,'square',.07,.05); emoNoise(.45,.08,500,0); }
+  else if(id==='love'){ emoTone(784,1046,.14,'sine',.14,0); emoTone(988,1318,.2,'sine',.14,.14); emoNoise(.05,.05,3000,.36); }
+  else if(id==='wow'){ emoTone(380,820,.22,'sine',.15,0); emoTone(820,640,.18,'sine',.1,.22); }
+  else if(id==='sleep'){ emoTone(220,170,.6,'sine',.1,0); emoTone(250,190,.7,'sine',.09,.7); }
+  else if(id==='party'){ emoNoise(.12,.14,2200,0); [523,659,784,1046].forEach((f,i)=>emoTone(f,f,.12,'triangle',.13,.1+i*.09)); }
+  else if(id==='cool'){ emoTone(330,330,.08,'square',.09,0); emoTone(494,494,.14,'square',.09,.09); emoTone(660,880,.18,'triangle',.1,.2); }
+  else sfxEmote();
+}
+
+/* Burbuja pegada a la foto del jugador (en las 4 esquinas) */
 function spawnFloatingReaction(playerColor, type, content){
-  // Se espera un frame para asegurar que la tarjeta del jugador ya esté
-  // pintada en pantalla antes de medir su posición (evita medir "en el aire").
+  const face = (type==='emoji' && EMO_IDS.includes(content)) ? content : null;
   requestAnimationFrame(()=>{
     try{
-      const avatarEl = document.querySelector(`.p-${playerColor} .avatar-ring-wrap`)
-        || document.querySelector(`.p-${playerColor} .avatar`)
-        || document.querySelector(`.p-${playerColor}`);
-
-      let left, top;
-      let r = avatarEl ? avatarEl.getBoundingClientRect() : null;
-      // Si el elemento no existe o da una posición inválida (0,0 o sin tamaño),
-      // usar el respaldo en vez de clavar la animación en la esquina.
-      const validRect = r && (r.width>0 || r.height>0) && (r.top!==0 || r.left!==0);
-      if(validRect){
-        left = r.left + r.width/2;
-        top = r.top + r.height/2;
-      } else {
-        left = window.innerWidth * 0.5;
-        top = window.innerHeight * 0.78;
-      }
-
+      const anchor = document.querySelector(`.p-${playerColor} .avatar-ring-wrap`) || document.querySelector(`.p-${playerColor}`);
+      const r = anchor ? anchor.getBoundingClientRect() : null;
+      const ok = r && r.width>0 && (r.top!==0 || r.left!==0);
+      const W = window.innerWidth, H = window.innerHeight;
+      document.querySelectorAll('.emo-bubble[data-c="'+playerColor+'"]').forEach(x=>x.remove());
       const el = document.createElement('div');
-      el.className = type==='text' ? 'big-emote big-emote-text' : 'big-emote';
-      el.textContent = content;
-      el.style.position = 'fixed';
-      el.style.zIndex = '9999';
-      el.style.pointerEvents = 'none';
-      el.style.left = left + 'px';
-      el.style.top = top + 'px';
-
+      el.className = 'emo-bubble' + (face ? ' emo-bubble-face' : ' emo-bubble-text');
+      el.dataset.c = playerColor;
+      if(face) el.innerHTML = emoFaceSVG(face);
+      else el.textContent = String(content);
+      el.style.visibility = 'hidden';
       document.body.appendChild(el);
-
-      // Las frases más largas ("Por favor no me mates") pueden ser bastante
-      // anchas — si el avatar que las dispara está cerca del borde de la
-      // pantalla, el texto centrado en ese punto se saldría. Medimos el
-      // ancho real ya puesto en pantalla y corregimos left para que quede
-      // siempre completo dentro del viewport, con un margen de 8px.
-      const halfWidth = el.offsetWidth/2;
-      const margin = 8;
-      const clampedLeft = Math.min(Math.max(left, halfWidth+margin), window.innerWidth-halfWidth-margin);
-      el.style.left = clampedLeft + 'px';
-
-      // La animación sube 260px desde donde arranca (ver @keyframes
-      // emoteFloat) — si el avatar está en la fila de arriba, cerca del
-      // borde superior, terminaría saliéndose de la pantalla por arriba.
-      // Empujamos el punto de partida hacia abajo lo necesario para que
-      // el recorrido completo quede siempre visible.
-      const floatDistance = 260;
-      const topMargin = 20;
-      const clampedTop = Math.max(top, floatDistance + topMargin);
-      el.style.top = clampedTop + 'px';
-
-      const cleanup = () => { if(el.parentNode) el.remove(); };
-      el.addEventListener('animationend', cleanup);
-      setTimeout(cleanup, 2000); // respaldo por si el navegador no dispara animationend
-    } catch(e){
-      console.warn('No se pudo mostrar la reacción flotante:', e);
-    }
+      const bw = el.offsetWidth, bh = el.offsetHeight, gap = 8;
+      let left, top, side;
+      if(ok){
+        side = (r.left + r.width/2) < W/2 ? 'right' : 'left';
+        left = side==='right' ? r.right + gap : r.left - bw - gap;
+        top = r.top + r.height/2 - bh/2;
+      } else { side='right'; left = W/2 - bw/2; top = H*0.7; }
+      left = Math.min(Math.max(left, 6), W - bw - 6);
+      top = Math.min(Math.max(top, 6), H - bh - 6);
+      el.style.left = left+'px'; el.style.top = top+'px';
+      el.classList.add('tail-'+side);
+      el.style.visibility = '';
+      const done = ()=>{ if(el.parentNode) el.remove(); };
+      setTimeout(done, face ? 3300 : 3000);
+    }catch(e){ console.warn('No se pudo mostrar la reacción:', e); }
   });
-  try{ sfxEmote(); }catch(e){}
+  try{ if(type==='emoji' && face) sfxFace(face); else sfxEmote(); }catch(e){}
 }
 
 /* ---------- Premio diario (almacenamiento persistente del artifact) ---------- */
@@ -19789,9 +19922,9 @@ function showReactBar(kind){
     if(typeof multiplayerActive==='undefined' || !multiplayerActive) return;
     const gs = document.getElementById('gameScreen'); if(!gs) return;
     let bar = document.getElementById('reactBar'); if(bar) bar.remove();
-    const set = kind==='win' ? ['😈','😂','👏'] : ['😡','😱','🔥'];
+    const set = kind==='win' ? ['laugh','cool','party'] : ['angry','wow','cry'];
     bar = document.createElement('div'); bar.id='reactBar';
-    bar.innerHTML = `<span class="rb-t">${kind==='win'?'¡Presume!':'¡Responde!'}</span>` + set.map(e=>`<button type="button" onclick="sendQuickEmote('${e}');var b=document.getElementById('reactBar');if(b)b.remove();">${e}</button>`).join('');
+    bar.innerHTML = `<span class="rb-t">${kind==='win'?'¡Presume!':'¡Responde!'}</span>` + set.map(e=>`<button type="button" onclick="sendQuickEmote('${e}');var b=document.getElementById('reactBar');if(b)b.remove();">${emoFaceSVG(e)}</button>`).join('');
     gs.appendChild(bar);
     setTimeout(()=>{ const b=document.getElementById('reactBar'); if(b) b.remove(); }, 5500);
   }catch(e){}
