@@ -4923,6 +4923,10 @@ body.tab-open #collectionsOverlay:not([style*="none"]){background:#12307f url(da
 .fr2-row{background:rgba(8,14,40,.55) !important;border:2px solid rgba(255,255,255,.28) !important;border-radius:16px;}
 .fr2-empty{background:rgba(8,14,40,.4);border:2px dashed rgba(255,255,255,.25);border-radius:16px;margin:10px 0;}
 .fr2-banner{border:3px solid #0a1430 !important;border-radius:20px !important;background:linear-gradient(160deg,#ff9a3c,#d2451f 60%,#6d1c2c) !important;box-shadow:0 0 0 2px #f0c64a, 0 5px 0 #070f24, 0 8px 12px rgba(0,0,0,.45) !important;color:#fff !important;font-family:'Archivo Black',sans-serif;-webkit-text-stroke:3px #0a1430;paint-order:stroke fill;bottom:calc(env(safe-area-inset-bottom,0px) + 8px) !important;}
+.fr2-banner{position:relative !important;left:auto !important;bottom:auto !important;transform:none !important;flex-shrink:0;width:calc(100% - 24px) !important;max-width:420px;margin:6px auto 8px !important;padding:5px 12px !important;font-size:13px !important;border-radius:14px !important;-webkit-text-stroke:2px #0a1430 !important;}
+.fr2-banner .fr2-prize{padding:2px 8px;border-radius:8px;}
+.fr2-list{padding-bottom:10px !important;}
+@media (max-height:780px){ .fr2-heroimg{height:110px !important;} }
 
 /* v1152b: el botón de video flota al lado y no le quita altura a la tarjeta de modos */
 .lobby-ad-row{height:0 !important;margin:0 !important;padding:0 !important;position:relative;z-index:6;overflow:visible;}
@@ -5922,7 +5926,7 @@ body.dice-shaking .dice-cube-wrap, body.dice-shaking .dice-sprite{ animation:dic
             <div class="fr2-empty">💬<br>NO HAY MENSAJES<br><small>Aquí aparecerán tus chats privados con amigos.</small></div>
           </div>
         </div>
-        <div class="fr2-banner">Invita y Gana <span class="fr2-prize">💎 500</span> Por Amigo</div>
+        <div class="fr2-banner">Invita y Gana <span class="fr2-prize">💎 100</span> Por Amigo</div>
       </div>
     </div>
 
@@ -14070,6 +14074,7 @@ async function _recordMatchResult(youWon){
     try{ lobbyToast('No se pudo registrar la partida en el servidor (sin conexión). No hubo premios.'); }catch(e){}
   }
 
+  try{ ECO.call('eco_ref_claim', {}); }catch(e){}
   const promotions = checkProgressAfterMatch(youWon, oldLevel);
   pendingPromotions = promotions;
 
@@ -15366,6 +15371,8 @@ const ECO_SIM = (function(){
       d.gifts.ids[o.id] = true; d.gifts.n++; d.gold += 100;
       return ok({ gold:100 });
     },
+    eco_ref_set(){ return ok(); },
+    eco_ref_claim(){ return ok(); },
     eco_dice_change(){
       const COSTS = [0,10,15,20,30,40,50,75,100];
       const n = d.stats.dchg||0, cost = COSTS[n];
@@ -17596,6 +17603,7 @@ async function applyFriendFromLink(){
   if(profileStats.friends.some(f=>f.id===fid)) return;
   profileStats.friends.push({id:fid, addedAt: Date.now()});
   try{ await saveProfile(); }catch(e){}
+  try{ ECO.call('eco_ref_set', {from:fid}); }catch(e){}   // si eres cuenta nueva, quien te invitó gana 100 💎 cuando juegues tu primera partida
   lobbyToast('¡' + friendName(fid) + ' ahora es tu amigo!');
 }
 

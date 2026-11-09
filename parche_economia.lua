@@ -1904,8 +1904,58 @@ local function rpc_gift_claim(context, payload)
   return eco_ok(doc, { gold = res })
 end
 
+
+-- Invita y gana: quien entra con el enlace de un amigo lo anota; cuando juega su primera partida de verdad,
+-- el que lo invito recibe 100 diamantes (tope: 10 por dia y 100 en total, una sola vez por invitado)
+local REF_GEMS, REF_DAY_MAX, REF_TOTAL_MAX = 100, 10, 100
+local function rpc_ref_set(context, payload)
+  local uid = context.user_id
+  if not uid then return eco_fail("sin_sesion") end
+  local from = decode(payload).from
+  if type(from) ~= "string" or #from == 0 or #from > 64 or from == uid then return eco_fail("pedido_invalido") end
+  local okf, us = pcall(nk.users_get_id, { from })
+  if not okf or type(us) ~= "table" or #us ~= 1 then return eco_fail("no_existe") end
+  local ok, res, doc = eco_update(uid, function(d)
+    if d.refBy then return true, "ya" end
+    if (tonumber(d.stats.games) or 0) > 0 then return true, "no_nuevo" end   -- solo cuentas que aun no han jugado
+    d.refBy = from
+    return true, "ok"
+  end)
+  if not ok then return eco_fail(res) end
+  return eco_ok(doc, { ref = res })
+end
+
+local function rpc_ref_claim(context, payload)
+  local uid = context.user_id
+  if not uid then return eco_fail("sin_sesion") end
+  local inviter
+  local ok, res, doc = eco_update(uid, function(d)
+    if not d.refBy or d.refPaid then return true, "nada" end
+    if (tonumber(d.stats.games) or 0) < 1 then return true, "aun_no" end
+    d.refPaid = true; inviter = d.refBy
+    return true, "pagar"
+  end)
+  if not ok then return eco_fail(res) end
+  local paid = 0
+  if res == "pagar" and inviter then
+    local ok2, got = eco_update(inviter, function(d)
+      local today = eco_day()
+      d.refs = d.refs or { n = 0, day = "", dn = 0 }
+      if d.refs.day ~= today then d.refs.day = today; d.refs.dn = 0 end
+      if d.refs.dn >= REF_DAY_MAX or d.refs.n >= REF_TOTAL_MAX then return true, 0 end
+      d.refs.dn = d.refs.dn + 1; d.refs.n = d.refs.n + 1
+      d.diamonds = d.diamonds + REF_GEMS
+      return true, REF_GEMS
+    end)
+    if ok2 then paid = got end
+  end
+  return eco_ok(doc, { invited = res, paid = paid })
+end
+
 nk.register_rpc(rpc_xmas_open, "eco_xmas_open")
 nk.register_rpc(rpc_gift_claim, "eco_gift_claim")
+nk.register_rpc(rpc_ref_set, "eco_ref_set")
+nk.register_rpc(rpc_ref_claim, "eco_ref_claim")
 
 
 -- ---- El perfil que sube el telefono ya no puede cambiar el oro ni las gemas ----
