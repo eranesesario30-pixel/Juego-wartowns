@@ -11951,7 +11951,7 @@ function buildBoardOnce(){
   if(boardOuterEl) boardOuterEl.dataset.mode = boardLook();
   const gsEl = document.getElementById('gameScreen');
   if(gsEl) gsEl.dataset.mode = boardLook();
-  try{ const bt=document.getElementById('boardTilt'); if(bt){ bt.classList.toggle('tilt', boardLook()==='classic'); } }catch(e){}
+  try{ const bt=document.getElementById('boardTilt'); if(bt){ bt.classList.toggle('tilt', true); } }catch(e){}
   fitBoardFrame(); void container.offsetHeight;
   document.documentElement.style.setProperty('--row-c1', pal.rowC1);
   document.documentElement.style.setProperty('--row-c2', pal.rowC2);
@@ -12076,7 +12076,7 @@ const BOARD_SIDE_ROOM = 0.7, BOARD_FOOT_ROOM = 0.5;
 const BOARD_NO_FLUSH = new Set([3,9,21,28,66,129,130,131,132,133]);
 function boardCatalogIdx(){
   try{
-    const eq = BOARD_CATALOG.find(x=>x.id===profileStats.equippedBoard);
+    const eq = BOARD_CATALOG.find(x=>x.id===(profileStats.equippedBoard==='classic'?'billar':profileStats.equippedBoard));
     const e = (eq && boardOwned(eq.id)) ? eq : BOARD_CATALOG[0];
     return BOARD_CATALOG.indexOf(e);
   }catch(e){ return 0; }
@@ -17128,13 +17128,15 @@ function boardOwned(id){
   grandfatherBoards();
   const b = BOARD_CATALOG.find(x=>x.id===id);
   if(!b) return false;
+  if(typeof PREVIEW_OFFLINE!=='undefined' && PREVIEW_OFFLINE) return true;   // vista previa del chat: las compras no se guardan, así que se pueden probar todos
   return !b.price || (profileStats.unlockedBoards||[]).includes(id);
 }
 /* Qué tablero (marco + colores) se dibuja ahora: el que elegiste y tienes; si no, el Clásico
    en todos los modos (las casillas y reglas del modo no cambian, solo el aspecto). */
 function boardLook(){
-  const eq = BOARD_CATALOG.find(x=>x.id===profileStats.equippedBoard);
-  return (eq && boardOwned(eq.id)) ? eq.mode : 'classic';
+  const eq = BOARD_CATALOG.find(x=>x.id===(profileStats.equippedBoard==='classic'?'billar':profileStats.equippedBoard));
+  const _l = (eq && boardOwned(eq.id)) ? eq.mode : 'billar';
+  return _l==='classic' ? 'billar' : _l;   // el tablero Clásico se retiró: el de arranque es la Mesa de Billar
 }
 let boardModalId = null;
 let boardTier = 'general';
@@ -17142,13 +17144,13 @@ let boardCont = 'all';
 const BOARD_CONTS = [['all','Todos'],['am','América'],['eu','Europa'],['as','Asia'],['af','África'],['oc','Oceanía']];
 function setBoardTier(t){ boardTier = t; renderBoardShop(); }
 function setBoardCont(c){ boardCont = c; renderBoardShop(); }
-function boardsOfTier(){ return BOARD_CATALOG.filter(b=> boardTier==='pais' ? (!!b.pais && (boardCont==='all' || b.cont===boardCont)) : !b.pais); }
+function boardsOfTier(){ return BOARD_CATALOG.filter(b=>b.id!=='classic' && ( boardTier==='pais' ? (!!b.pais && (boardCont==='all' || b.cont===boardCont)) : !b.pais)); }
 function renderBoardShop(){
   const box = document.getElementById('boardShopGrid');
   if(!box) return;
   const owned = BOARD_CATALOG.filter(b=>boardOwned(b.id)).length;
   const bar = document.getElementById('boardActiveBar');
-  const eq = BOARD_CATALOG.find(x=>x.id===profileStats.equippedBoard);
+  const eq = BOARD_CATALOG.find(x=>x.id===(profileStats.equippedBoard==='classic'?'billar':profileStats.equippedBoard));
   if(bar) bar.innerHTML = `<div class="dc-active"><div class="dc-active-img" style="background-image:url('${eq?eq.img:BOARD_CATALOG[0].img}');"></div><div><div class="dc-active-top">Tu tablero</div><div class="dc-active-name">${eq?eq.name:'Cada modo usa el suyo'}</div></div><div style="margin-left:auto;font-size:11px;font-weight:800;color:#cfd8f5;">${owned}/${BOARD_CATALOG.length}</div></div>`;
   ['general','pais'].forEach(t=>{ const bt=document.getElementById('bdTierBtn-'+t); if(bt) bt.classList.toggle('active', t===boardTier); });
   const cr = document.getElementById('bdContRow');
@@ -17174,7 +17176,7 @@ function openBoardModal(id){
 }
 function stepBoardModal(delta){
   const cur = BOARD_CATALOG.find(b=>b.id===boardModalId);
-  const list = BOARD_CATALOG.filter(b=>!!b.pais===!!(cur&&cur.pais) && (!(cur&&cur.pais) || boardCont==='all' || b.cont===boardCont));
+  const list = BOARD_CATALOG.filter(b=>b.id!=='classic' && !!b.pais===!!(cur&&cur.pais) && (!(cur&&cur.pais) || boardCont==='all' || b.cont===boardCont));
   const i = list.findIndex(b=>b.id===boardModalId);
   boardModalId = list[(i + delta + list.length) % list.length].id;
   renderBoardModal(boardModalId);
