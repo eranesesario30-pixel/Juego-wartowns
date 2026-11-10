@@ -5115,6 +5115,8 @@ body.tab-open #collectionsOverlay .skin-catalog{max-height:none !important;overf
 @keyframes celebFly{0%{opacity:0;transform:translateY(40px) scale(.4)}25%{opacity:1}100%{opacity:0;transform:translateY(-150px) rotate(40deg) scale(1.1)}}
 @keyframes celebFall{0%{opacity:0;transform:translateY(-30px) scale(.6)}25%{opacity:1}100%{opacity:0;transform:translateY(120px) rotate(-30deg) scale(.9)}}
 .celeb-shake{animation:celebShake .5s ease-in-out;}
+.cap-flash{position:absolute;inset:0;pointer-events:none;z-index:30;border-radius:inherit;background:radial-gradient(circle at 50% 50%,rgba(255,236,160,.55),rgba(255,200,60,.18) 45%,transparent 70%);animation:capFlash .5s ease-out forwards;}
+@keyframes capFlash{0%{opacity:0}18%{opacity:1}100%{opacity:0}}
 @keyframes celebShake{0%,100%{transform:translateX(0)}15%{transform:translateX(-9px) rotate(-.6deg)}35%{transform:translateX(8px) rotate(.5deg)}55%{transform:translateX(-6px)}75%{transform:translateX(4px)}}
 
 /* ===== Mascota ===== */
@@ -19423,7 +19425,21 @@ function mascotReact(type,color){
   if(c.k==='good') mascotSay(mine?'wave':'confused', mine?_say('myGood'):_say('rivalGood',n), 2400);
   else mascotSay(mine?(type==='turno'||type==='embargo'?'angry':'shocked'):'wave', mine?_say('myBad'):_say('rivalBad',n), 2400);
 }
+/* Impacto al comer: explosión de chispas del color de quien come + destello dorado en el tablero (original de Parche) */
+function captureImpact(attacker){
+  try{
+    if(!b3d || !attacker) return;
+    const cell = path[attacker.position]; if(!cell) return;
+    const pos = cellWorldPos3D(cell.row, cell.col);
+    const col = PLAYER_COLOR_HEX[attacker.color] || 0xffd24a;
+    spawn3DParticleBurst(pos, { count:60, colors:[col,0xffe27a,0xffffff], spread:1.5, upward:3.2, durationMs:1000, gravity:2.4, size:0.09 });
+    setTimeout(()=>{ try{ spawn3DParticleBurst(pos, { count:28, colors:[0xffffff,0xffd24a], spread:0.7, upward:2, durationMs:700, gravity:1.6, size:0.06 }); }catch(e){} }, 160);
+    const host = document.getElementById('boardOuter'); if(!host) return;
+    const fl = document.createElement('div'); fl.className='cap-flash'; host.appendChild(fl); setTimeout(()=>fl.remove(), 520);
+  }catch(e){}
+}
 function onCaptureEvent(attacker,victim){
+  try{ captureImpact(attacker); }catch(e){}
   try{
     const me=MY_COLOR;
     if(attacker.color===me) { mascotSay('wave',_say('captureMe'),2600); floatReaction('😈'); }
