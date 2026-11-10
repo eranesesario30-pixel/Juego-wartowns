@@ -3093,10 +3093,18 @@ window.__threeReadyPromise = (async ()=>{
   /* ----- jugadores alrededor del tablero ----- */
   .side-row{
     display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 8px 0;
-    padding:4px 6px;border-radius:0;
+    padding:10px 6px;border-radius:0;
     overflow:visible;
     background:none;box-shadow:none;
+    position:relative;isolation:isolate;
   }
+  /* RIEL DE JUGADORES: banda oscura de lado a lado con filo dorado fino arriba y abajo, detrás de cada fila de perfiles (como el riel de una mesa). */
+  .side-row::before{content:'';position:absolute;z-index:-1;pointer-events:none;top:0;bottom:0;left:calc(50% - 50vw);right:calc(50% - 50vw);
+    background:
+      linear-gradient(90deg,rgba(214,170,70,0) 0%,rgba(240,205,110,.85) 18%,rgba(255,236,170,.95) 50%,rgba(240,205,110,.85) 82%,rgba(214,170,70,0) 100%) top/100% 2px no-repeat,
+      linear-gradient(90deg,rgba(214,170,70,0) 0%,rgba(240,205,110,.85) 18%,rgba(255,236,170,.95) 50%,rgba(240,205,110,.85) 82%,rgba(214,170,70,0) 100%) bottom/100% 2px no-repeat,
+      linear-gradient(180deg,rgba(4,9,28,.78),rgba(10,20,52,.62) 50%,rgba(4,9,28,.78));
+    box-shadow:0 10px 22px rgba(0,0,0,.35);}
   .p-card{
     position:relative;
     display:flex;align-items:flex-start;gap:6px;
