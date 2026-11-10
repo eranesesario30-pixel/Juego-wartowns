@@ -3298,6 +3298,17 @@ window.__threeReadyPromise = (async ()=>{
     100%{transform:rotateX(360deg) rotateY(180deg) scale(1);}
   }
 
+  /* PRUEBA · cámara inclinada (solo tablero Clásico): el marco y el tablero se inclinan juntos, como vistos desde la mesa. */
+  #boardTilt{position:relative;}
+  #boardTilt.tilt{transform:perspective(1150px) rotateX(24deg) scale(.96);transform-origin:50% 62%;}
+  #boardTilt.tilt[data-cam="1"]{transform:perspective(1500px) rotateX(14deg) scale(.985);}
+  #boardTilt.tilt[data-cam="2"]{transform:perspective(1150px) rotateX(24deg) scale(.96);}
+  #boardTilt.tilt[data-cam="3"]{transform:perspective(950px) rotateX(34deg) scale(.93);}
+  #boardTilt.tilt[data-cam="4"]{transform:perspective(1100px) rotateX(22deg) rotateY(-13deg) scale(.93);}
+  #boardTilt.tilt[data-cam="5"]{transform:perspective(780px) rotateX(42deg) scale(.88);transform-origin:50% 66%;}
+  #camTestBar{position:fixed;bottom:3px;left:50%;transform:translateX(-50%);z-index:9999;display:none;gap:5px;padding:3px 6px;background:rgba(6,16,51,.72);border-radius:14px;align-items:center;font:700 11px system-ui,sans-serif;color:#fff}
+  #camTestBar b{padding:3px 9px;border-radius:10px;background:#2b3a68;cursor:pointer}
+  #camTestBar b.on{background:#f5b928;color:#3a2400}
   #boardOuter{
     /* MARCO ILUSTRADO de madera tallada con adornos dorados.
        Se aplica con border-image (9 partes): las 4 esquinas quedan fijas y
@@ -6422,10 +6433,12 @@ body.dice-shaking .dice-cube-wrap, body.dice-shaking .dice-sprite{ animation:dic
   <div class="card">
     <div class="side-row" id="topRow"></div>
 
+    <div id="boardTilt">
     <div id="boardOuter">
       <div id="boardWrap">
         <div id="board"></div>
       </div>
+    </div>
     </div>
 
     <div class="side-row" id="bottomRow"></div>
@@ -11923,6 +11936,7 @@ function buildBoardOnce(){
   if(boardOuterEl) boardOuterEl.dataset.mode = boardLook();
   const gsEl = document.getElementById('gameScreen');
   if(gsEl) gsEl.dataset.mode = boardLook();
+  try{ const bt=document.getElementById('boardTilt'); if(bt){ const cm = (window._testCam==null?2:window._testCam); bt.classList.toggle('tilt', boardLook()==='classic' && cm>0); bt.dataset.cam = String(cm); camBarSync(); } }catch(e){}
   fitBoardFrame(); void container.offsetHeight;
   document.documentElement.style.setProperty('--row-c1', pal.rowC1);
   document.documentElement.style.setProperty('--row-c2', pal.rowC2);
@@ -12076,6 +12090,7 @@ function on3DBoardResize(){
     b3d.canvas.style.left = (-sidePx) + 'px'; b3d.canvas.style.width = (width + 2*sidePx) + 'px';
     b3d.renderer.setSize(width + 2*sidePx, height + extraPx + footPx, false);
   };
+  const _bt = document.getElementById('boardTilt'), _wasTilt = _bt && _bt.classList.contains('tilt'); if(_wasTilt) _bt.classList.remove('tilt');   // medir sin la inclinación
   apply(1,1);
   // Casillas pegadas al marco: solo en tableros de marco liso (no en los ilustrados ni los de adornos en las esquinas).
   // Se mide el hueco real de ESTE tablero y se agranda la cuadrícula justo ese hueco, dejando 0.5 px.
@@ -12096,6 +12111,7 @@ function on3DBoardResize(){
       if(okMed && (gx>0.05 || gy>0.05)) apply(1 + 2*Math.max(0,gx)/gw, 1 + 2*Math.max(0,gy)/gh);
     }
   }catch(e){ console.warn('pegado', e); }
+  if(_wasTilt) _bt.classList.add('tilt');
 }
 
 /* Saltos grandes (sube, baja, a la Salida, retroceso, cambio de lugar, comer…): la ficha VUELA en arco con estela y aterriza con rebote.
@@ -12324,11 +12340,35 @@ function pulseGlowingCells3D(){
 
 /* ---------- Dados 3D: física real, resultado ya decidido antes de tirar ---------- */
 
+/* Con el tablero inclinado (CSS 3D) los rectángulos del canvas ya no son rectas: se convierte entre coordenadas locales del canvas y de pantalla con una sonda de 0 px. */
+function canvasLocalToClient(lx, ly){
+  try{
+    const cv = b3d.canvas, par = cv.parentElement; const pr = par.getBoundingClientRect();
+    const probe = document.createElement('div');
+    probe.style.cssText = 'position:absolute;width:0;height:0;pointer-events:none;left:'+(lx + cv.offsetLeft)+'px;top:'+(ly + cv.offsetTop)+'px';
+    par.appendChild(probe); const r = probe.getBoundingClientRect(); par.removeChild(probe);
+    return { x:r.left, y:r.top };
+  }catch(e){ return null; }
+}
+function setTestCam(n){ window._testCam = n; try{ buildBoardOnce(); }catch(e){ try{ on3DBoardResize(); }catch(_){} } }
+function camBarSync(){
+  let bar = document.getElementById('camTestBar');
+  if(!bar){ bar = document.createElement('div'); bar.id='camTestBar'; bar.innerHTML = '<span>📷</span>' + [0,1,2,3,4,5].map(i=>`<b data-c="${i}" onclick="setTestCam(${i})">${i===0?'Plano':i}</b>`).join(''); document.body.appendChild(bar); }
+  const cm = (window._testCam==null?2:window._testCam);
+  [...bar.querySelectorAll('b')].forEach(b=>b.classList.toggle('on', +b.dataset.c===cm));
+  const gs = document.getElementById('gameScreen');
+  bar.style.display = (boardLook()==='classic' && gs && gs.style.display!=='none') ? 'flex' : 'none';
+}
+setInterval(()=>{ try{ camBarSync(); }catch(e){} }, 700);
+function boardTilted(){ const t=document.getElementById('boardTilt'); return !!(t && t.classList.contains('tilt')); }
 function on3DBoardTap(event){
   if(!b3d) return;
   const rect = b3d.canvas.getBoundingClientRect();
-  const nx = ((event.clientX-rect.left)/rect.width)*2-1;
-  const ny = -((event.clientY-rect.top)/rect.height)*2+1;
+  let nx = ((event.clientX-rect.left)/rect.width)*2-1;
+  let ny = -((event.clientY-rect.top)/rect.height)*2+1;
+  if(boardTilted() && event.target===b3d.canvas && typeof event.offsetX==='number'){   // inclinado: offsetX/Y ya vienen en coordenadas locales del canvas
+    nx = (event.offsetX/b3d.canvas.offsetWidth)*2-1; ny = -(event.offsetY/b3d.canvas.offsetHeight)*2+1;
+  }
   const raycaster = new THREE.Raycaster();
   raycaster.setFromCamera({x:nx,y:ny}, b3d.camera);
 
@@ -12379,6 +12419,7 @@ function updateDieChoiceBubble(){
   v.project(b3d.camera);
   const r = b3d.canvas.getBoundingClientRect();
   let x = r.left + (v.x*0.5+0.5)*r.width, y = r.top + (-v.y*0.5+0.5)*r.height;
+  if(boardTilted()){ const q = canvasLocalToClient((v.x*0.5+0.5)*b3d.canvas.offsetWidth, (-v.y*0.5+0.5)*b3d.canvas.offsetHeight); if(q){ x=q.x; y=q.y; } }
   x = Math.min(Math.max(x, 80), window.innerWidth-80);
   y = Math.max(y, 90);
   el.style.left = x+'px'; el.style.top = y+'px'; el.style.display='block';
