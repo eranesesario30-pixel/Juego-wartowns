@@ -3300,7 +3300,7 @@ window.__threeReadyPromise = (async ()=>{
 
   /* PRUEBA · cámara inclinada (solo tablero Clásico): el marco y el tablero se inclinan juntos, como vistos desde la mesa. */
   #boardTilt{position:relative;}
-  #boardTilt.tilt{transform:perspective(2200px) rotateX(52deg) scale(.88,1.58);transform-origin:50% 55%;}   /* al bajar la cámara el tablero se estira a lo alto (scaleY ≈ 1/cos del ángulo) para no verse más chico */
+  #boardTilt.tilt{transform:translateY(-5vh) perspective(2200px) rotateX(52deg) scale(.88,1.58);transform-origin:50% 55%;}   /* al bajar la cámara el tablero se estira a lo alto (scaleY ≈ 1/cos del ángulo) para no verse más chico */
   #boardOuter{
     /* MARCO ILUSTRADO de madera tallada con adornos dorados.
        Se aplica con border-image (9 partes): las 4 esquinas quedan fijas y
