@@ -3107,15 +3107,29 @@ window.__threeReadyPromise = (async ()=>{
        en vez de pegado a él. Alineado arriba, queda siempre junto al
        nombre, tenga o no dados visibles debajo. */
     /* Marco neutro de los perfiles: placa de vidrio oscuro con filo plateado-dorado fino. Combina con cualquier tablero y llena la mesa vacía. */
-    background:linear-gradient(180deg,rgba(18,30,66,.62),rgba(8,14,36,.72));border-radius:20px;padding:5px 8px 5px 6px;
-    border:none;box-shadow:inset 0 0 0 1.5px rgba(214,196,150,.5), inset 0 1px 0 rgba(255,255,255,.18), 0 6px 14px rgba(0,0,0,.4);
+    background:none;border-radius:0;padding:6px 9px 6px 8px;--cut:15px;--pc:rgba(120,140,200,.5);--pcg:rgba(160,180,255,.0);isolation:isolate;
+    border:none;box-shadow:none;
     min-width:0; /* clave: sin esto, un grid item nunca se achica más que su
       contenido — si el contenido no entra, empuja TODA la fila hacia afuera
       en vez de comprimirse. */
   }
-  .p-card-mirrored{flex-direction:row-reverse;}
+  .p-card-mirrored{flex-direction:row-reverse;padding:6px 8px 6px 9px;}
+  /* PERFIL «PLACA DE FICHA»: silueta tallada con esquinas en diagonal (no una caja redonda), filo dorado y fondo teñido con el color de la ficha del jugador. */
+  .p-red{--pc:rgba(224,74,63,.62);--pcg:rgba(255,90,70,.75);}
+  .p-blue{--pc:rgba(47,111,224,.62);--pcg:rgba(80,140,255,.75);}
+  .p-yellow{--pc:rgba(242,194,48,.55);--pcg:rgba(255,215,70,.75);}
+  .p-green{--pc:rgba(47,180,90,.6);--pcg:rgba(70,230,120,.75);}
+  .p-card::before,.p-card::after{content:'';position:absolute;pointer-events:none;
+    clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,0 100%,0 var(--cut));}
+  .p-card::before{inset:0;z-index:-2;background:linear-gradient(135deg,#fff3c4 0%,#e0aa3a 30%,#8a5a0c 52%,#f4cf6a 78%,#fff0b0 100%);}
+  .p-card::after{inset:2px;z-index:-1;
+    background:linear-gradient(135deg,rgba(255,255,255,.16) 0,rgba(255,255,255,0) 28%),linear-gradient(160deg,var(--pc) 0%,rgba(10,18,48,.94) 62%);
+    clip-path:polygon(calc(var(--cut) - 1px) 0,100% 0,100% calc(100% - var(--cut) + 1px),calc(100% - var(--cut) + 1px) 100%,0 100%,0 calc(var(--cut) - 1px));}
+  .p-card-mirrored::before,.p-card-mirrored::after{clip-path:polygon(0 0,calc(100% - var(--cut)) 0,100% var(--cut),100% 100%,var(--cut) 100%,0 calc(100% - var(--cut)));}
+  .p-card-mirrored::after{clip-path:polygon(0 0,calc(100% - var(--cut) + 1px) 0,100% calc(var(--cut) - 1px),100% 100%,calc(var(--cut) - 1px) 100%,0 calc(100% - var(--cut) + 1px));}
+  .p-card.current{filter:drop-shadow(0 0 7px var(--pcg));}
   /* Tarjetas del lado derecho: el diamante va a la IZQUIERDA de los dados (antes caía encima de la foto de perfil) */
-  .p-card-mirrored .p-dice .dia-btn-wrap{order:-1;margin-left:-44px;}
+  .p-card-mirrored .p-dice .dia-btn-wrap{order:-1;}
   /* El botón de cambiar dado con diamantes solo lo ve el jugador al que le toca, en su propia pantalla */
   .p-card.dia-other .dia-btn-wrap{display:none !important;}
   /* El botón del diamante (cambiar tirada) es solo tuyo: en los perfiles de los rivales no se muestra (se montaba sobre su foto). */
@@ -3136,14 +3150,14 @@ window.__threeReadyPromise = (async ()=>{
   }
   .dia-mini-btn:disabled{opacity:.3;cursor:default;}
   .dia-mini-btn.armed-btn{box-shadow:0 0 0 2px var(--green);}
-  .dia-btn-wrap{position:relative;display:inline-flex;width:40px;height:40px;align-items:center;justify-content:center;}
+  .dia-btn-wrap{position:relative;display:inline-flex;width:36px;height:36px;align-items:center;justify-content:center;}
   .dia-undo-badge{
     position:absolute;bottom:-1px;right:-1px;width:15px;height:15px;border-radius:50%;
     background:linear-gradient(160deg,#405170,#1a2438);border:1.2px solid #c4ad72;color:#f5efe0;
     display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;
     z-index:3;pointer-events:none;box-shadow:0 1px 2px rgba(0,0,0,.4);
   }
-  .dia-ring{position:absolute;inset:0;width:40px;height:40px;transform:rotate(-90deg);pointer-events:none;}
+  .dia-ring{position:absolute;inset:0;width:36px;height:36px;transform:rotate(-90deg);pointer-events:none;}
   .dia-ring .ring-bg{fill:none;stroke:rgba(0,0,0,.15);stroke-width:2.5;}
   .dia-ring .ring-progress{
     fill:none;stroke:#FF3B4E;stroke-width:2.5;stroke-linecap:round;
@@ -3188,7 +3202,7 @@ window.__threeReadyPromise = (async ()=>{
     filter:drop-shadow(0 0 3px #39FF6E);
   }
   /* ---- Marco clásico dorado en TODAS las fotos; al que le toca se le llena la foto de color y se va vaciando ---- */
-  .avatar-ring-wrap{width:60px;height:60px;}
+  .avatar-ring-wrap{width:44px;height:44px;}
   /* La fila de abajo baja un poco para que la flecha de turno y la foto no queden pegadas al tablero */
   #bottomRow{margin-top:20px;}
   .avatar-frame-metal{box-sizing:border-box;padding:2.5px;
@@ -3245,13 +3259,13 @@ window.__threeReadyPromise = (async ()=>{
   .p-capsule-text{min-width:0;flex:1;}
   .p-dia{font-size:8.5px;font-weight:700;color:var(--ink-dark);opacity:.85;}
   .p-dice{
-    display:flex;align-items:center;gap:8px;margin-top:2px;position:relative;z-index:10;
+    display:flex;align-items:center;gap:5px;margin-top:2px;position:relative;z-index:10;
     background:none;border:none;border-radius:0;
     padding:0;width:fit-content;box-shadow:none;
   }
   .p-dice-hidden{visibility:hidden;}
   .mini-die{
-    width:40px;height:40px;background:linear-gradient(160deg,#fff,#cfd8e8);border:2px solid var(--ink-dark);border-radius:11px;
+    width:38px;height:38px;background:linear-gradient(160deg,#fff,#cfd8e8);border:2px solid var(--ink-dark);border-radius:11px;
     display:flex;align-items:center;justify-content:center;font-family:'Archivo Black',sans-serif;font-size:17px;color:var(--ink-dark);
     box-shadow:0 3px 3px rgba(0,0,0,.3);
   }
