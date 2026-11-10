@@ -3300,15 +3300,7 @@ window.__threeReadyPromise = (async ()=>{
 
   /* PRUEBA · cámara inclinada (solo tablero Clásico): el marco y el tablero se inclinan juntos, como vistos desde la mesa. */
   #boardTilt{position:relative;}
-  #boardTilt.tilt{transform:perspective(1150px) rotateX(24deg) scale(.96);transform-origin:50% 62%;}
-  #boardTilt.tilt[data-cam="1"]{transform:perspective(1500px) rotateX(14deg) scale(.985);}
-  #boardTilt.tilt[data-cam="2"]{transform:perspective(1150px) rotateX(24deg) scale(.96);}
-  #boardTilt.tilt[data-cam="3"]{transform:perspective(950px) rotateX(34deg) scale(.93);}
-  #boardTilt.tilt[data-cam="4"]{transform:perspective(1100px) rotateX(22deg) rotateY(-13deg) scale(.93);}
-  #boardTilt.tilt[data-cam="5"]{transform:perspective(780px) rotateX(42deg) scale(.88);transform-origin:50% 66%;}
-  #camTestBar{position:fixed;bottom:3px;left:50%;transform:translateX(-50%);z-index:9999;display:none;gap:5px;padding:3px 6px;background:rgba(6,16,51,.72);border-radius:14px;align-items:center;font:700 11px system-ui,sans-serif;color:#fff}
-  #camTestBar b{padding:3px 9px;border-radius:10px;background:#2b3a68;cursor:pointer}
-  #camTestBar b.on{background:#f5b928;color:#3a2400}
+  #boardTilt.tilt{transform:perspective(1700px) rotateX(36deg) scale(.93);transform-origin:50% 55%;}
   #boardOuter{
     /* MARCO ILUSTRADO de madera tallada con adornos dorados.
        Se aplica con border-image (9 partes): las 4 esquinas quedan fijas y
@@ -11936,7 +11928,7 @@ function buildBoardOnce(){
   if(boardOuterEl) boardOuterEl.dataset.mode = boardLook();
   const gsEl = document.getElementById('gameScreen');
   if(gsEl) gsEl.dataset.mode = boardLook();
-  try{ const bt=document.getElementById('boardTilt'); if(bt){ const cm = (window._testCam==null?2:window._testCam); bt.classList.toggle('tilt', boardLook()==='classic' && cm>0); bt.dataset.cam = String(cm); camBarSync(); } }catch(e){}
+  try{ const bt=document.getElementById('boardTilt'); if(bt){ bt.classList.toggle('tilt', boardLook()==='classic'); } }catch(e){}
   fitBoardFrame(); void container.offsetHeight;
   document.documentElement.style.setProperty('--row-c1', pal.rowC1);
   document.documentElement.style.setProperty('--row-c2', pal.rowC2);
@@ -12350,16 +12342,6 @@ function canvasLocalToClient(lx, ly){
     return { x:r.left, y:r.top };
   }catch(e){ return null; }
 }
-function setTestCam(n){ window._testCam = n; try{ buildBoardOnce(); }catch(e){ try{ on3DBoardResize(); }catch(_){} } }
-function camBarSync(){
-  let bar = document.getElementById('camTestBar');
-  if(!bar){ bar = document.createElement('div'); bar.id='camTestBar'; bar.innerHTML = '<span>📷</span>' + [0,1,2,3,4,5].map(i=>`<b data-c="${i}" onclick="setTestCam(${i})">${i===0?'Plano':i}</b>`).join(''); document.body.appendChild(bar); }
-  const cm = (window._testCam==null?2:window._testCam);
-  [...bar.querySelectorAll('b')].forEach(b=>b.classList.toggle('on', +b.dataset.c===cm));
-  const gs = document.getElementById('gameScreen');
-  bar.style.display = (boardLook()==='classic' && gs && gs.style.display!=='none') ? 'flex' : 'none';
-}
-setInterval(()=>{ try{ camBarSync(); }catch(e){} }, 700);
 function boardTilted(){ const t=document.getElementById('boardTilt'); return !!(t && t.classList.contains('tilt')); }
 function on3DBoardTap(event){
   if(!b3d) return;
