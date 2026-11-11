@@ -5491,6 +5491,18 @@ body.dice-shaking .dice-cube-wrap, body.dice-shaking .dice-sprite{ animation:dic
   .dia-cost{position:absolute;left:50%;top:100%;transform:translateX(-50%);margin-top:1px;white-space:nowrap;
     font-size:10px;font-weight:800;color:#fff;background:rgba(12,24,48,.7);border-radius:8px;padding:1px 6px;}
   .dia-cost.free{background:#2fa84f;}
+  /* Cajón de los dados: del color del jugador, con una punta que apunta a su foto */
+  .p-card .p-dice{position:relative;background:var(--pc);border:2px solid var(--pf2);border-radius:16px;padding:5px 8px 4px;margin-top:6px;}
+  .p-card .p-dice::before{content:'';position:absolute;top:16px;left:-11px;width:0;height:0;
+    border-top:8px solid transparent;border-bottom:8px solid transparent;border-right:10px solid var(--pf2);}
+  .p-card-mirrored .p-dice::before{left:auto;right:-11px;border-right:none;border-left:10px solid var(--pf2);}
+  .p-card .p-dice{gap:3px;padding:4px 5px 3px;}
+  .p-card .p-dice .mini-die{width:32px;height:32px;border-radius:9px;font-size:15px;}
+  .p-card .p-dice .dia-btn-wrap{width:40px;height:40px;}
+  .p-card .p-dice .dia-ring{width:40px;height:40px;}
+  .p-card .p-dice .dia-mini-btn{width:33px;height:33px;}
+  .p-card .p-dice .dia-arrow{font-size:23px;}
+  .p-card .p-dice .dia-cost{font-size:9px;padding:1px 5px;}
 </style>
 </head>
 <body>
