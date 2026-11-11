@@ -5478,6 +5478,8 @@ body.dice-shaking .dice-cube-wrap, body.dice-shaking .dice-sprite{ animation:dic
   .p-card.current .avatar-frame-metal{box-shadow:0 0 0 2px #fff,0 0 14px 5px rgba(255,255,255,.7) !important;}
   .p-info-capsule{background:rgba(12,24,48,.62) !important;border-radius:12px;padding:2px 7px 2px 2px;}
   .p-name{color:#fff;font-weight:700;}
+  .p-btn-row{display:flex;align-items:center;gap:6px;margin-top:3px;}
+  .p-btn-row .p-mini-btn,.p-btn-row .p-mic-btn{margin-left:0;}
 </style>
 </head>
 <body>
@@ -10914,14 +10916,16 @@ function playerCardHTML(p,i,mirrored){
           <div class="p-capsule-text">
             <div class="p-name">${escapeHtml(pf.n)}</div>
           </div>
+        </div>
+        ${teamTag}${inactiveTag}
+        ${diceRow}
+        <div class="p-btn-row">
           ${p.color===MY_COLOR ? `<button class="p-mini-btn" onclick="event.stopPropagation();toggleEmotes();" title="Emojis y chat">😀</button>` : ''}
           ${p.color===MY_COLOR
             ? `<button class="p-mic-btn" id="micBtn" onclick="event.stopPropagation();toggleMic();" title="Micrófono">🎤</button>`
             : `<button class="p-mic-btn ${mutedPlayers[p.color]?'muted':''}" onclick="event.stopPropagation();togglePlayerMute('${p.color}');" title="Silenciar a este jugador">${mutedPlayers[p.color]?'🔇':'🔊'}</button>`}
           ${(p.color!==MY_COLOR && colorUserId(p.color)) ? `<button class="p-mic-btn p-report-btn" onclick="event.stopPropagation();openReport('${p.color}');" title="Reportar a este jugador">🚩</button>` : ''}
         </div>
-        ${teamTag}${inactiveTag}
-        ${diceRow}
       </div>
     </div>`;
 }
