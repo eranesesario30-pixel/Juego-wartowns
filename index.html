@@ -5503,6 +5503,17 @@ body.dice-shaking .dice-cube-wrap, body.dice-shaking .dice-sprite{ animation:dic
   .p-card .p-dice .dia-mini-btn{width:33px;height:33px;}
   .p-card .p-dice .dia-arrow{font-size:23px;}
   .p-card .p-dice .dia-cost{font-size:9px;padding:1px 5px;}
+  /* Con las filas de jugadores más altas (cajón de dados + botones) se quita el zoom y los márgenes grandes de pantallas altas para que nada se salga por abajo */
+  #topRow,#bottomRow{zoom:1 !important;}
+  #topRow{margin-top:8px !important;}
+  #bottomRow{margin-top:6px !important;}
+  .p-card .p-dice .dia-btn-wrap{margin-bottom:7px;}
+  .p-card .p-dice .dia-cost{top:auto;bottom:-9px;margin-top:0;}
+  .p-card .p-dice{margin-top:4px;padding:3px 5px 2px;}
+  .p-btn-row{margin-top:2px;}
+  .p-btn-row .p-mini-btn,.p-btn-row .p-mic-btn{width:26px;height:26px;font-size:15px;}
+  #topRow{margin-top:4px !important;}
+  #bottomRow{margin-top:2px !important;}
 </style>
 </head>
 <body>
