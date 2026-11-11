@@ -3123,13 +3123,14 @@ window.__threeReadyPromise = (async ()=>{
   }
   .p-card-mirrored{flex-direction:row-reverse;padding:6px 8px 6px 9px;}
   /* PERFIL «PLACA DE FICHA»: silueta tallada con esquinas en diagonal (no una caja redonda), filo dorado y fondo teñido con el color de la ficha del jugador. */
-  .p-red{--pc:rgba(224,74,63,.62);--pcg:rgba(255,90,70,.75);}
-  .p-blue{--pc:rgba(47,111,224,.62);--pcg:rgba(80,140,255,.75);}
-  .p-yellow{--pc:rgba(242,194,48,.55);--pcg:rgba(255,215,70,.75);}
-  .p-green{--pc:rgba(47,180,90,.6);--pcg:rgba(70,230,120,.75);}
+  .p-card{--pf1:#cfd8ff;--pf2:#7f93d6;--pf3:#46568f;}
+  .p-red{--pc:rgba(224,74,63,.62);--pcg:rgba(255,90,70,.75);--pf1:#ff9d92;--pf2:#e04a3f;--pf3:#a82b22;}
+  .p-blue{--pc:rgba(47,111,224,.62);--pcg:rgba(80,140,255,.75);--pf1:#9cc2ff;--pf2:#2f6fe0;--pf3:#1b45a6;}
+  .p-yellow{--pc:rgba(242,194,48,.55);--pcg:rgba(255,215,70,.75);--pf1:#fff2a0;--pf2:#f2c230;--pf3:#c48a08;}
+  .p-green{--pc:rgba(47,180,90,.6);--pcg:rgba(70,230,120,.75);--pf1:#9df0b6;--pf2:#2fb45a;--pf3:#1a7a3a;}
   .p-card::before,.p-card::after{content:'';position:absolute;pointer-events:none;
     clip-path:polygon(var(--cut) 0,100% 0,100% calc(100% - var(--cut)),calc(100% - var(--cut)) 100%,0 100%,0 var(--cut));}
-  .p-card::before{inset:0;z-index:-2;background:linear-gradient(135deg,#fff3c4 0%,#e0aa3a 30%,#8a5a0c 52%,#f4cf6a 78%,#fff0b0 100%);}
+  .p-card::before{inset:0;z-index:-2;background:linear-gradient(135deg,var(--pf1) 0%,var(--pf2) 32%,var(--pf3) 56%,var(--pf2) 80%,var(--pf1) 100%);}
   .p-card::after{inset:2px;z-index:-1;
     background:linear-gradient(135deg,rgba(255,255,255,.16) 0,rgba(255,255,255,0) 28%),linear-gradient(160deg,var(--pc) 0%,rgba(10,18,48,.94) 62%);
     clip-path:polygon(calc(var(--cut) - 1px) 0,100% 0,100% calc(100% - var(--cut) + 1px),calc(100% - var(--cut) + 1px) 100%,0 100%,0 calc(var(--cut) - 1px));}
