@@ -12993,6 +12993,38 @@ async function executeMove(idx){
           effectMsg += ` 🎁 Premio: avanza ${advanced} casillas por la captura` + (_wasLeader?' (¡derribó al líder!)':'') + (p._capStreak>=2?` (racha x${p._capStreak})`:'') + '.';
           sfxBonus();
         }
+        // Cadena: si el premio lo deja encima de OTRA ficha, también se la come y gana 6 pasos más
+        for(let _ch=0; _ch<4; _ch++){
+          const v2 = players.find(x=>x.active && x!==p && x.position===p.position && x.position>=5 && x.position<META_INDEX-8 && !(p.team && x.team===p.team));
+          if(!v2) break;
+          if(v2.shield){
+            v2.shield = false;
+            effectMsg += ` 🛡️ ¡El Escudo de ${NAMES[v2.color]} lo protegió! No lo pueden comer.`;
+            sfxBonus(); vibrate(15); try{ render(); }catch(e){}
+            break;
+          }
+          await wait(250);
+          const _cr3 = campRespawn(v2.position);
+          v2.position = _cr3; updateTokenPosition(v2); updateActiveCellGlow();
+          v2._capStreak = 0;
+          effectMsg += ` 💥 ¡Con el premio también eliminó a ${NAMES[v2.color]}, que vuelve ${campText(_cr3)}! +6 pasos.`;
+          sfxCapture(); vibrate([30,20,30]); try{ onCaptureEvent(p, v2); }catch(e){}
+          matchStats.capturesTotal++;
+          if(p.color===MY_COLOR) matchStats.capturesByRed++;
+          const _to2 = Math.min(p.position+6, META_INDEX-1);
+          if(_to2 > p.position){
+            await wait(450);
+            for(let st=p.position+1; st<=_to2; st++){
+              p.position = st;
+              updateTokenPosition(p);
+              bounceToken(p.color);
+              updateActiveCellGlow();
+              sfxTokenTap();
+              await wait(tokStepMs(p));
+            }
+            sfxBonus();
+          }
+        }
         matchStats.capturesTotal++;
         if(p.color===MY_COLOR) matchStats.capturesByRed++;
       }
