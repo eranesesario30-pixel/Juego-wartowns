@@ -12077,7 +12077,7 @@ const BOARD_SIDE_ROOM = 0.7, BOARD_FOOT_ROOM = 0.5;
 const BOARD_NO_FLUSH = new Set([3,9,21,28,66,129,130,131,132,133]);
 function boardCatalogIdx(){
   try{
-    const eq = BOARD_CATALOG.find(x=>x.id===(profileStats.equippedBoard==='classic'?'billar':profileStats.equippedBoard));
+    const eq = BOARD_CATALOG.find(x=>x.id===(profileStats.equippedBoard==='classic'?'egipto':profileStats.equippedBoard));
     const e = (eq && boardOwned(eq.id)) ? eq : BOARD_CATALOG[0];
     return BOARD_CATALOG.indexOf(e);
   }catch(e){ return 0; }
@@ -17135,9 +17135,9 @@ function boardOwned(id){
 /* Qué tablero (marco + colores) se dibuja ahora: el que elegiste y tienes; si no, el Clásico
    en todos los modos (las casillas y reglas del modo no cambian, solo el aspecto). */
 function boardLook(){
-  const eq = BOARD_CATALOG.find(x=>x.id===(profileStats.equippedBoard==='classic'?'billar':profileStats.equippedBoard));
-  const _l = (eq && boardOwned(eq.id)) ? eq.mode : 'billar';
-  return _l==='classic' ? 'billar' : _l;   // el tablero Clásico se retiró: el de arranque es la Mesa de Billar
+  const eq = BOARD_CATALOG.find(x=>x.id===(profileStats.equippedBoard==='classic'?'egipto':profileStats.equippedBoard));
+  const _l = (eq && boardOwned(eq.id)) ? eq.mode : 'egipto';
+  return _l==='classic' ? 'egipto' : _l;   // el tablero Clásico se retiró: el de arranque es Egipto Antiguo
 }
 let boardModalId = null;
 let boardTier = 'general';
@@ -17151,7 +17151,7 @@ function renderBoardShop(){
   if(!box) return;
   const owned = BOARD_CATALOG.filter(b=>boardOwned(b.id)).length;
   const bar = document.getElementById('boardActiveBar');
-  const eq = BOARD_CATALOG.find(x=>x.id===(profileStats.equippedBoard==='classic'?'billar':profileStats.equippedBoard));
+  const eq = BOARD_CATALOG.find(x=>x.id===(profileStats.equippedBoard==='classic'?'egipto':profileStats.equippedBoard));
   if(bar) bar.innerHTML = `<div class="dc-active"><div class="dc-active-img" style="background-image:url('${eq?eq.img:BOARD_CATALOG[0].img}');"></div><div><div class="dc-active-top">Tu tablero</div><div class="dc-active-name">${eq?eq.name:'Cada modo usa el suyo'}</div></div><div style="margin-left:auto;font-size:11px;font-weight:800;color:#cfd8f5;">${owned}/${BOARD_CATALOG.length}</div></div>`;
   ['general','pais'].forEach(t=>{ const bt=document.getElementById('bdTierBtn-'+t); if(bt) bt.classList.toggle('active', t===boardTier); });
   const cr = document.getElementById('bdContRow');
