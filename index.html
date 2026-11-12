@@ -8624,8 +8624,8 @@ function generateBoard(){
   const middleIdx = [];
   for(let i=12;i<=88;i++){ if(i%20!==0) middleIdx.push(i); } // los campamentos ⛺ (cada 20) quedan solos: sin trampas ni ventajas encima
   /* */ // se excluyen las últimas 10 casillas antes de la Meta: nada de trampas/ventajas ahí
-  const specialSet = new Set(pickSpacedIndices(middleIdx, 16, 2)); // tablero más libre: 16 especiales, nunca pegadas
-  let specialTypes = packOrder(SPECIAL_TYPE_POOL.slice(0,16));
+  const specialSet = new Set(pickSpacedIndices(middleIdx, 24, 2)); // 24 especiales (11 ventajas + 13 trampas), nunca pegadas
+  let specialTypes = packOrder([...Array(5).fill('lance'),...Array(6).fill('sube'),...Array(6).fill('turno'),...Array(6).fill('baja'),'vuelva']);
   if(ARMADA){ specialTypes = specialTypes.map(()=>'arma'); } // solo cajas de armas: nada de trampas de otros modos
 
   // 3) construir grid y path: números secuenciales en las casillas no especiales
@@ -8698,8 +8698,8 @@ function generateBoardMode2(){
   const eligible = [];
   for(let n=12;n<=98;n++){ if(n%20!==0) eligible.push(n); } // sin trampas/ventajas sobre los campamentos ⛺ (cada 20)
   /* */ // se excluyen los últimos 10 números antes de la Meta: nada de trampas/ventajas ahí
-  const specialNumbers = new Set(pickSpacedIndices(eligible, 18, 2));
-  const allTypes = packOrder([...fillTypes(MODE2_TRAP_TYPES, 10), ...fillTypes(MODE2_POWER_TYPES, 8)]);
+  const specialNumbers = new Set(pickSpacedIndices(eligible, 26, 2));
+  const allTypes = packOrder([...Array(4).fill('congelado'),...Array(4).fill('lava'),...Array(4).fill('empujon'),...Array(2).fill('intercambio'),...Array(3).fill('escudo'),...Array(3).fill('portal'),...Array(3).fill('doble'),...Array(3).fill('roba')]);
 
   grid = Array.from({length:rows}, ()=>Array(10));
   path = [];
@@ -8750,8 +8750,8 @@ function generateBoardMode3(){
   const eligible = [];
   for(let n=12;n<=98;n++){ if(n%20!==0) eligible.push(n); } // sin trampas/ventajas sobre los campamentos ⛺ (cada 20)
   /* */ // se excluyen los últimos 10 números antes de la Meta: nada de trampas/ventajas ahí
-  const specialNumbers = new Set(pickSpacedIndices(eligible, 20, 2));
-  const allTypes = packOrder([...fillTypes(MODE3_ATTACK_TYPES, 10), ...fillTypes(MODE3_DEFENSE_TYPES, 10)]);
+  const specialNumbers = new Set(pickSpacedIndices(eligible, 28, 2));
+  const allTypes = packOrder([...Array(5).fill('captura'),...Array(5).fill('empujon3'),...Array(4).fill('bloqueo'),...Array(7).fill('retroceso'),...Array(7).fill('embargo')]);
 
   grid = Array.from({length:rows}, ()=>Array(10));
   path = [];
@@ -8798,8 +8798,8 @@ function generateBoardMode4(){
   for(let n=12;n<=98;n++){ if(n%20!==0) eligible.push(n); } // sin trampas/ventajas sobre los campamentos ⛺ (cada 20)
   /* */ // se excluyen los últimos 10 números antes de la Meta: nada de Electrocución ahí
   const _early = eligible.filter(n=>n<=55), _late = eligible.filter(n=>n>56);
-  const trapNumbers = pickSpacedIndices(_early, 5, 2).concat(pickSpacedIndices(_late, 12, 2));
-  const trapTypes = shuffleArray([...Array(10).fill('electro'), ...Array(7).fill('reversa')]);
+  const trapNumbers = pickSpacedIndices(_early, 7, 2).concat(pickSpacedIndices(_late, 14, 2));
+  const trapTypes = shuffleArray([...Array(12).fill('electro'), ...Array(9).fill('reversa')]);
   const trapByNumber = {}; trapNumbers.forEach((n,i)=>{ trapByNumber[n] = trapTypes[i]; });
 
   grid = Array.from({length:rows}, ()=>Array(10));
