@@ -6989,7 +6989,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running' && !document.hidden){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1250';
+const BUILD_VERSION = '1251';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -20704,7 +20704,7 @@ function victoryShow(color){
 })();
 
 /* ===== ACTUALIZACIÓN OBLIGATORIA / AVISO (v1186) =====
-   Solo en la app de Android. Lee version.json de la web de Parche:
+   Solo en la app. Lee los datos del servidor de Parche (RPC app_version; respaldo: version.json de la web):
    - minVersion: si tu versión es menor, no puedes jugar hasta actualizar (pantalla bloqueada).
    - latestVersion: si tu versión es menor pero >= minVersion, sale un aviso con "Más tarde". */
 const UPDATE_JSON_URL = 'https://eranesesario30-pixel.github.io/Juego-wartowns/version.json';
@@ -20736,14 +20736,37 @@ function showUpdateScreen(hard){
   const l=document.getElementById('updLater'); if(l) l.onclick = ()=>{ o.remove(); };
   if(hard){ try{ stopAllGameAudio(); }catch(e){} }
 }
+/* Datos de actualización: primero del servidor de Parche (RPC app_version); si no responde, respaldo en la web (version.json) */
+async function _fetchUpdateInfo(){
+  try{
+    const ctl = new AbortController(); const to = setTimeout(()=>ctl.abort(), 6000);
+    try{
+      const a = await fetch(SERVER_URL + '/v2/account/authenticate/device?create=true', {
+        method:'POST', headers:{ 'Authorization':'Basic ' + btoa(NAKAMA_SERVER_KEY + ':'), 'Content-Type':'application/json' },
+        body: JSON.stringify({ id: getDeviceId() }), signal: ctl.signal });
+      if(a.ok){
+        const tk = (await a.json()).token;
+        const r = await fetch(SERVER_URL + '/v2/rpc/app_version', {
+          method:'POST', headers:{ 'Authorization':'Bearer ' + tk, 'Content-Type':'application/json' },
+          body: JSON.stringify('{}'), signal: ctl.signal });
+        if(r.ok){ const o = await r.json(); const j = JSON.parse(o.payload || '{}'); if(j && (j.minVersion!=null || j.latestVersion!=null)){ clearTimeout(to); return j; } }
+      }
+    }catch(e){}
+    clearTimeout(to);
+  }catch(e){}
+  try{
+    const ctl2 = new AbortController(); const to2 = setTimeout(()=>ctl2.abort(), 6000);
+    const r2 = await fetch(UPDATE_JSON_URL+'?t='+Date.now(), {cache:'no-store', signal:ctl2.signal}); clearTimeout(to2);
+    if(r2.ok) return await r2.json();
+  }catch(e){}
+  return null;
+}
 async function checkAppUpdate(){
   try{
     if(!_isNativeApp()) return;
     if(/[?&]pagina=/.test(location.search)) return;
-    const ctl = new AbortController(); const to = setTimeout(()=>ctl.abort(), 6000);
-    const r = await fetch(UPDATE_JSON_URL+'?t='+Date.now(), {cache:'no-store', signal:ctl.signal}); clearTimeout(to);
-    if(!r.ok) return;
-    const j = await r.json();
+    const j = await _fetchUpdateInfo();
+    if(!j) return;
     const cur = parseInt(BUILD_VERSION,10);
     if(j && j.minVersion && cur < parseInt(j.minVersion,10)){ showUpdateScreen(true); return; }
     if(j && j.latestVersion && cur < parseInt(j.latestVersion,10) && !_updShownSoft){ _updShownSoft = true; showUpdateScreen(false); }
