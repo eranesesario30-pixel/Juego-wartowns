@@ -5732,6 +5732,9 @@ body.dice-shaking .dice-cube-wrap, body.dice-shaking .dice-sprite{ animation:dic
   #gameScreen[data-mode="p_nz"]{ background-image:linear-gradient(180deg,#1f3f7a 0%,#14274f 100%) !important; background-color:#1f3f7a !important; background-repeat:no-repeat !important; background-size:100% 100% !important; background-position:center !important; }
   #gameScreen[data-mode="rd"]{ background-image:linear-gradient(180deg,#1f3f7a 0%,#14274f 100%) !important; background-color:#1f3f7a !important; background-repeat:no-repeat !important; background-size:100% 100% !important; background-position:center !important; }
   #gameScreen[data-mode="rd"]::before,#gameScreen[data-mode="rd"]::after{display:none !important;}
+
+/* La pantalla de partida ocupa siempre toda la altura del teléfono (sin franja oscura abajo) */
+#gameScreen{min-height:100vh;min-height:100dvh;box-sizing:border-box;}
 </style>
 </head>
 <body>
@@ -13245,7 +13248,7 @@ async function executeMove(idx){
         p._lastCapT = _myT;
         const _bB = Math.min(3, 2*(p._capStreak-1));
         const _bC = _wasLeader ? 2 : 0;
-        const _bonus = Math.min(8, _bA + _bB + _bC);
+        const _bonus = 6;   // al comer una ficha, siempre avanza 6 casillas (decisión del dueño)
         try{ if(p.color===MY_COLOR && p._capStreak===2) bumpMission('streaksToday'); }catch(e){}
         const _cartels = [];
         if(_wasLeader) _cartels.push(['lider', p.color]);
@@ -13265,7 +13268,7 @@ async function executeMove(idx){
             sfxTokenTap();
             await wait(tokStepMs(p));
           }
-          effectMsg += ` 🎁 Premio: avanza ${advanced} casillas por la captura` + (_wasLeader?' (¡derribó al líder!)':'') + (p._capStreak>=2?` (racha x${p._capStreak})`:'') + '.';
+          effectMsg += ` 🎁 Premio: avanza ${advanced} casillas por la captura.`;
           sfxBonus();
         }
         // Cadena: si el premio lo deja encima de OTRA ficha, también se la come y gana 6 pasos más
