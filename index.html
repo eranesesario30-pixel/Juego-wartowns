@@ -13844,11 +13844,13 @@ function micErrorMessage(err){
   return 'No se pudo activar el micrófono: ' + ((err && err.message) || 'error desconocido');
 }
 function micUpdateBtn(){
-  const btn = document.getElementById('micBtn');
-  if(!btn) return;
-  btn.textContent = micMuted ? '🔇' : '🎤';
-  btn.classList.toggle('muted', micMuted);
-  btn.title = micMuted ? 'Micrófono apagado — toca para activar' : 'Micrófono activado — toca para apagar';
+  // hay dos botones con el mismo id (el del chat y el de la mesa): se actualizan todos
+  const btns = Array.from(document.querySelectorAll('#micBtn, .p-mic-btn[title^="Micr"]'));
+  btns.forEach(btn=>{
+    btn.textContent = micMuted ? '🔇' : '🎤';
+    btn.classList.toggle('muted', micMuted);
+    btn.title = micMuted ? 'Micrófono apagado — toca para activar' : 'Micrófono activado — toca para apagar';
+  });
 }
 function micTrackDead(){
   const t = micStream && micStream.getAudioTracks()[0];
