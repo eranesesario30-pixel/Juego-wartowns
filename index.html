@@ -18467,6 +18467,29 @@ function closeTeamUpScreen(){
 // carrusel normal de "Elige el tablero", qué tablero y cuánto apostar —
 // reutilizamos exactamente la misma pantalla que usa el modo local.
 let pendingMultiplayerCreate = false;
+let pendingFriendInvite = null;   // amigo al que se le manda la invitación en cuanto se cree la mesa
+function friendPlayPicker(fid){
+  let d = document.getElementById('friendPlayDialog'); if(d) d.remove();
+  d = document.createElement('div'); d.id = 'friendPlayDialog';
+  d.style.cssText = 'position:fixed;inset:0;z-index:9000;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:24px;';
+  const nm = escapeHtml(friendName(fid));
+  d.innerHTML = `<div style="width:100%;max-width:320px;background:linear-gradient(180deg,#2A4A85,#152849);border:3px solid #fbc02c;border-radius:18px;padding:20px;text-align:center;color:#fff;box-shadow:0 10px 30px rgba(0,0,0,.6);">
+    <div style="font-size:34px;">🎮</div>
+    <div style="font-size:17px;font-weight:900;margin:6px 0 14px;">Jugar con ${nm}</div>
+    <button class="store-free-btn" data-m="1v1" style="margin-bottom:8px;"><span class="sf-icon">⚔️</span><span class="sf-text">1 contra 1</span></button>
+    <button class="store-free-btn" data-m="2v2" style="margin-bottom:8px;"><span class="sf-icon">🤝</span><span class="sf-text">2 contra 2</span></button>
+    <button class="store-free-btn" data-m="ffa" style="margin-bottom:12px;"><span class="sf-icon">👥</span><span class="sf-text">4 jugadores</span></button>
+    <button id="fpNo" style="width:100%;padding:11px;border-radius:22px;border:1px solid rgba(255,255,255,.4);background:transparent;color:#fff;font-weight:800;">Cancelar</button></div>`;
+  document.body.appendChild(d);
+  document.getElementById('fpNo').onclick = ()=>d.remove();
+  d.querySelectorAll('[data-m]').forEach(b=>{ b.onclick = ()=>{
+    d.remove();
+    const ci = document.getElementById('teamUpJoinInput'); if(ci) ci.value = '';
+    pendingFriendInvite = fid;
+    try{ closeFriends(); }catch(e){}
+    startTeamUpBoardPicker(b.dataset.m);
+  }; });
+}
 function startTeamUpBoardPicker(subMode){
   // Si ya escribiste un código de un amigo, esto NO puede avanzar — crear
   // una mesa nueva en vez de unirte a la de tu amigo es la causa real de
@@ -18634,7 +18657,9 @@ async function createTeamUpTableFinal(){
     showMultiplayerGate();
     mpLog('→ abriendo mesa ' + teamUpCode + ' (emparejador, exacto ' + multiplayerRequiredCount + '/' + multiplayerRequiredCount + ')');
     await enterNamedTable();
+    if(pendingFriendInvite){ const _f = pendingFriendInvite; pendingFriendInvite = null; inviteFriendToTable(_f); }
   }catch(err){
+    pendingFriendInvite = null;
     if(socketIsConnected){
       // El socket sigue bien — esto fue un rechazo de verdad del
       // servidor (query mala, properties inválidas, etc.), no un corte de
@@ -19362,6 +19387,7 @@ function renderFriendsList(){
     <div class="fr2-row">
       <div class="fr2-av" style="cursor:pointer;overflow:visible;" onclick="openFriendInfo('${escapeHtml(f.id)}')">${friendAvHTML(f.id)}${friendsOnline[f.id] ? '<span class="fr2-dot"></span>' : ''}</div>
       <div class="fr2-info" style="cursor:pointer;" onclick="openFriendInfo('${escapeHtml(f.id)}')"><div class="fr2-name">${escapeHtml(friendName(f.id))}</div><div class="fr2-sub">${friendsOnline[f.id] ? '<b style="color:#6dff9a">● En línea</b>' : 'Desconectado'}${f.pendingGift ? ' · te envió un regalo' : ''}</div></div>
+      <button class="fr2-act" style="min-width:0;width:44px;padding:9px 0;font-size:18px;flex:none;background:linear-gradient(180deg,#46e04a,#12a51c);" title="Jugar con este amigo" onclick="friendPlayPicker('${escapeHtml(f.id)}')">🎮</button>
       ${act}
       <button class="fr2-x" onclick="removeFriend(${i})">✕</button>
     </div>`;
