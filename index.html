@@ -6895,7 +6895,7 @@ function endTour(silent){
 function lobbyTourSteps(){
   const nav = n => `.lobby-bottom-nav button:nth-child(${n})`;
   return [
-    {title:'¡Hola, soy Dadín!', text:'Te hago un recorrido rápido por el lobby para que sepas dónde está todo. ¡Es cortito!'},
+    {title:'¡Hola, soy Alainy!', text:'Te hago un recorrido rápido por el lobby para que sepas dónde está todo. ¡Es cortito!'},
     {sel:'.lobby-economy', title:'Tu dinero', text:'Aquí ves tu oro y tus diamantes. Toca el <b>+</b> para conseguir más en la tienda.',
       chips:[{img:null,e:'🪙',t:'Oro: apuestas y compras'},{e:'💎',t:'Diamantes: repetir dados'}]},
     {sel:'.lobby-xp-bar-wrap', title:'Tu nivel', text:'Cada partida te da puntos de experiencia. ¡Gana más para subir de nivel y desbloquear premios!'},
@@ -6943,7 +6943,7 @@ function gameTourSteps(mode){
   const steps = [];
   if(!profileStats.tourGameV1){
     steps.push(
-      {title:'¡A jugar!', text:'Soy Dadín y te explico lo básico en un minuto. Llega con tu ficha a la <b>meta</b> antes que los demás.'},
+      {title:'¡A jugar!', text:'Soy Aarón y te explico lo básico en un minuto. Llega con tu ficha a la <b>meta</b> antes que los demás.'},
       {sel:()=>document.querySelector('.p-card.current .p-dice')||document.querySelector('.p-dice'), title:'Tus 2 dados', text:'En tu turno toca los dados para tirarlos. Cada dado es <b>un movimiento</b>: toca tu ficha y elige con cuál dado avanzar.',
         big:[['2','movimientos por tirada'],['🎲🎲','dobles = tiras otra vez (3 seguidos: ¡a la Salida!)']]},
       {sel:()=>document.querySelector('#diaBtn')||document.querySelector('.dia-btn-wrap'), title:'¿No te gustó la tirada?', text:'Toca el botón del <b>diamante</b> junto a tus dados y los vuelves a lanzar al instante.',
