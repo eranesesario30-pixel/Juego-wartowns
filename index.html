@@ -15261,9 +15261,45 @@ function diamondCostFor(type){
     async cancelAll(){
       const p = ln(); if(!p) return;
       try{ for(let k=0;k<12;k++){ await p.cancel({ notifications:[{ id: 9100+k }] }); } }catch(e){}
+      try{ await p.cancel({ notifications:[{ id:9200 },{ id:9201 }] }); }catch(e){}
+    },
+    // Recordatorios al salir de la app: ánfora sin poner a desbloquear (9200) y "hoy no has jugado" (9201)
+    async scheduleReminders(hasIdleChest){
+      const p = ln(); if(!p) return;
+      try{
+        if(!(await allowed(p))) return;
+        const soft = (ms)=>{ // si cae de noche (22 a 9 h), pasa a las 9:00
+          const d = new Date(ms); const h = d.getHours();
+          if(h>=22){ d.setDate(d.getDate()+1); d.setHours(9,0,0,0); } else if(h<9){ d.setHours(9,0,0,0); }
+          return d;
+        };
+        const list = [];
+        if(hasIdleChest){
+          list.push({ id:9200, title:'Tienes una ánfora esperando 🏺', body:'Se te olvidó ponerla a desbloquear. ¡Hazlo para tenerla lista!', schedule:{ at: soft(Date.now()+3*3600000), allowWhileIdle:true } });
+        } else { await p.cancel({ notifications:[{ id:9200 }] }).catch(()=>{}); }
+        const t = new Date(); t.setDate(t.getDate()+1); t.setHours(19,0,0,0);   // mañana a las 7 pm
+        list.push({ id:9201, title:'¡Te extrañamos en Parche! 🎲', body:'Hoy no has jugado. Entra a una partida y suma puntos.', schedule:{ at: t, allowWhileIdle:true } });
+        await p.schedule({ notifications:list });
+      }catch(e){}
     }
   };
 })();
+
+// Al salir de la app se programan los recordatorios; al volver se cancelan
+document.addEventListener('visibilitychange', ()=>{
+  try{
+    if(!window.NotificationBridge) return;
+    if(document.hidden){
+      if(!pushEnabled) return;
+      ensureChestSlots();
+      const idle = (chestSlotsData||[]).some(c=>c && c.state!=='unlocking' && c.state!=='ready');
+      NotificationBridge.scheduleReminders(idle);
+    } else {
+      const p = window.Capacitor && Capacitor.Plugins && Capacitor.Plugins.LocalNotifications;
+      if(p) p.cancel({ notifications:[{ id:9200 },{ id:9201 }] }).catch(()=>{});
+    }
+  }catch(e){}
+});
 
 async function startChestUnlock(i){
   ensureChestSlots();
