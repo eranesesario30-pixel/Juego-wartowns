@@ -7299,15 +7299,25 @@ async function connectToServerOnce(){
     } else if(matchData.op_code === OPCODE_GAME_WON){
       if(payload && payload.color && typeof players!=='undefined' && players){
         const w = players.find(p=>p.color===payload.color);
-        if(w && !winner){
+        if(w && !winner && payload.final===false && payload.place===1){
+          // 4 jugadores: llegó el 1.º, la partida sigue por el 2.º lugar
+          if(!firstFinisher){
+            firstFinisher = w; w.finished = true; w.position = payload.position || META_INDEX;
+            log(`${NAMES[w.color]} llegó primero a la Meta. La partida sigue por el 2.º lugar.`);
+            try{ victoryShow(w.color); }catch(e){}
+            if(w.color!==MY_COLOR){ sfxPenalty(); vibrate([60,40,60]); }
+            try{ render(); }catch(e){}
+          }
+        } else if(w && !winner){
           winner = w;
+          if(payload.second){ firstFinisher = firstFinisher || w; secondFinisher = players.find(p=>p.color===payload.second) || null; }
           if(payload.reason==='meta'){ w.position = payload.position; log(`${NAMES[w.color]} llegó a la Meta y ganó.`); try{ victoryShow(w.color); }catch(e){} }
           else log(`${NAMES[w.color]} ganó — el otro jugador salió de la partida.`);
           if(w.color===MY_COLOR){ sfxWin(); vibrate([40,60,40,60,120]); fireConfetti(); }
           else { sfxPenalty(); vibrate([60,40,60]); }
           // Liquida apuestas/estadísticas también en el celular que no ganó
           // por su propia jugada (antes no se registraba nada ahí).
-          Promise.resolve(recordMatchResult(w.color===MY_COLOR)).catch(()=>{}).then(()=>render());
+          Promise.resolve(payload.second ? finishPodium() : recordMatchResult(w.color===MY_COLOR)).catch(()=>{}).then(()=>render());
         }
       }
     } else if(matchData.op_code === OPCODE_TABLE_CONFIG){
@@ -9483,6 +9493,7 @@ function getTokenIcon(color){
   </svg>`;
 }
 let players, current, dice, usedDie, winner, rolling, animating, armMode, pendingDoubleExtra, gameMode;
+let firstFinisher = null, secondFinisher = null, paidEarly = false, earlyBetAmt = 0;   // podio de 4 jugadores
 let BOARD_ROWS = 10;
 let activeBoardMode = 'classic'; // 'classic' | 'mode2' | 'mode3' | 'mode4' | 'sized'
 let singleDieTurn = false;
@@ -9508,7 +9519,7 @@ function freshState(){
         else this._d = v;
       } });
   });
-  current = 0; dice=[null,null]; usedDie=[false,false]; winner=null; welcomeStripShownThisMatch=false;
+  current = 0; dice=[null,null]; usedDie=[false,false]; winner=null; firstFinisher=null; secondFinisher=null; paidEarly=false; earlyBetAmt=0; welcomeStripShownThisMatch=false;
   rolling=false; animating=false; armMode=null; pendingDoubleExtra=false;
   try{ treasureReset(); }catch(e){}
   matchStats = {capturesByRed:0, capturesTotal:0, doublesByRed:0, doublesTotal:0};
@@ -13019,6 +13030,28 @@ async function executeMove(idx){
     effectMsg = ` 🎯 Necesita el número exacto para llegar a la Meta (le faltan ${META_INDEX-start}) — no se mueve.`;
     sfxPenalty();
   }
+  else if(target===META_INDEX && (podiumRule() || firstFinisher || players.some(x=>x!==p && x.finished))){
+    // 4 jugadores: el 1.º cobra en cuanto llega y la partida sigue hasta que llegue el 2.º
+    p.finished = true; p.position = META_INDEX;
+    sfxWin(); vibrate([40,60,40,60,120]);
+    fireConfetti(); celebrateCell('meta', p.color);
+    turnLossNow = true;   // ya llegó: no usa el otro dado ni vuelve a tirar
+    const _first = firstFinisher || players.find(x=>x!==p && x.finished) || null;
+    if(!_first){
+      firstFinisher = p;
+      effectMsg = ` 🏁 ¡${NAMES[p.color]} llegó primero a la Meta! La partida sigue por el 2.º lugar.`;
+      if(multiplayerActive) sendMatchData(OPCODE_GAME_WON, {color: p.color, reason:'meta', position: p.position, place:1, final:false});
+      if(p.color===MY_COLOR){
+        paidEarly = true;
+        await recordMatchResult(true, 1, true);
+        try{ const sm = lastMatchSummary; if(sm && sm.betPayout>0) lobbyToast('¡Llegaste primero! Cobraste ' + sm.betPayout.toLocaleString('es') + ' 🪙', 4200); else lobbyToast('¡Llegaste primero! Ganaste la partida.', 3600); }catch(e){}
+      }
+    } else {
+      firstFinisher = _first; secondFinisher = p; winner = _first;
+      if(multiplayerActive) sendMatchData(OPCODE_GAME_WON, {color: _first.color, reason:'meta', position: META_INDEX, place:2, second: p.color, final:true});
+      await finishPodium();
+    }
+  }
   else if(target===META_INDEX){
     winner=p;
     sfxWin(); vibrate([40,60,40,60,120]);
@@ -13343,11 +13376,40 @@ async function executeMove(idx){
   }
 }
 
+/* Podio: en las partidas de 4 (todos contra todos) la partida no termina cuando llega el 1.º, sino cuando llega el 2.º */
+function podiumRule(){
+  try{ return gameMode==='ffa' && players.filter(x=>x.active).length>=3; }catch(e){ return false; }
+}
+function _podiumPayers(){
+  try{ return players.filter(x=>x.active && (x.color===MY_COLOR || colorUserId(x.color))).length; }catch(e){ return 2; }
+}
+/* Cierre de la partida con podio (lo corre cada celular cuando llega el 2.º) */
+async function finishPodium(){
+  const me = MY_COLOR;
+  const iAmFirst = !!winner && winner.color===me;
+  const iAmSecond = !!secondFinisher && secondFinisher.color===me;
+  if(iAmFirst && paidEarly){
+    // Ya cobré al llegar primero. Si el 2.º lugar fue una máquina (no apostó), el servidor me paga la diferencia.
+    const secondPays = !!secondFinisher && (secondFinisher.color===me || !!colorUserId(secondFinisher.color));
+    if(!secondPays && _podiumPayers()>=3 && earlyBetAmt>0){
+      try{
+        const r = await ECO.call('eco_match_adjust', {});
+        const paid = r && r.ok && r.result && r.result.paid || 0;
+        if(paid>0 && lastMatchSummary){ lastMatchSummary.betPayout = (lastMatchSummary.betPayout||0) + paid; lastMatchSummary.goldWon = (lastMatchSummary.goldWon||0) + paid; try{ updateEconomyDisplays(); }catch(e){} }
+      }catch(e){}
+    }
+  } else {
+    await recordMatchResult(iAmFirst, iAmSecond ? 2 : 0);
+  }
+}
+
 function nextTurn(){
   clearDiaWindow();
+  let _guard = 0;
   do{
     current=(current+1)%players.length;
-  } while(!players[current].active);
+    _guard++;
+  } while((!players[current].active || players[current].finished) && _guard < 20);
   const p = players[current];
   p._myTurns = (p._myTurns||0) + 1;
   if(ARMADA){ try{ armaOnTurn(p); }catch(e){ console.warn('armada',e); } }
@@ -14262,7 +14324,9 @@ async function showEndGameModal(){
   try{ clearActiveMatch(); }catch(e){}
   try{ if(window._recP) await Promise.race([window._recP, new Promise(r=>setTimeout(r,8000))]); }catch(e){}   // espera a que el servidor pague
   const summary = lastMatchSummary || { youWon: winner.color===MY_COLOR, goldWon:0, betPayout:0, chestResult:{granted:false}, xpGained:(winner.color===MY_COLOR?30:0), leaguePts:(winner.color===MY_COLOR?25:8), standings: computeStandings() };
+  try{ summary.standings = computeStandings(); }catch(e){}
   const won = !!summary.youWon;
+  const second = !won && summary.place===2;
   const overlay = document.getElementById('endGameOverlay');
   const card = document.getElementById('endGameCard');
   overlay.style.display = 'flex';
@@ -14307,8 +14371,8 @@ async function showEndGameModal(){
       ${stars}
       <div class="vx-medal"><div class="vx-medal-glow"></div>${iconImgHTML(won?'endWin':'endLose', won?'🏆':'😢')}</div>
     </div>
-    <div class="vx-title">${won ? '¡VICTORIA!' : 'DERROTA'}</div>
-    <div class="vx-sub">${won ? `${NAMES[winner.color]} llegó a la Meta${teamMsg}` : `${NAMES[winner.color]} ganó esta vez${teamMsg}. ¡La revancha es tuya!`}</div>
+    <div class="vx-title">${won ? '¡VICTORIA!' : second ? '2.º LUGAR' : 'DERROTA'}</div>
+    <div class="vx-sub">${won ? `${NAMES[winner.color]} llegó a la Meta${teamMsg}` : second ? `${NAMES[winner.color]} llegó primero. ¡No perdiste nada, recuperaste tu apuesta!` : `${NAMES[winner.color]} ganó esta vez${teamMsg}. ¡La revancha es tuya!`}</div>
     <div class="vx-list">${rows}</div>
     <div class="vx-tiles">${tilesHtml}</div>
     ${chips}
@@ -14576,10 +14640,12 @@ let pendingPromotions = [];
 function computeStandings(){
   // Ordena a los jugadores ACTIVOS por qué tan lejos llegaron (el que ganó
   // siempre queda primero por estar en la meta).
+  const _podium = [firstFinisher, secondFinisher].filter(Boolean);
+  const _rank = p=>{ const i=_podium.indexOf(p); return i>=0 ? 1e6-i : p.position; };
   return players
     .filter(p=>p.active)
     .slice()
-    .sort((a,b)=> b.position - a.position)
+    .sort((a,b)=> _rank(b) - _rank(a))
     .map((p,i)=>({color:p.color, name:NAMES[p.color], place:i+1, isMe:p.color===MY_COLOR}));
 }
 
@@ -14650,12 +14716,12 @@ function checkProgressAfterMatch(youWon, oldLevel){
   return promos;
 }
 
-function recordMatchResult(youWon){
+function recordMatchResult(youWon, place, early){
   lastMatchSummary = null;
-  window._recP = _recordMatchResult(youWon).catch(e=>{ console.warn('recordMatchResult', e); });
+  window._recP = _recordMatchResult(youWon, place||0, !!early).catch(e=>{ console.warn('recordMatchResult', e); });
   return window._recP;
 }
-async function _recordMatchResult(youWon){
+async function _recordMatchResult(youWon, place, early){
   // La apuesta se liquida UNA sola vez: se anota aquí y se suelta para que nada la cobre dos veces.
   const betNow = pendingBet;
   pendingBet = 0;
@@ -14688,7 +14754,8 @@ async function _recordMatchResult(youWon){
 
   // El servidor paga: apuesta, 50 de oro, ánfora, XP y avance del pase y de los desafíos
   let goldWon = 0, betPayout = 0, xpGained = 0, chestResult = {granted:false};
-  const r = await ECO.call('eco_match_end', { won:!!youWon, mode:gameMode, humans:_mctx.opps.length, refund:!!_refundBet, payers:(()=>{ try{ return players.filter(x=>x.active && (x.color===MY_COLOR || colorUserId(x.color))).length; }catch(e){ return 2; } })() });
+  if(early) earlyBetAmt = betNow>0 ? betNow : ((ECO.st && ECO.st.bet && ECO.st.bet.amount) || 0);
+  const r = await ECO.call('eco_match_end', { won:!!youWon, place:place||0, early:!!early, mode:gameMode, humans:_mctx.opps.length, refund:!!_refundBet, payers:(()=>{ try{ return players.filter(x=>x.active && (x.color===MY_COLOR || colorUserId(x.color))).length; }catch(e){ return 2; } })() });
   if(r && r.ok && r.result){
     const o = r.result;
     goldWon = o.goldWon||0; betPayout = o.betPayout||0; xpGained = o.xp||0;
@@ -14707,7 +14774,7 @@ async function _recordMatchResult(youWon){
   try{ await saveProfile(); }catch(e){}
 
   lastMatchSummary = {
-    youWon, goldWon, betPayout, chestResult, xpGained, leaguePts: (youWon?25:0),
+    youWon, place: place||0, goldWon, betPayout, chestResult, xpGained, leaguePts: (youWon?25:0),
     standings: computeStandings(),
   };
 }

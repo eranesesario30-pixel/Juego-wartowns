@@ -1569,6 +1569,7 @@ local MATCH_MIN_DUR = 20        -- una partida de verdad dura mas que esto desde
 local BET_STREAK_MAX = 8        -- tantas victorias seguidas con apuesta ya es raro: se deja de pagar ganancia ese dia
 local BET_PROFIT_DAY_CAP = 60000000  -- ganancia maxima por apuestas en un dia (el resto se devuelve como la apuesta)
 local REFUND_DAY_CAP = 3        -- devoluciones por "rival desconectado" al dia
+local SECOND_DAY_CAP = 30       -- veces al dia que se le devuelve la apuesta al 2.o lugar (partidas de 4)
 local TRACK_CAPS = { capturesToday = 15, doublesToday = 10, treasureToday = 5, streaksToday = 5 }
 
 local function level_cost(L) return L <= 10 and 100 or (L <= 30 and 150 or (L <= 60 and 200 or 300)) end
@@ -1642,6 +1643,8 @@ local function rpc_match_end(context, payload)
   local mode = d0.mode
   local humans = tonumber(d0.humans) or 0
   local refund = d0.refund == true
+  local place = tonumber(d0.place) or 0        -- 1 = llego primero, 2 = llego segundo (partidas de 4)
+  local early = d0.early == true               -- el 1.o cobra en cuanto llega; la partida sigue por el 2.o
   local payers = math.floor(tonumber(d0.payers) or 2)   -- jugadores reales que apostaron (pozo = apuesta x pagadores)
   if payers < 2 then payers = 2 end
   if payers > 4 then payers = 4 end
@@ -1696,6 +1699,12 @@ local function rpc_match_end(context, payload)
           local mult = 2
           if mode ~= "1v1" and mode ~= "2v2" then mult = payers end
           out.betPayout = bet.amount * mult
+          -- Podio (4 jugadores, al menos 3 con apuesta): el 2.o recupera su apuesta, asi que al 1.o se le descuenta
+          -- (si el 2.o resulta ser una maquina, el celular del 1.o pide el ajuste con eco_match_adjust y se le devuelve)
+          if early and place == 1 and mode ~= "1v1" and mode ~= "2v2" and payers >= 3 then
+            out.betPayout = out.betPayout - bet.amount
+            d.stats.adjAmt = bet.amount; d.stats.adjT = now
+          end
           d.stats.bstreak = (d.stats.bstreak or 0) + 1
           d.stats.bpProfit = (d.stats.bpProfit or 0) + (out.betPayout - bet.amount)
         else
@@ -1714,6 +1723,16 @@ local function rpc_match_end(context, payload)
     elseif bet and not won then
       d.stats.bstreak = 0
     end
+    -- 2.o lugar en una partida de 4: no pierde nada, se le devuelve la apuesta (con tope diario)
+    if (not won) and bet and place == 2 and bet.started and mode ~= "1v1" and mode ~= "2v2" and payers >= 3 then
+      local today2 = eco_day()
+      if d.stats.p2Day ~= today2 then d.stats.p2Day = today2; d.stats.p2N = 0 end
+      if (d.stats.p2N or 0) < SECOND_DAY_CAP then
+        d.stats.p2N = (d.stats.p2N or 0) + 1
+        d.gold = d.gold + bet.amount
+        out.betPayout = bet.amount; out.goldWon = bet.amount; out.second = true
+      end
+    end
     if (not won) and bet and refund and humans > 0 then
       -- gano un jugador desconectado (su bot): se devuelve la apuesta (con tope diario)
       local today = eco_day()
@@ -1724,6 +1743,25 @@ local function rpc_match_end(context, payload)
       end
     end
     return true, out
+  end)
+  if not ok then return eco_fail(res) end
+  return eco_ok(doc, { result = res })
+end
+
+-- El 1.o cobro de entrada suponiendo que el 2.o tambien aposto; si el 2.o fue una maquina, se le paga la diferencia (una sola vez)
+local function rpc_match_adjust(context, payload)
+  local uid = context.user_id
+  if not uid then return eco_fail("sin_sesion") end
+  local ok, res, doc = eco_update(uid, function(d)
+    local amt = tonumber(d.stats.adjAmt) or 0
+    local t = tonumber(d.stats.adjT) or 0
+    d.stats.adjAmt = 0
+    if amt > 0 and (os.time() - t) <= BET_STALE then
+      d.gold = d.gold + amt
+      d.stats.bpProfit = (d.stats.bpProfit or 0) + amt
+      return true, { paid = amt }
+    end
+    return true, { paid = 0 }
   end)
   if not ok then return eco_fail(res) end
   return eco_ok(doc, { result = res })
@@ -1818,6 +1856,7 @@ nk.register_rpc(rpc_bet_hold, "eco_bet_hold")
 nk.register_rpc(rpc_bet_cancel, "eco_bet_cancel")
 nk.register_rpc(rpc_match_start, "eco_match_start")
 nk.register_rpc(rpc_match_end, "eco_match_end")
+nk.register_rpc(rpc_match_adjust, "eco_match_adjust")
 nk.register_rpc(rpc_progress, "eco_progress")
 nk.register_rpc(rpc_dice_change, "eco_dice_change")
 nk.register_rpc(rpc_game_ad, "eco_game_ad")

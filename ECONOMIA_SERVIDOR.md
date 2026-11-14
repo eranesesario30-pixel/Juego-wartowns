@@ -40,3 +40,10 @@ Importante: el cliente nuevo NO funciona con el servidor viejo (usa RPCs `eco_*`
 
 ## Regla: si no ganas, no sumas nada
 Una derrota no da puntos de liga, ni puntos de nivel, ni puntos del Pase (solo cuenta como partida jugada para los desafíos). La victoria da 30 de nivel/Pase, 25 de liga y 50 de oro.
+
+## Podio en partidas de 4 (todos contra todos)
+- La partida NO termina cuando llega el 1.º: sigue hasta que llegue el 2.º (los que ya llegaron se saltan en los turnos).
+- Con apuesta A y P jugadores reales apostando (P >= 3): el 1.º cobra al llegar A*P - A; el 2.º recupera A; el 3.º y el 4.º pierden A.
+- Si el 2.º es una máquina (no apostó), el celular del 1.º pide `eco_match_adjust` y el servidor le paga la diferencia A (una sola vez, solo si antes cobró de entrada).
+- Con menos de 3 apostadores, 1 contra 1 y 2 contra 2: sin cambios (el ganador se lleva el pozo).
+- Puntos de liga, nivel y Pase: solo el 1.º. Tope de devoluciones al 2.º: 30 al día por jugador.
