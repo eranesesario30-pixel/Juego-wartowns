@@ -1567,6 +1567,20 @@ window.__threeReadyPromise = (async ()=>{
   #dailyRewardOverlay{position:fixed;inset:0;z-index:300;background:rgba(10,6,20,.8);display:flex;align-items:center;justify-content:center;padding:16px;}
   #dailyRewardOverlay .profile-card{background:linear-gradient(180deg,#3D62A8 0%,#2A4A85 35%,#1E3663 65%,#152849 100%) !important;border:4px solid #fbc02c !important;border-radius:22px;}
   #playerInfoOverlay{position:fixed;inset:0;z-index:400;background:rgba(10,6,20,.75);display:none;align-items:center;justify-content:center;padding:16px;}
+  #playerInfoCard{position:relative;overflow:hidden;background:radial-gradient(circle at 18% 12%,rgba(255,217,122,.16),transparent 42%),radial-gradient(circle at 85% 30%,rgba(120,170,255,.16),transparent 45%),radial-gradient(circle at 30% 88%,rgba(255,217,122,.10),transparent 40%),linear-gradient(180deg,#2d4f93 0%,#223e78 40%,#182d5a 100%) !important;}
+  .pi-banner{position:absolute;left:0;right:0;top:0;height:130px;background:linear-gradient(180deg,rgba(255,217,122,.30),rgba(255,217,122,0) 100%),radial-gradient(circle at 50% 0%,rgba(255,236,170,.45),transparent 65%);background-size:cover;background-position:center;pointer-events:none;z-index:0;}
+  .pi-banner{-webkit-mask-image:linear-gradient(180deg,#000 35%,transparent 100%);mask-image:linear-gradient(180deg,#000 35%,transparent 100%);}
+  #playerInfoCard>*:not(.pi-banner):not(.profile-close){position:relative;z-index:1;}
+  #playerInfoCard .profile-close{z-index:3;}
+  .pi-league{display:flex;align-items:center;justify-content:center;gap:8px;margin:0 0 10px;font-weight:900;color:#ffe27a;font-size:14px;letter-spacing:.02em;}
+  .pi-league .pi-lg-ic{width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-size:26px;}
+  .pi-league .pi-lg-ic img{width:100%;height:100%;object-fit:contain;}
+  .pi-vit{width:100%;display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:2px 0 10px;}
+  .pi-vit>div{background:rgba(10,20,60,.42);border:1.5px solid rgba(255,217,122,.35);border-radius:12px;padding:8px 4px 6px;text-align:center;}
+  .pi-vit .pi-vi{height:46px;display:flex;align-items:center;justify-content:center;font-size:32px;}
+  .pi-vit .pi-vi img{max-width:100%;max-height:46px;object-fit:contain;border-radius:6px;}
+  .pi-vit small{display:block;font-size:10px;font-weight:800;color:#f5efe0;margin-top:3px;line-height:1.15;}
+  .pi-vit em{display:block;font-style:normal;font-size:9px;font-weight:800;color:#ffd97a;letter-spacing:.06em;text-transform:uppercase;}
   .pi-country{display:flex;align-items:center;gap:8px;font-weight:800;color:#f2ebd8;font-size:15px;margin:2px 0 12px;}
   .pi-flag{font-size:26px;line-height:1;}
   .pi-grid{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:6px;}
@@ -10961,7 +10975,9 @@ function openCountryPicker(){
 function closeCountryPicker(){ const o=document.getElementById('countryPickOverlay'); if(o) o.style.display='none'; }
 function pickCountry(k){ setMyCountry(k); renderCountrySelect(); closeCountryPicker(); }
 function myStatsForTable(){
-  return { c: myCountry(), lv: profileStats.level||1, gp: profileStats.gamesPlayed||0, gw: profileStats.gamesWon||0, st: profileStats.winStreak||0, w2: profileStats.wins2p||0, w4: profileStats.wins4p||0, wt: profileStats.winsTeam||0 };
+  return { c: myCountry(), lv: profileStats.level||1, gp: profileStats.gamesPlayed||0, gw: profileStats.gamesWon||0, st: profileStats.winStreak||0, w2: profileStats.wins2p||0, w4: profileStats.wins4p||0, wt: profileStats.winsTeam||0,
+    lg: (function(){ try{ return leagueTierClamp((profileStats.league&&profileStats.league.tierIdx)||0); }catch(e){ return 0; } })(),
+    eb: (function(){ try{ return _eqBoardId(); }catch(e){ return ''; } })() };
 }
 function closePlayerInfo(){ const o=document.getElementById('playerInfoOverlay'); if(o) o.style.display='none'; }
 function showPlayerCard(name, url, d, kind, uid){
@@ -10977,7 +10993,23 @@ function showPlayerCard(name, url, d, kind, uid){
   } else {
     const pct = d.gp>0 ? Math.round(d.gw/d.gp*100) : 100;
     const cn = COUNTRIES[d.c] ? COUNTRIES[d.c] : 'País no indicado';
-    body = `<div class="pi-country"><span class="pi-flag">${countryFlag(d.c)}</span><span>${escapeHtml(cn)}</span></div>
+    let _lg = '', _vit = '';
+    try{
+      const T = LEAGUE_TIERS[Math.max(0,Math.min(3,d.lg||0))];
+      _lg = `<div class="pi-league"><span class="pi-lg-ic">${iconImgHTML(T.img, T.shield)}</span><span>${T.name}</span></div>`;
+      ensureDiceSkins();
+      const ds = d.dd && DICE_CATALOG.find(x=>x.id===d.dd);
+      const bd = d.eb && BOARD_CATALOG.find(x=>x.id===d.eb);
+      const tkn = (d.tk && ANIMAL_NAMES[d.tk]) ? ANIMAL_NAMES[d.tk] : 'Peón';
+      const dI = (ds && ds.img) ? `<img src="${ds.img}" alt="">` : '🎲';
+      const bI = (bd && bd.img) ? `<img src="${bd.img}" alt="">` : '🧩';
+      _vit = `<div class="pi-vit">
+        <div><em>Dado</em><div class="pi-vi">${dI}</div><small>${escapeHtml(ds?ds.name:'Clásico')}</small></div>
+        <div><em>Ficha</em><div class="pi-vi" id="piTokIc">♟️</div><small>${escapeHtml(tkn)}</small></div>
+        <div><em>Tablero</em><div class="pi-vi">${bI}</div><small>${escapeHtml(bd?bd.name:'Egipto Antiguo')}</small></div>
+      </div>`;
+    }catch(e){}
+    body = `<div class="pi-country"><span class="pi-flag">${countryFlag(d.c)}</span><span>${escapeHtml(cn)}</span></div>${_lg}${_vit}
       <div class="pi-grid">
         <div class="pi-box"><b>${d.lv}</b><span>Nivel</span></div>
         <div class="pi-box"><b>${d.gw} / ${d.gp}</b><span>Partidas ganadas</span></div>
@@ -10995,11 +11027,17 @@ function showPlayerCard(name, url, d, kind, uid){
     _fr = isF ? `<div class="profile-note" style="margin-top:10px;">✅ Ya es tu amigo</div>`
               : `<button class="pi-addfriend" onclick="addFriendFromTable('${uid}')">➕ Agregar amigo</button>`;
   }
-  card.innerHTML = `<button class="profile-close" onclick="closePlayerInfo()">✕</button>
+  const _bn = (typeof ICON_IMAGES!=='undefined' && ICON_IMAGES.profileBanner) ? ` style="background-image:url('${ICON_IMAGES.profileBanner}')"` : '';
+  card.innerHTML = `<div class="pi-banner"${_bn}></div><button class="profile-close" onclick="closePlayerInfo()">✕</button>
     <div class="profile-title">Perfil</div>
     <div class="profile-avatar-frame"><div class="lobby-avatar" style="width:72px;height:72px;font-size:34px;overflow:hidden;">${av}</div></div>
     <div class="profile-name" style="margin-bottom:6px;">${escapeHtml(name||'Jugador')}</div>${_sid}${body}${_fr}`;
   document.getElementById('playerInfoOverlay').style.display = 'flex';
+  try{
+    if(d && d.tk && ANIMAL_NAMES[d.tk]){
+      tokenIconURL(d.tk, COLORS[0], 96).then(u=>{ const e=document.getElementById('piTokIc'); if(e && u) e.innerHTML='<img src="'+u+'" alt="">'; }).catch(()=>{ const e=document.getElementById('piTokIc'); if(e) e.textContent = ANIMAL_EMOJI[d.tk] || '♟️'; });
+    }
+  }catch(e){}
 }
 let _piToken = 0;
 async function addFriendFromTable(uid){
@@ -11089,7 +11127,7 @@ function cleanCard(d){
   const c = (typeof d.c==='string' && COUNTRIES[d.c]) ? d.c : '';
   let dd = null; try{ ensureDiceSkins(); if(typeof d.dd==='string' && DICE_CATALOG.some(x=>x.id===d.dd)) dd = d.dd; }catch(e){}
   let tk = null; try{ if(typeof d.tk==='string' && ANIMAL_NAMES[d.tk]) tk = d.tk; }catch(e){}
-  return { id: (typeof d.id==='string' && /^\d{5,9}$/.test(d.id)) ? d.id : '', dd, tk, n: n || 'Guest', a, p, c, lv:num(d.lv,999), gp: d.gp!==undefined?num(d.gp):undefined, gw:num(d.gw), st:num(d.st), w2:num(d.w2), w4:num(d.w4), wt:num(d.wt) };
+  return { id: (typeof d.id==='string' && /^\d{5,9}$/.test(d.id)) ? d.id : '', dd, tk, n: n || 'Guest', a, p, c, lv:num(d.lv,999), gp: d.gp!==undefined?num(d.gp):undefined, gw:num(d.gw), st:num(d.st), w2:num(d.w2), w4:num(d.w4), wt:num(d.wt), lg: Math.min(3, num(d.lg,3)), eb: (function(){ try{ return (typeof d.eb==='string' && BOARD_CATALOG.some(x=>x.id===d.eb)) ? d.eb : ''; }catch(e){ return ''; } })() };
 }
 function onProfileData(uid, d){
   if(!uid || !d || typeof d!=='object') return;
