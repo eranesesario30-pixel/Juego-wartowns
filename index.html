@@ -6634,7 +6634,7 @@ body.dice-shaking .dice-cube-wrap, body.dice-shaking .dice-sprite{ animation:dic
     </div>
     <div class="bet-grid" id="betGrid"></div>
     <div class="carousel-dots" id="betGridDots"></div>
-    <div class="profile-note">Apuestas tu oro antes de jugar. Si ganas la partida, recuperas el doble; si pierdes, lo pierdes.</div>
+    <div class="profile-note">Apuestas tu oro antes de jugar. El primero en llegar a la meta gana el pozo; en 1 contra 1 recuperas el doble. En partidas de 4, el 2.º recupera su apuesta. Si pierdes, la pierdes.</div>
   </div>
 
 <div id="settingsOverlay" style="display:none;" onclick="if(event.target===this) closeSettings();">
@@ -6981,6 +6981,36 @@ function runGameTour(mode, replay){
     startTurnTimer();
   }});
 }
+
+/* ----- Alaia explica los modos y las apuestas (la primera vez que se abren esas pantallas) ----- */
+function _tourFlagDone(flag){ return async ()=>{ try{ profileStats[flag]=true; await saveProfile(); }catch(e){} }; }
+function runModesTour(force){
+  if(_tour || (!force && profileStats && profileStats.tourModesV1)) return;
+  const bc = document.getElementById('boardChoiceScreen');
+  if(!bc || bc.style.display==='none') return;
+  startTour([
+    {title:'¡Hola, soy Alaia!', text:'Te explico los modos de juego. Ya elegiste cuántos juegan; ahora eliges el tablero y el estilo de partida.'},
+    {sel:'#boardChoiceCarousel', title:'Los 4 modos', text:'Desliza las tarjetas para verlos y toca la que quieras:',
+      chips:[{e:'🎲',t:'Clásico: 84 casillas, el tablero original'},{e:'⚡',t:'Trampas y Poderes: 108 casillas con trampas y poderes'},{e:'⚔️',t:'Batalla: 108 casillas, ataques y defensas'},{e:'🏁',t:'Carrera Extrema: 108 casillas, carrera directa'}], lastLabel:'¡Entendido!'}
+  ], {onDone: _tourFlagDone('tourModesV1')});
+}
+function runBetTour(force){
+  if(_tour || (!force && profileStats && profileStats.tourBetV1)) return;
+  const bs = document.getElementById('betScreen');
+  if(!bs || bs.style.display==='none') return;
+  startTour([
+    {title:'¡Hola, soy Alaia!', text:'Ahora te explico las apuestas, que es donde se pone divertido.'},
+    {sel:'#betGrid', title:'Elige cuánto apostar', text:'Cada tarjeta es una apuesta en oro. Pagas esa cantidad al empezar la partida; las que no te alcanzan salen bloqueadas.'},
+    {sel:'#betGrid', title:'Cómo se gana', text:'El primero que llega a la meta gana el pozo, que es lo que apostaron todos. Si pierdes, pierdes tu apuesta.',
+      big:[['1 vs 1','ganas el doble de lo que apostaste'],['2 vs 2','cada ganador cobra el doble']]},
+    {sel:'#betGrid', title:'En partidas de 4', text:'La partida sigue hasta que llega el segundo, y el segundo no pierde nada:',
+      big:[['🥇 1.º','gana el pozo'],['🥈 2.º','recupera su apuesta'],['3.º y 4.º','pierden su apuesta']], lastLabel:'¡A apostar!'}
+  ], {onDone: _tourFlagDone('tourBetV1')});
+}
+(function(){
+  const _ob = openBoardChoice; openBoardChoice = function(){ const r=_ob.apply(this,arguments); try{ setTimeout(()=>runModesTour(false),500); }catch(e){} return r; };
+  const _os = openBetScreen;   openBetScreen   = function(){ const r=_os.apply(this,arguments); try{ setTimeout(()=>runBetTour(false),500); }catch(e){} return r; };
+})();
 
 /* ----- Los sonidos de la partida no suenan si ya saliste al lobby ----- */
 function gameHidden(){ const g=document.getElementById('gameScreen'); return !g || g.style.display==='none'; }
