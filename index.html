@@ -7752,7 +7752,7 @@ function mpOnGameData(op, payload, presence){
       const idx = players.findIndex(x=>x.color===payload.c);
       if(idx>=0 && idx!==current){ current = idx; }
       if(payload.start){
-        dice=[1,1]; usedDie=[false,false]; singleDieTurn = false;
+        if(!payload.r){ dice=[1,1]; usedDie=[false,false]; singleDieTurn = false; }   // r = cambio de dado con 💎: se conserva lo ya usado
         // se ven los dados del rival girando mientras tira (igual que cuando tiras tú)
         rolling = true; _remoteRolling = true;
         clearTimeout(_remoteRollT);
@@ -7760,7 +7760,7 @@ function mpOnGameData(op, payload, presence){
         try{ sfxRoll(); }catch(e){} renderPlayerCards(); return;
       }
       if(_remoteRolling){ _remoteRolling=false; rolling=false; clearTimeout(_remoteRollT); }
-      dice = [payload.d[0], payload.d[1]]; usedDie = [false, !!payload.n]; singleDieTurn = !!payload.n;  // el "un solo dado" depende de ESE jugador, no del último que tiré yo
+      dice = [payload.d[0], payload.d[1]]; usedDie = payload.u ? [!!payload.u[0], !!payload.u[1]] : [false, !!payload.n]; singleDieTurn = !!payload.n;  // el "un solo dado" depende de ESE jugador, no del último que tiré yo
       try{ sfxDiceRattle(); }catch(e){}
       render();
     }, payload.start ? 900 : 350);
@@ -12862,6 +12862,7 @@ async function useDiamondChange(){
   // repite la misma animación de giro que una tirada normal, pero solo
   // en el/los dado(s) que de verdad se están cambiando.
   rolling = true;
+  if(mpDriving()) sendMatchData(OPCODE_DICE, {c:p.color, start:1, r:1});   // los demás ven los dados girar de nuevo
   render();
   sfxRoll();
   let ticks = 0;
@@ -12885,6 +12886,7 @@ async function useDiamondChange(){
         pendingDoubleExtra = (dice[0]===dice[1]) && p.doubleStreak<3;
       }
 
+      if(mpDriving()) sendMatchData(OPCODE_DICE, {c:p.color, d:[dice[0],dice[1]], n:singleDieTurn?1:0, u:[!!usedDie[0], !!usedDie[1]], r:1});   // y el número nuevo
       const nextCost = DIAMOND_COSTS[p.diceChangeCount];
       const usesLeftMsg = p.turnDiaUses>=2 ? ' Ya usaste tus 2 cambios de este turno.' : '';
       const extra = nextCost===undefined ? ' Ya no puede cambiar más dados esta partida.' : ` El próximo cambio costará ${nextCost} 💎.`;
