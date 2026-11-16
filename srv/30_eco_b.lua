@@ -9,8 +9,8 @@ local TOKEN_COLOR_CHANCE = { bronce = 0.05, plata = 0.08, oro = 0.15, diamante =
 local AV_PIECE_CHANCE = { bronce = 0.03, plata = 0.04, oro = 0.06, diamante = 0.08 }
 local CHEST_GEM_COST = { bronce = 30, plata = 60, oro = 100, diamante = 150 }
 local AD_LADDER = {
-  { "diamond", 5 }, { "gold", 100 }, { "diamond", 10 }, { "gold", 150 },
-  { "diamond", 15 }, { "gold", 200 }, { "diamond", 20 }, { "gold", 400 },
+  { "diamond", 10 }, { "gold", 1000 }, { "diamond", 20 }, { "gold", 1500 },
+  { "diamond", 30 }, { "gold", 2000 }, { "diamond", 50 }, { "gold", 2500 },
 }
 local AD_DAILY_DIAMOND_LIMIT = 8
 local AD_DAILY_MAX = 30        -- tope de videos que se pagan por dia
