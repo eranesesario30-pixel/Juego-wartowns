@@ -7752,7 +7752,7 @@ function mpOnGameData(op, payload, presence){
       const idx = players.findIndex(x=>x.color===payload.c);
       if(idx>=0 && idx!==current){ current = idx; }
       if(payload.start){
-        dice=[1,1]; usedDie=[false,false];
+        dice=[1,1]; usedDie=[false,false]; singleDieTurn = false;
         // se ven los dados del rival girando mientras tira (igual que cuando tiras tú)
         rolling = true; _remoteRolling = true;
         clearTimeout(_remoteRollT);
@@ -7760,7 +7760,7 @@ function mpOnGameData(op, payload, presence){
         try{ sfxRoll(); }catch(e){} renderPlayerCards(); return;
       }
       if(_remoteRolling){ _remoteRolling=false; rolling=false; clearTimeout(_remoteRollT); }
-      dice = [payload.d[0], payload.d[1]]; usedDie = [false, !!payload.n];
+      dice = [payload.d[0], payload.d[1]]; usedDie = [false, !!payload.n]; singleDieTurn = !!payload.n;  // el "un solo dado" depende de ESE jugador, no del último que tiré yo
       try{ sfxDiceRattle(); }catch(e){}
       render();
     }, payload.start ? 900 : 350);
