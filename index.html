@@ -7105,6 +7105,7 @@ const OPCODE_TURN_BEACON = 40; // señal de turno: {c:color de quien cree que ju
 const OPCODE_CHAT = 39;       // mensaje de chat: {c:color, v:texto}
 const OPCODE_REMATCH = 41;     // pide/retira revancha con los mismos jugadores: {a:1} quiero · {a:0} ya no
 const OPCODE_EMOTE = 38;      // emoji o frase rápida: {c:color, t:'emoji'|'text', v:contenido}
+const OPCODE_FX = 42;          // efecto visual de combate: {k:'proj',a,v,h} · {k:'note',t,e,q,c}
 const OPCODE_STATE_SYNC = 3; // manda el estado completo de la partida al terminar cada turno
 
 /* ---------- Ciclo de vida móvil (llamadas, apps en segundo plano) ----------
@@ -7381,7 +7382,7 @@ async function connectToServerOnce(){
       try{ mpOnTurnBeacon(matchData.presence && matchData.presence.user_id, payload); }catch(e){}
     } else if(matchData.op_code === OPCODE_STATE_SYNC){
       mpEnqueue(()=>applyStateSync(payload), 0);
-    } else if(matchData.op_code===OPCODE_MOVE || matchData.op_code===OPCODE_DIE_USED || matchData.op_code===OPCODE_DICE || matchData.op_code===OPCODE_LEFT || matchData.op_code===OPCODE_STATE_REQ){
+    } else if(matchData.op_code===OPCODE_MOVE || matchData.op_code===OPCODE_DIE_USED || matchData.op_code===OPCODE_DICE || matchData.op_code===OPCODE_LEFT || matchData.op_code===OPCODE_STATE_REQ || matchData.op_code===OPCODE_FX){
       mpOnGameData(matchData.op_code, payload, matchData.presence);
     } else if(matchData.op_code === OPCODE_REMATCH){
       try{ rematchOnMsg(matchData.presence && matchData.presence.user_id, payload); }catch(e){}
@@ -7743,6 +7744,9 @@ function mpOnGameData(op, payload, presence){
       pl.position = payload.p; mpLastPos[pl.color] = payload.p;
       updateTokenPosition(pl); try{ bounceToken(pl.color); sfxTokenTap(); updateActiveCellGlow(); }catch(e){}
     }, isRapidoSpeed ? 120 : 230);
+  } else if(op===OPCODE_FX){
+    if(!payload) return;
+    mpEnqueue(()=>fxPlay(payload), 0);
   } else if(op===OPCODE_DIE_USED){
     if(!payload) return;
     mpEnqueue(()=>{ usedDie[payload.i] = true; renderPlayerCards(); }, 0);
@@ -9055,7 +9059,7 @@ function generateBoardMode3(){
 }
 
 // ---- Motor exclusivo del Modo 4 (108 casillas, Carrera Extrema) ----
-// Única trampa: Electrocución. La captura de fichas se resuelve en executeMove
+// Trampas y ventajas: Electrocución, Reversa, Frenazo, Derrape y Turbo. La captura de fichas se resuelve en executeMove
 // cuando activeBoardMode === 'mode4'. No toca los otros generadores.
 function generateBoardMode4(){
   const numbersTotal = 108;
@@ -9076,8 +9080,9 @@ function generateBoardMode4(){
   for(let n=12;n<=98;n++){ if(n%20!==0) eligible.push(n); } // sin trampas/ventajas sobre los campamentos ⛺ (cada 20)
   /* */ // se excluyen los últimos 10 números antes de la Meta: nada de Electrocución ahí
   const _early = eligible.filter(n=>n<=55), _late = eligible.filter(n=>n>56);
-  const trapNumbers = pickSpacedIndices(_early, 7, 2).concat(pickSpacedIndices(_late, 14, 2));
-  const trapTypes = shuffleArray([...Array(12).fill('electro'), ...Array(9).fill('reversa')]);
+  const trapNumbers = pickSpacedIndices(_early, 9, 2).concat(pickSpacedIndices(_late, 16, 2));
+  // 25 casillas especiales (~23%): Turbo (ventaja propia) + 4 trampas distintas
+  const trapTypes = shuffleArray([...Array(6).fill('turbo'), ...Array(8).fill('electro'), ...Array(5).fill('reversa'), ...Array(3).fill('frenazo'), ...Array(3).fill('derrape')]);
   const trapByNumber = {}; trapNumbers.forEach((n,i)=>{ trapByNumber[n] = trapTypes[i]; });
 
   grid = Array.from({length:rows}, ()=>Array(10));
@@ -9611,6 +9616,9 @@ function botCellScore(p, pos){
       case 'retroceso': return 3;
       case 'bloqueo': return 2;
       case 'arma': return 4;
+      case 'turbo': return 7;
+      case 'frenazo': return -4;
+      case 'derrape': return -1;
       case 'lance': return 8;
       case 'captura': case 'empujon3': return rivals.length ? 6 : 0;
       case 'roba': { const l = rivals.slice().sort((a,b)=>b.position-a.position)[0]; return (l && l.position>pos) ? (l.position-pos) : 0; }
@@ -10494,6 +10502,7 @@ const CELEB = {
   lava:{t:'¡LAVA!',e:'🔥',k:'bad'}, congelado:{t:'¡CONGELADO!',e:'🧊',k:'bad'}, empujon:{t:'¡PANTANO!',e:'🟤',k:'bad'},
   retroceso:{t:'¡ARMADURA!',e:'🪖',k:'good'}, embargo:{t:'¡EMBARGO!',e:'🚫',k:'bad'}, intercambio:{t:'¡CAMBIO!',e:'🔁',k:'bad'},
   electro:{t:'¡ZAP!',e:'⚡',k:'bad'}, reversa:{t:'¡REVERSA!',e:'⏪',k:'bad'},
+  turbo:{t:'¡TURBO!',e:'🏎️',k:'good'}, frenazo:{t:'¡FRENAZO!',e:'🛑',k:'bad'}, derrape:{t:'¡DERRAPE!',e:'💨',k:'bad'},
   arma:{t:'¡ARMA!',e:'🎁',k:'good'}, gigante:{t:'¡EL GIGANTE!',e:'🦖',k:'bad'}, boom:{t:'¡BOOM!',e:'💥',k:'bad'}
 };
 function celebrateCell(type, color){
@@ -10504,7 +10513,7 @@ function celebrateCell(type, color){
     const host = document.getElementById('boardOuter') || document.getElementById('gameScreen'); if(!host) return;
     const pop = document.createElement('div');
     pop.className = 'celeb-pop ' + c.k;
-    const BAD_MASCOT = {lava:'shocked',electro:'shocked',congelado:'shocked',empujon:'shocked',turno:'angry',embargo:'angry',vuelva:'angry',baja:'confused',retroceso:'confused',reversa:'confused',intercambio:'confused'};
+    const BAD_MASCOT = {frenazo:'angry',derrape:'confused',lava:'shocked',electro:'shocked',congelado:'shocked',empujon:'shocked',turno:'angry',embargo:'angry',vuelva:'angry',baja:'confused',retroceso:'confused',reversa:'confused',intercambio:'confused'};
     const mk = c.k==='bad' ? (BAD_MASCOT[type]||'confused') : 'wave';
     pop.innerHTML = `<span class="celeb-mascot" style="background-image:var(--mascot-${mk})"></span><span class="celeb-text">${c.t}</span>`;
     host.appendChild(pop);
@@ -10522,6 +10531,37 @@ function celebrateCell(type, color){
     setTimeout(()=>pop.remove(), c.k==='win'?2200:1300);
   }catch(e){}
 }
+
+/* ---------- Efectos de combate que ven TODOS (proyectil, impacto y carteles con el motivo) ---------- */
+function celebrateCustom(t,e,k,color){ try{ CELEB.__n = {t:String(t).slice(0,40), e:String(e||'✨').slice(0,4), k:(k==='bad'||k==='win')?k:'good'}; celebrateCell('__n', color); }catch(x){} }
+function fxProjectile(fc,tc,hex){
+  try{
+    if(!b3d || !b3d.tokenMeshes) return;
+    const a=b3d.tokenMeshes[fc], b=b3d.tokenMeshes[tc]; if(!a||!b) return;
+    for(let i=1;i<=7;i++) setTimeout(()=>{ try{
+      if(gameHidden()||!b3d) return;
+      const pos=a.position.clone().lerp(b.position,i/8); pos.y+=0.5+Math.sin(i/8*Math.PI)*0.6;
+      spawn3DParticleBurst(pos,{count:7,colors:[hex||0xffd24a,0xffffff],spread:0.12,upward:0.2,durationMs:380,gravity:0,size:0.09});
+    }catch(e){} }, i*55);
+  }catch(e){}
+}
+function hitFx(tc){
+  try{
+    const m=_fxMesh(tc); if(!m) return;
+    fxBurst(m,[0xff5a4a,0xffe27a,0xffffff],{count:32,spread:1.5,upward:2});
+    fxGlow(m,0xff5a4a,500); try{ fxSound('bloqueo'); }catch(e){}
+    try{ camFxTrigger('hit', tc); }catch(e){}
+    const host=document.getElementById('boardOuter'); if(host){ host.classList.remove('celeb-shake'); void host.offsetWidth; host.classList.add('celeb-shake'); setTimeout(()=>host.classList.remove('celeb-shake'),600); }
+  }catch(e){}
+}
+function fxPlay(o){
+  try{
+    if(!o) return;
+    if(o.k==='proj' && COLORS.includes(o.a) && COLORS.includes(o.v)){ fxProjectile(o.a,o.v,Number(o.h)||0xff5a4a); setTimeout(()=>hitFx(o.v), 520); }
+    else if(o.k==='note' && typeof o.t==='string'){ celebrateCustom(o.t,o.e,o.q,COLORS.includes(o.c)?o.c:undefined); }
+  }catch(e){}
+}
+function fxEmit(o){ try{ fxPlay(o); if(typeof mpDriving==='function' && mpDriving()) sendMatchData(OPCODE_FX, o); }catch(e){} }
 
 function sparkleAt(position){
   if(!b3d) return;
@@ -11372,6 +11412,9 @@ const CELL_TYPE_STYLE = {
   electro:      { c1:'#39FF88', c2:'#0a275c', icon:'⚡', label:'electrocución' },
   reversa:      { c1:'#FF8AE0', c2:'#4a0a6e', icon:'⏪', label:'reversa' },
   arma:         { c1:'#FFD9A0', c2:'#D1481A', icon:'🎁', label:'arma' },
+  turbo:        { c1:'#FFD27A', c2:'#E0561A', icon:'🏎️', label:'turbo x2' },
+  frenazo:      { c1:'#D0D0D8', c2:'#4A4A5C', icon:'🛑', label:'frenazo' },
+  derrape:      { c1:'#CFE3F2', c2:'#3C5E7A', icon:'💨', label:'derrape' },
 };
 
 // Imágenes de las casillas especiales. Referencias simples (/_blob/<id>);
@@ -13032,8 +13075,17 @@ async function executeMove(idx){
   const p = players[current];
   const baseVal = dice[idx];
   const boosted = p.rollMultiplier && p.rollMultiplier>1;
-  const val = baseVal * (p.rollMultiplier||1);
+  let val = baseVal * (p.rollMultiplier||1);
   if(boosted) p.rollMultiplier = 1; // se consume el impulso al usarlo
+  let _braked = false, _sprint = 0;
+  if(p.brake){ val = Math.max(1, Math.floor(val/2)); p.brake = false; _braked = true; }   // Carrera Extrema: Frenazo
+  if(activeBoardMode==='mode4'){   // Carrera Extrema: Sprint final, empuje de +2 cuando faltan entre 12 y 30 casillas
+    const _left = META_INDEX - p.position;
+    if(_left>11 && _left<=30 && val+2 < _left-1){ val += 2; _sprint = 2; }
+    if(!_braked && val>=8){ try{ fxSound('motor'); }catch(e){} }
+  }
+  if(_braked) fxEmit({k:'note', t:'¡FRENAZO! Mitad', e:'🛑', q:'bad', c:p.color});
+  if(_sprint) fxEmit({k:'note', t:'¡SPRINT +2!', e:'🏁', q:'good', c:p.color});
   usedDie[idx] = true;
   if(mpDriving()) sendMatchData(OPCODE_DIE_USED, {i:idx});
   animating = true;
@@ -13080,6 +13132,7 @@ async function executeMove(idx){
     bounceToken(p.color);
     updateActiveCellGlow();
     sfxTokenTap();
+    if(activeBoardMode==='mode4'){ try{ const _tm=_fxMesh(p.color); if(_tm) fxBurst(_tm,[0xffe27a,0xff8a2a,0xffffff],{count:6,spread:0.35,upward:0.3,size:0.06,durationMs:380}); }catch(e){} }   // estela de velocidad
     await wait(tokStepMs(p));
     if(gameHidden()){ animating = false; return; }
     if(ARMADA && step<META_INDEX){ const _hz = armHazardAt(step, p); if(_hz){ armHit=_hz; target=step; break; } }
@@ -13226,6 +13279,7 @@ async function executeMove(idx){
       if(p.embargoed){
         p.embargoed = false;
         effectMsg = ' 🚫 Estaba embargado: la habilidad no funcionó.';
+        fxEmit({k:'note', t:'¡EMBARGADO! No funcionó', e:'🚫', q:'bad', c:p.color});
       } else {
         const rivals = players.filter(x=>x.active && x!==p);
         let target2 = null;
@@ -13240,13 +13294,18 @@ async function executeMove(idx){
             victim.reboundShield = false;
             attacker = target2; victim = p; wasRebounded = true;
             effectMsg = ' 🪞 ¡Rebote! El efecto se devolvió al atacante.';
+            fxEmit({k:'note', t:'¡REBOTE! Vuelve al atacante', e:'🪞', q:'good', c:victim.color});
           }
           if(!wasRebounded && victim.armor){
             victim.armor = false;
             effectMsg += ` 🪖 ¡Armadura! ${NAMES[victim.color]} ignoró el ataque.`;
+            fxEmit({k:'note', t:'¡ARMADURA! Ataque anulado', e:'🪖', q:'good', c:victim.color});
             sfxBonus(); vibrate(15);
+          } else if(cell.type!=='intercambio3' && victim.position<=0){
+            effectMsg += ` 🤷 ${NAMES[victim.color]} está en la Salida: no se puede mover más atrás.`;
+            fxEmit({k:'note', t:'¡SIN EFECTO! Está en la Salida', e:'🤷', q:'bad', c:p.color});
           } else if(cell.type==='captura'){
-            await wait(250);
+            fxEmit({k:'proj', a:attacker.color, v:victim.color, h:0xff5a4a}); await wait(600);
             if(wasRebounded){
               // Rebotada, la captura ya no manda a la Salida: solo retrocede 4 casillas
               victim.position = Math.max(0, victim.position-4); updateTokenPosition(victim); updateActiveCellGlow();
@@ -13255,18 +13314,24 @@ async function executeMove(idx){
               const _cr = campRespawn(victim.position);
               victim.position = _cr; updateTokenPosition(victim); updateActiveCellGlow();
               effectMsg += ` 🎯 Captura: ${NAMES[victim.color]} regresa ${campText(_cr)}.`;
+              // Cadena de capturas: 2 seguidas (en turnos seguidos) dan tiro extra
+              const _tt = p._myTurns||0;
+              p._capStreak = (p._lastCapT!==undefined && _tt - p._lastCapT <= 1) ? (p._capStreak||1)+1 : 1; p._lastCapT = _tt;
+              if(activeBoardMode==='mode3' && p._capStreak>=2){ pendingDoubleExtra = true; p._chainExtra = true; fxEmit({k:'note', t:'¡CADENA! Tiro extra', e:'🔗', q:'good', c:p.color}); }
             }
             sfxPenalty(); vibrate(35);
             matchStats.capturesTotal++;
             if(attacker.color===MY_COLOR) matchStats.capturesByRed++;
           } else if(cell.type==='empujon3'){
-            await wait(250);
-            const back = 5 + Math.floor(Math.random()*11);
+            fxEmit({k:'proj', a:attacker.color, v:victim.color, h:0xff9a3a}); await wait(600);
+            const _arena = activeBoardMode==='mode3' && victim.position>=40 && victim.position<=70;
+            const back = (_arena ? 10 : 5) + Math.floor(Math.random()*11);   // en la Arena el empujón pega más fuerte (10 a 20)
+            if(_arena) fxEmit({k:'note', t:'¡ARENA! Empujón más fuerte', e:'⚔️', q:'good', c:attacker.color});
             victim.position = Math.max(0, victim.position-back); updateTokenPosition(victim); updateActiveCellGlow();
             effectMsg += ` 💥 Empujón: ${NAMES[victim.color]} retrocede ${back} casillas.`;
             sfxPenalty(); vibrate(30);
           } else {
-            await wait(250);
+            fxEmit({k:'proj', a:attacker.color, v:victim.color, h:0xb07bff}); await wait(600);
             const tmp=p.position; p.position=victim.position; victim.position=tmp;
             updateTokenPosition(p); updateTokenPosition(victim); updateActiveCellGlow();
             effectMsg += ` 🔁 Intercambio forzado con ${NAMES[victim.color]}.`;
@@ -13274,6 +13339,7 @@ async function executeMove(idx){
           }
         } else {
           effectMsg = ' No hay rivales disponibles para esta habilidad.';
+          fxEmit({k:'note', t:'¡SIN RIVALES! No hay a quién atacar', e:'🤷', q:'bad', c:p.color});
         }
       }
     }
@@ -13308,6 +13374,24 @@ async function executeMove(idx){
           effectMsg = ' 🔀 Ya iba de último, no hay con quién intercambiar.';
         }
       }
+    }
+    else if(cell.type==='turbo'){
+      sfxBonus(); vibrate(20);
+      p.rollMultiplier = 2;
+      effectMsg = ' 🏎️ ¡Turbo! Su próxima tirada se duplica.';
+    }
+    else if(cell.type==='frenazo'){
+      sfxPenalty(); vibrate([30,30]);
+      p.brake = true;
+      effectMsg = ' 🛑 ¡Frenazo! Su próxima tirada cuenta solo la mitad.';
+    }
+    else if(cell.type==='derrape'){
+      sfxPenalty(); vibrate([20,30,20]);
+      await wait(250);
+      const _dd = [-3,-2,2,3][Math.floor(Math.random()*4)];
+      const _np = Math.max(1, Math.min(p.position + _dd, META_INDEX-12));
+      p.position = _np; updateTokenPosition(p); updateActiveCellGlow();
+      effectMsg = ` 💨 ¡Derrape! La ficha patina ${_dd>0?'adelante':'atrás'} ${Math.abs(_dd)} casillas.`;
     }
     else if(cell.type==='reversa'){
       sfxPenalty(); vibrate([25,40,25]);
@@ -13350,6 +13434,7 @@ async function executeMove(idx){
         const _myT = p._myTurns||0;
         p._capStreak = (p._lastCapT!==undefined && _myT - p._lastCapT <= 1) ? (p._capStreak||1)+1 : 1;
         p._lastCapT = _myT;
+        if(activeBoardMode==='mode3' && p._capStreak>=2){ pendingDoubleExtra = true; p._chainExtra = true; fxEmit({k:'note', t:'¡CADENA! Tiro extra', e:'🔗', q:'good', c:p.color}); }
         const _bB = Math.min(3, 2*(p._capStreak-1));
         const _bC = _wasLeader ? 2 : 0;
         const _bonus = 6;   // al comer una ficha, siempre avanza 6 casillas (decisión del dueño)
@@ -13433,7 +13518,7 @@ async function executeMove(idx){
     dice=[null,null]; usedDie=[false,false];
     if(pendingDoubleExtra){
       pendingDoubleExtra = false;
-      log(`${NAMES[p.color]} usó el dado ${diceDesc}.${effectMsg} ¡Sacó dobles! Toca un dado para tirar de nuevo.`);
+      log(`${NAMES[p.color]} usó el dado ${diceDesc}.${effectMsg} ${p._chainExtra?'¡Cadena de capturas!':'¡Sacó dobles!'} Toca un dado para tirar de nuevo.`); p._chainExtra = false;
       render();
     } else {
       log(`${NAMES[p.color]} usó el dado ${diceDesc}.${effectMsg}`);
@@ -13505,7 +13590,7 @@ function broadcastStateSync(){
     return;
   }
   const snapshot = {
-    players: players.map(p=>({color:p.color, position:p.position, active:p.active, finished:p.finished, frozen:p.frozen, shield:p.shield, rb:!!p.reboundShield, em:!!p.embargoed, mt:p._myTurns||0, cs:p._capStreak||0, cd:p.card||null, mu:p.rollMultiplier||1, sk:!!p.skipNext, sw:!!p.swamp, rv:!!p.reverseRoll, ar:!!p.armor, isBot:!!p.isBot})),
+    players: players.map(p=>({color:p.color, position:p.position, active:p.active, finished:p.finished, frozen:p.frozen, shield:p.shield, rb:!!p.reboundShield, em:!!p.embargoed, mt:p._myTurns||0, cs:p._capStreak||0, cd:p.card||null, mu:p.rollMultiplier||1, sk:!!p.skipNext, sw:!!p.swamp, rv:!!p.reverseRoll, ar:!!p.armor, br:!!p.brake, isBot:!!p.isBot})),
     walls: (activeWalls||[]).map(w=>w.position),
     tr: treasure ? treasure.pos : -1, td: treasureDone ? 1 : 0,
     current,
@@ -13528,7 +13613,7 @@ function applyStateSync(snapshot){
     p.frozen = sp.frozen;
     p._myTurns = sp.mt||0; p._capStreak = sp.cs||0; if(sp.color!==MY_COLOR) p.card = sp.cd||null;
     p.shield = sp.shield;
-    p.reboundShield = !!sp.rb; p.embargoed = !!sp.em; p.rollMultiplier = sp.mu||1; p.skipNext = !!sp.sk; p.swamp = !!sp.sw; p.reverseRoll = !!sp.rv; p.armor = !!sp.ar;
+    p.reboundShield = !!sp.rb; p.embargoed = !!sp.em; p.rollMultiplier = sp.mu||1; p.skipNext = !!sp.sk; p.swamp = !!sp.sw; p.reverseRoll = !!sp.rv; p.armor = !!sp.ar; p.brake = !!sp.br;
     p.isBot = (sp.color===MY_COLOR) ? false : !!sp.isBot;
     mpLastPos[sp.color] = sp.position;
   });
@@ -14636,6 +14721,7 @@ const TUTORIALS = {
       'Ataque 🎯💥🧱🔁: Captura manda al rival más cercano a la Salida, Empujón lo hace retroceder, Bloqueo pone un muro que detiene a quien pase, e Intercambio Forzado te cambia de lugar con un rival al azar.',
       'Defensa 🪖🚫🪞: Armadura te hace ignorar el próximo ataque que recibas, Embargo anula tu próxima habilidad de ataque, y Escudo Rebote devuelve la próxima captura o empujón que recibas directo al atacante.',
       'Captura: si caes exactamente en la casilla de un rival (pasada la casilla 5) lo mandas de vuelta (al campamento ⛺ anterior, que hay uno cada 20 casillas, o a la Salida si aún no pasó ninguno) y avanzas de 3 a 8 casillas de premio — y a ti te puede pasar lo mismo. Ojo: al jugador al que le faltan 8 casillas o menos para ganar no se le puede comer.',
+      'Cadena 🔗: si capturas dos veces seguidas (en turnos seguidos) tiras otra vez. Arena ⚔️: de la casilla 40 a la 70 (teñidas de rojo) los empujones pegan más fuerte. Cuando una ficha tiene defensa activa se le ve un aura.',
       'Dobles 🎲🎲 = tiras otra vez (¡tres seguidos te mandan a la Salida!). A mitad de partida aparece un cofre 💰: ¡el que lo toca gana el premio!',
     ],
   },
@@ -14645,10 +14731,11 @@ const TUTORIALS = {
     icon: '⚡',
     color: '#ffcd4d',
     steps: [
-      '¡Ritmo directo y sin zonas seguras! El tablero más largo, pensado para el combate frontal.',
+      '¡Ritmo directo y sin zonas seguras! Un tablero largo y veloz: aquí manda la velocidad.',
       'Captura: si caes exactamente en la casilla de un rival (pasada la casilla 5) lo mandas de vuelta (al campamento ⛺ anterior, que hay uno cada 20 casillas, o a la Salida si aún no pasó ninguno) y avanzas de 3 a 8 casillas de premio — y a ti te puede pasar lo mismo. Ojo: al jugador al que le faltan 8 casillas o menos para ganar no se le puede comer.',
       'Dobles 🎲🎲 = tiras otra vez (¡tres seguidos te mandan a la Salida!). A mitad de partida aparece un cofre 💰: ¡el que lo toca gana el premio!',
-      'Dos trampas: ⚡ Electrocución te hace retroceder entre 10 y 20 casillas, y ⏪ Reversa hace que tu próxima tirada se cuente hacia atrás. Hay 28 repartidas por el camino.',
+      'Ventaja: 🏎️ Turbo hace que tu próxima tirada cuente el doble. ¡Y en el tramo final (de 30 a 12 casillas de la meta) cada tirada tiene un empuje extra de +2 con el 🏁 Sprint!',
+      'Cuatro trampas: ⚡ Electrocución te hace retroceder entre 10 y 20 casillas, ⏪ Reversa cuenta tu próxima tirada hacia atrás, 🛑 Frenazo la reduce a la mitad y 💨 Derrape te patina 2 o 3 casillas hacia adelante o hacia atrás.',
     ],
   },
   'rapido': {
@@ -20191,6 +20278,8 @@ function fxSound(type){
     case 'baja': seq([400,300,200,120],'triangle',0.1,0.08,70); break;
     case 'bloqueo': beep(100,0.2,'square',0.12); break;
     case 'embargo': seq([220,196],'sawtooth',0.15,0.08,120); break;
+    case 'motor': seq([120,160,210,280],'sawtooth',0.07,0.05,45); break;
+    case 'frenazo': seq([900,600,380,220],'square',0.07,0.05,55); break;
   }
 }
 const TOKEN_FX = {
@@ -20215,9 +20304,12 @@ const TOKEN_FX = {
   embargo: m=>{ fxSprite(m,'🚫'); fxBurst(m,[0xff5050,0x888888],{spread:1}); fxSound('embargo'); },
   intercambio:m=>{ fxSprite(m,'🔁'); fxBurst(m,[0xb07bff,0xffffff],{spread:1.1}); },
   electro: m=>{ fxSprite(m,'⚡'); fxGlow(m,0xfff27a,900,true); fxBurst(m,[0xfff27a,0xffffff,0x9fe8ff],{count:40,spread:1.4,upward:1.8,durationMs:700}); fxSound('electro'); },
-  reversa: m=>{ fxSprite(m,'⏪'); fxBurst(m,[0xc9c9d6,0xffffff],{upward:1,spread:1.2}); }
+  reversa: m=>{ fxSprite(m,'⏪'); fxBurst(m,[0xc9c9d6,0xffffff],{upward:1,spread:1.2}); },
+  turbo:   m=>{ fxSprite(m,'🏎️'); fxGlow(m,0xff8a2a,900); fxBurst(m,[0xff8a2a,0xffe27a,0xffffff],{count:38,spread:1.3,upward:1.2}); fxSound('motor'); },
+  frenazo: m=>{ fxSprite(m,'🛑'); fxScaleAnim(m,'squash',500); fxBurst(m,[0x777777,0xbbbbbb],{count:22,spread:1.0,upward:0.8}); fxSound('frenazo'); },
+  derrape: m=>{ fxSprite(m,'💨'); fxBurst(m,[0xdddddd,0xffffff],{count:26,spread:1.5,upward:0.6}); fxSound('frenazo'); }
 };
-const FX_STATUS_TYPES = {congelado:1, escudo:1, rebote:1, embargo:1};
+const FX_STATUS_TYPES = {congelado:1, escudo:1, rebote:1, embargo:1, retroceso:1};
 function tokenFx(type,color){
   try{
     const m=_fxMesh(color), f=TOKEN_FX[type]; if(!m||!f) return;
@@ -20233,6 +20325,7 @@ function _statusTick(){
   Object.values(b3d.tokenMeshes||{}).forEach(m=>{
     const fx=m.userData.fx; if(!fx) return;
     Object.values(fx).forEach(o=>{ if(!o||!o.mesh) return; any=true;
+      if(o.kind==='armor'){ o.mesh.rotation.y+=0.02; o.mesh.material.opacity=0.55+0.15*Math.sin(t*2.6); }
       if(o.kind==='shield'||o.kind==='rb'){ o.mesh.material.opacity=0.2+0.12*Math.sin(t*3+(o.kind==='rb'?1:0)); o.mesh.rotation.y+=0.01; }
       if(o.kind==='emb'){ o.mesh.rotation.z+=0.04; }
       if(o.kind==='ice'){ o.mesh.material.opacity=0.46+0.06*Math.sin(t*2); }
@@ -20256,6 +20349,9 @@ function _statusAdd(mesh,key,kind){
     const s=new THREE.Mesh(new THREE.SphereGeometry(Math.max(r*2.0,h*0.6),20,14),
       new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:0.25,blending:THREE.AdditiveBlending,depthWrite:false,wireframe:kind==='rb'}));
     s.position.y=h*0.5; mesh.add(s); o={kind,mesh:s,born:performance.now()};
+  } else if(kind==='armor'){
+    const a=new THREE.Mesh(new THREE.TorusGeometry(Math.max(r*1.7,0.3),Math.max(r*0.2,0.05),8,6),new THREE.MeshPhongMaterial({color:0xd9dde6,emissive:0x3a4a6a,shininess:90,flatShading:true,transparent:true,opacity:0.6}));
+    a.rotation.x=Math.PI/2; a.position.y=h*0.35; mesh.add(a); o={kind:'armor',mesh:a,born:performance.now()};
   } else if(kind==='emb'){
     const t=new THREE.Mesh(new THREE.TorusGeometry(r*1.5,r*0.22,6,10),new THREE.MeshPhongMaterial({color:0xb04040,emissive:0x501010,flatShading:true}));
     t.rotation.x=Math.PI/2; t.position.y=h*0.55; mesh.add(t); o={kind:'emb',mesh:t,born:performance.now()};
@@ -20275,7 +20371,7 @@ function syncTokenStatus(){
     players.forEach(p=>{
       const m=b3d.tokenMeshes[p.color]; if(!m) return;
       const fx=m.userData.fx||{};
-      const want={ice:!!p.frozen&&p.active, shield:!!p.shield&&p.active, rb:!!p.reboundShield&&p.active, emb:!!p.embargoed&&p.active};
+      const want={ice:!!p.frozen&&p.active, shield:!!p.shield&&p.active, rb:!!p.reboundShield&&p.active, emb:!!p.embargoed&&p.active, armor:!!p.armor&&p.active};
       Object.keys(want).forEach(k=>{
         const has=!!fx[k];
         if(want[k]&&!has) _statusAdd(m,k,k);
@@ -20717,7 +20813,7 @@ function camFxStep(now){
       const c = CELEB[type]; if(!c) return;
       if(type==='tesoro') camFxTrigger('treasure', color);
       else if(type==='meta') camFxTrigger('win', color);
-      else if(c.k==='bad' && ['lava','electro','congelado','empujon','vuelva','reversa','embargo','turno'].indexOf(type)>=0) camFxTrigger('trap', color);
+      else if(c.k==='bad' && ['lava','electro','congelado','empujon','vuelva','reversa','embargo','turno','frenazo','derrape'].indexOf(type)>=0) camFxTrigger('trap', color);
     }catch(e){}
   };
   const _oc = onCaptureEvent;
@@ -20820,6 +20916,15 @@ function boardFxBuild(){
       g.userData={type:'camp', r1}; b3d.scene.add(g); b3d._lmObjs.push(g);
     });
   }catch(e){}
+  try{
+    if(activeBoardMode==='mode3'){   // Batalla: la ARENA (casillas 40 a 70) se ve teñida de rojo
+      for(let i=40;i<=70;i++){
+        const cell=path[i]; if(!cell) continue; const q=cellWorldPos3D(cell.row,cell.col);
+        const m=new THREE.Mesh(new THREE.PlaneGeometry(0.86,0.86),new THREE.MeshBasicMaterial({color:0xff4a2a,transparent:true,opacity:0.2,depthWrite:false,blending:THREE.AdditiveBlending}));
+        m.rotation.x=-Math.PI/2; const g=new THREE.Group(); g.position.set(q.x,0.07,q.z); g.add(m); g.userData={type:'arena',m,ph:i*0.35}; b3d.scene.add(g); b3d._lmObjs.push(g);
+      }
+    }
+  }catch(e){}
   const a=path[0], z=path[META_INDEX];
   if(a) mk(cellWorldPos3D(a.row,a.col),'salida');
   if(z){ const p=cellWorldPos3D(z.row,z.col); b3d._metaPos=p; mk(p,'meta'); }
@@ -20835,6 +20940,8 @@ function boardFxStep(now){
       const k=0.5+0.5*Math.sin(t*2.4);
       u.r1.scale.setScalar(1+0.18*k); u.r1.material.opacity=0.55+0.4*k;
       u.r2.scale.setScalar(1.15-0.12*k); u.r2.material.opacity=0.25+0.4*(1-k);
+    } else if(u.type==='arena'){
+      u.m.material.opacity=0.14+0.12*(0.5+0.5*Math.sin(t*2+u.ph));
     } else if(u.type==='camp'){
       const k=0.5+0.5*Math.sin(t*1.5+2);
       u.r1.material.opacity=0.45+0.35*k;
