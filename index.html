@@ -19689,6 +19689,7 @@ async function tokBuildModel(id, color){
   model.traverse(o=>{
     if(o.isMesh){
       o.material = o.material.clone();
+      if(TOKEN_SPRITE[id] && o.material.map){ const lt = o.material.map.clone(); lt.encoding = THREE.LinearEncoding; lt.needsUpdate = true; o.material.map = lt; }   // colores fieles en el icono (el visor no corrige a sRGB)
       if(o.name==='token-sprite-base'){ o.material.color = new THREE.Color(TOK_ICON_COLOR[color]||0xffffff); return; }
       if(o.material.map && TOKEN_HOODIE[id]){ o.material.map = hoodieTintTexture(o.material.map.image, TOK_ICON_COLOR[color]||0xffffff, TOKEN_HOODIE[id]); o.material.color.set(0xffffff); o.material.needsUpdate = true; }
       else if(o.material.map && TOKEN_HUE_TINT.includes(id)){ o.material.map = hueTintTexture(o.material.map.image, TOK_ICON_COLOR[color]||0xffffff, TOKEN_HUE_MAX[id]); o.material.color.set(0xffffff); o.material.needsUpdate = true; }
@@ -19724,7 +19725,7 @@ async function tokBuildModel(id, color){
         const cv = document.createElement('canvas'); cv.width=cv.height=S; const g = cv.getContext('2d');
         let gr = g.createLinearGradient(0,S*0.55,0,S); gr.addColorStop(0,'rgba(0,0,0,0)'); gr.addColorStop(1,'rgba(20,0,30,0.22)'); g.fillStyle=gr; g.fillRect(0,0,S,S);
         g.globalCompositeOperation='destination-in'; g.drawImage(im,0,0,S,S);
-        const tx = new THREE.CanvasTexture(cv); tx.encoding = THREE.sRGBEncoding;
+        const tx = new THREE.CanvasTexture(cv);
         const ov = new THREE.Mesh(new THREE.PlaneGeometry(1,1), new THREE.MeshBasicMaterial({ map:tx, transparent:true, depthWrite:false, toneMapped:false, side:THREE.DoubleSide }));
         ov.position.copy(m.position); ov.position.z = m.name==='token-sprite' ? 0.003 : m.position.z + 0.0005; model.add(ov);
       });
