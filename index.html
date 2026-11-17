@@ -11709,6 +11709,15 @@ const TOKEN_FREE_TEST = ['canica','domo','trompo','perla','piramide','gota','cam
 //   // PRUEBA: ficha búho (estilo personaje sobre base de color)
 // Fichas que cambian SOLO sus zonas rojas al color del jugador (el oro y el crema se quedan)
 const TOKEN_HUE_TINT = ['buho'];
+// Fichas de Tripo con acabado brillante (cristal): menos rugosidad y reflejo del entorno
+const TOKEN_GLOSS = { canica:{ r:0.1, m:0.06, env:1.2 } };
+function applyTokenGloss(mat, id){
+  const g = TOKEN_GLOSS[id]; if(!g || !mat) return;
+  mat.roughnessMap = null; mat.metalnessMap = null;
+  mat.roughness = g.r; mat.metalness = g.m;
+  try{ mat.envMap = finishEnvMap(); mat.envMapIntensity = g.env; }catch(e){}
+  mat.needsUpdate = true;
+}
 const TOKEN_SCALE = { zorrito:1.25, chico:1.7, osoparche:1.25 };
 // Fichas con la MISMA base que el zorro (mismo tamaño y altura): se escalan todas igual, sin ajustar por el ancho del personaje
 const TOKEN_SAME_BASE = ['zorrito'];
@@ -12203,6 +12212,7 @@ function create3DTokenMesh(color){
             const y0 = bbG.min.y + (bbG.max.y-bbG.min.y)*frac;
             const soft = (bbG.max.y-bbG.min.y)*0.05;
             const tint = new THREE.Color(colorHex);
+            applyTokenGloss(o.material, skinId);
             o.material.onBeforeCompile = (sh)=>{
               sh.uniforms.uTint = {value:tint}; sh.uniforms.uY0 = {value:y0}; sh.uniforms.uSoft = {value:soft};
               sh.vertexShader = sh.vertexShader.replace('#include <common>','#include <common>\nvarying float vLocalY;').replace('#include <begin_vertex>','#include <begin_vertex>\nvLocalY = position.y;');
@@ -19777,6 +19787,7 @@ async function tokBuildModel(id, color){
         o.geometry.computeBoundingBox();
         const bbG = o.geometry.boundingBox, hG = bbG.max.y-bbG.min.y;
         const y0 = bbG.min.y + hG*BASE_TINT_FRAC[id], soft = hG*0.05, tint = new THREE.Color(TOK_ICON_COLOR[color]||0xffffff);
+        applyTokenGloss(o.material, id);
         o.material.onBeforeCompile = (sh)=>{
           sh.uniforms.uTint = {value:tint}; sh.uniforms.uY0 = {value:y0}; sh.uniforms.uSoft = {value:soft};
           sh.vertexShader = sh.vertexShader.replace('#include <common>','#include <common>\nvarying float vLocalY;').replace('#include <begin_vertex>','#include <begin_vertex>\nvLocalY = position.y;');
