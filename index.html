@@ -12344,7 +12344,7 @@ function buildBoardOnce(){
     const mesh = create3DTokenMesh(p.color);
     const cell = path[p.position];
     const base = cellWorldPos3D(cell.row, cell.col);
-    const subX = (p.color==='blue'||p.color==='yellow') ? 0.3 : -0.3;
+    const subX = (p.color==='blue'||p.color==='yellow') ? 0.16 : -0.16;
     const subZ = (p.color==='green'||p.color==='yellow') ? 0.16 : -0.16;
     mesh.position.set(base.x+subX, 0, base.z+subZ);
     scene.add(mesh);
@@ -12515,7 +12515,7 @@ function updateTokenPosition(p){
   // Solo separamos las fichas por color cuando de verdad comparten la
   // misma casilla con otra ficha activa — si está sola, va centrada.
   const sharing = players.some(o=>o.active && o.color!==p.color && o.position===p.position);
-  const subX = sharing ? ((p.color==='blue'||p.color==='yellow') ? 0.3 : -0.3) : 0;
+  const subX = sharing ? ((p.color==='blue'||p.color==='yellow') ? 0.16 : -0.16) : 0;
   const subZ = sharing ? ((p.color==='green'||p.color==='yellow') ? 0.16 : -0.16) : 0;
   const target = { x: base.x+subX, y: 0, z: base.z+subZ };
   const from = { x: mesh.position.x, y: 0, z: mesh.position.z };
@@ -19712,6 +19712,11 @@ async function tokBuildModel(id, color){
       else if(!(o.material.userData && o.material.userData.keep)) { o.material.color = new THREE.Color(TOK_ICON_COLOR[color]||0xffffff); if(PAWN_FINISH[id]) applyPawnFinish(o.material, id, TOK_ICON_COLOR[color]||0xffffff); }
     }
   });
+  if(TOKEN_SPRITE[id]){   // solo en el icono de la tienda/Colección: grosor para que no se vea plana
+    const front = []; model.traverse(o=>{ if(o.isMesh) front.push(o); });
+    front.forEach(m=>{ for(let i=1;i<=7;i++){ const cp = m.clone(); cp.material = m.material.clone(); cp.material.color.multiplyScalar(0.62 - i*0.03); cp.position.z = m.position.z - i*0.014; model.add(cp); } });
+    model.rotation.x = -0.12;
+  }
   if(TOKEN_FRONT_FIX[id]) model.rotation.y = TOKEN_FRONT_FIX[id];
   const box = new THREE.Box3().setFromObject(model);
   const size = new THREE.Vector3(); box.getSize(size);
