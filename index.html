@@ -14387,8 +14387,14 @@ async function loadProfile(){
       if(profileStats.tokenSkins && typeof profileStats.tokenSkins==='object'){
         tokenSkins = Object.assign({red:null,blue:null,yellow:null,green:null}, profileStats.tokenSkins);
       }
+      // Una sola vez: la ficha principal por defecto es el Pingüino (a quien tenía el peón sin haber elegido nada)
+      if(!profileStats.pinguinoDefault){
+        ['red','blue','yellow','green'].forEach(c=>{ if(!tokenSkins[c]) tokenSkins[c] = 'pinguino'; });
+        profileStats.tokenSkins = tokenSkins; profileStats.pinguinoDefault = true; needsResave = true;
+      }
     } else {
       profileStats.playerId = genPlayerId();
+      profileStats.pinguinoDefault = true;
       profileStats.diamonds = lobbyDiamonds;
       profileStats.gold = lobbyGold;
       await saveProfile();
