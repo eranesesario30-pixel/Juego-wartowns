@@ -19789,7 +19789,7 @@ async function startTokenModalCanvas(id, color){
     if(!cv.isConnected){ diceModalRAF = 0; return; }
     if(!document.hidden && now-last >= 33){
       last = now;
-      const src = tokDraw(pivot, (TOKEN_IMG[id]||TOKEN_SPRITE[id]) ? Math.sin((now-t0)/650)*0.45 : -0.6 + (now-t0)/1000*0.9, PX);
+      const src = tokDraw(pivot, TOKEN_SPRITE[id] ? 0 : TOKEN_IMG[id] ? Math.sin((now-t0)/650)*0.45 : -0.6 + (now-t0)/1000*0.9, PX);
       ctx.clearRect(0,0,PX,PX); ctx.drawImage(src, 0, 0);
     }
     diceModalRAF = requestAnimationFrame(loop);
