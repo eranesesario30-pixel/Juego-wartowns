@@ -7039,7 +7039,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running' && !document.hidden){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1261';
+const BUILD_VERSION = '1262';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -10404,6 +10404,7 @@ function autoPlayForTimeout(){
   const gate = document.getElementById('multiplayerGate');
   if(gate && gate.style.display!=='none') return;
   if(winner || rolling || animating) return;
+  if(multiplayerActive && !tableLaunched) return;   // buscando rival: no se tira solo
   if(multiplayerActive && players[current] && players[current].color !== MY_COLOR) return;
   if(dice[0]===null && dice[1]===null){
     log(`${NAMES[players[current].color]} se demoró: el juego tira los dados automáticamente.`);
@@ -12875,6 +12876,7 @@ async function useDiamondChange(){
 
 function handleDieTap(idx){
   if(rolling || animating || winner) return;
+  if(multiplayerActive && !tableLaunched){ lobbyToast('Esperando al rival: todavía no puedes tirar.'); return; }   // mientras se busca rival no se juega
   if(multiplayerActive && players[current] && players[current].color !== MY_COLOR){
     lobbyToast('Todavía no es tu turno.');
     return;
