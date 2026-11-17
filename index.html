@@ -11814,6 +11814,8 @@ const ANIMAL_EMOJI = {
 // Fichas dibujadas con código: caben en la misma caja que el peón clásico (0.82 de ancho × 1.28 de alto)
 // Fichas retiradas: ya no se venden ni se ven en la colección, salvo para quien ya las tiene
 const RETIRED_TOKENS = ['torre','corona','estrella','diamante','cohete','corazon','rayo','luna','escudo','copa'];
+// Fichas viejas que ya no existen en la tienda ni en la colección (solo quedan el peón y las fichas nuevas 2D; las 4 del Pase siguen en el Pase)
+const OLD_TOKENS_GONE = ['torre','corona','estrella','diamante','cohete','corazon','rayo','luna','escudo','copa','canica','domo','trompo','perla','piramide','gota','campana','barril','cono','farol','caliz','anillo','nieve','peonza','gema','moneda','canica2d'];
 const CODE_TOKENS = ['perla','piramide','gota','campana','barril','cono','farol','caliz','anillo','nieve','peonza','gema','canica','domo','trompo','torre','corona','estrella','diamante','cohete','corazon','rayo','luna','escudo','copa'];
 const PAWN_FINISH = { peon_oro:1, peon_cristal:1, peon_cromo:1, peon_neon:1 };
 let _finishEnv = null;
@@ -12141,7 +12143,7 @@ const TOKEN_TILT_DEG = 40; // cuánto se inclina la ficha hacia la cámara (0 = 
 const DEFAULT_TOKEN = 'pinguino';
 function _skinResolve(v){
   if(v==='clasico') return null;                       // peón clásico elegido a propósito
-  if(!v || !ANIMAL_NAMES[v]) return DEFAULT_TOKEN;     // sin elegir (o ficha desconocida): la principal
+  if(!v || !ANIMAL_NAMES[v] || OLD_TOKENS_GONE.includes(v)) return DEFAULT_TOKEN;     // sin elegir (o ficha desconocida): la principal
   return v;
 }
 function mySkinForMatch(){
@@ -16144,7 +16146,7 @@ const ECO_SIM = (function(){
   }
   function rollColor(t){
     if(Math.random() >= (TOK_CH[t]||.05)) return null;
-    const cand = Object.keys(ANIMAL_NAMES).filter(id=>id!=='clasico' && !tokOwned(id) && !PASS_ONLY_TOKENS.includes(id) && !RETIRED_TOKENS.includes(id));
+    const cand = Object.keys(ANIMAL_NAMES).filter(id=>id!=='clasico' && !tokOwned(id) && !PASS_ONLY_TOKENS.includes(id) && !RETIRED_TOKENS.includes(id) && !OLD_TOKENS_GONE.includes(id));
     if(!cand.length) return null;
     const prog = id => (d.drops.tok[id]||[]).length;
     const best = Math.max.apply(null, cand.map(prog));
@@ -16182,6 +16184,7 @@ const ECO_SIM = (function(){
       if(o.kind==='token'){
         if(!ANIMAL_NAMES[o.id]) return fail('no_existe');
         if(PASS_ONLY_TOKENS.includes(o.id)) return fail('solo_pase');
+        if(OLD_TOKENS_GONE.includes(o.id)) return fail('retirado');
         if(RETIRED_TOKENS.includes(o.id)) return fail('retirado');
         price = TOKEN_FREE_TEST.includes(o.id) ? 0 : PRICE_TOKEN;
       } else {
@@ -19671,7 +19674,7 @@ function selectSkinColor(color){
 
 function tokenOptions(){
   return [{id:'clasico', name:'Clásico', emoji:'♟️'}].concat(
-    Object.keys(ANIMAL_NAMES).filter(id=>(!PASS_ONLY_TOKENS.includes(id) && !RETIRED_TOKENS.includes(id)) || tokenOwned(id)).map(id=>({id, name:ANIMAL_NAMES[id], emoji:ANIMAL_EMOJI[id]}))
+    Object.keys(ANIMAL_NAMES).filter(id=>!OLD_TOKENS_GONE.includes(id) && ((!PASS_ONLY_TOKENS.includes(id) && !RETIRED_TOKENS.includes(id)) || tokenOwned(id))).map(id=>({id, name:ANIMAL_NAMES[id], emoji:ANIMAL_EMOJI[id]}))
   );
 }
 function tokenOwned(id){
