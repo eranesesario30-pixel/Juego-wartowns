@@ -5,7 +5,7 @@
 math.randomseed(os.time())
 local COLORS4 = { "red", "blue", "yellow", "green" }
 local DICE_FACE_CHANCE = { bronce = 0.06, plata = 0.10, oro = 0.18, diamante = 0.24 }
-local TOKEN_COLOR_CHANCE = { bronce = 0.05, plata = 0.08, oro = 0.15, diamante = 0.20 }
+local TOKEN_COLOR_CHANCE = { bronce = 0.10, plata = 0.16, oro = 0.30, diamante = 0.40 }
 local AV_PIECE_CHANCE = { bronce = 0.03, plata = 0.04, oro = 0.06, diamante = 0.08 }
 local CHEST_GEM_COST = { bronce = 30, plata = 60, oro = 100, diamante = 150 }
 local AD_LADDER = {
@@ -147,7 +147,7 @@ local function roll_token_color(d, ctype)
   local cand = {}
   for _, id in ipairs(list_keys(CAT.tokens)) do
     local c = CAT.tokens[id]
-    if id ~= "clasico" and not tok_owned(d, id) and not c.pass and not retired[id] then cand[#cand + 1] = id end
+    if id ~= "clasico" and c.anfora and not tok_owned(d, id) and not c.pass and not retired[id] then cand[#cand + 1] = id end
   end
   if #cand == 0 then return nil end
   local function prog(id) return #(dr.tok[id] or {}) end
