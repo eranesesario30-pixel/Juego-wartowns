@@ -19712,10 +19712,31 @@ async function tokBuildModel(id, color){
       else if(!(o.material.userData && o.material.userData.keep)) { o.material.color = new THREE.Color(TOK_ICON_COLOR[color]||0xffffff); if(PAWN_FINISH[id]) applyPawnFinish(o.material, id, TOK_ICON_COLOR[color]||0xffffff); }
     }
   });
+  let _halo = null;
   if(TOKEN_SPRITE[id]){   // solo en el icono de la tienda/Colección: grosor para que no se vea plana
     const front = []; model.traverse(o=>{ if(o.isMesh) front.push(o); });
     front.forEach(m=>{ const N=30; for(let i=1;i<=N;i++){ const t=i/N, cp = m.clone(); cp.material = m.material.clone(); cp.material.color.multiplyScalar(0.88 - 0.28*t); cp.position.z = m.position.z - i*0.0075; cp.scale.multiplyScalar(1 - 0.07*t*t); model.add(cp); } });
     model.rotation.x = -0.12;
+    try{   // brillo de tienda: reflejo de luz + sombra suave de volumen + resplandor del contorno (solo en este icono)
+      const S=512, imgs = front.map(m=>m.material.map && m.material.map.image).filter(Boolean);
+      front.forEach(m=>{
+        const im = m.material.map && m.material.map.image; if(!im) return;
+        const cv = document.createElement('canvas'); cv.width=cv.height=S; const g = cv.getContext('2d');
+        let gr = g.createLinearGradient(0,S*0.55,0,S); gr.addColorStop(0,'rgba(0,0,0,0)'); gr.addColorStop(1,'rgba(20,0,30,0.32)'); g.fillStyle=gr; g.fillRect(0,0,S,S);
+        gr = g.createRadialGradient(S*0.34,S*0.28,0,S*0.34,S*0.28,S*0.6); gr.addColorStop(0,'rgba(255,255,255,0.7)'); gr.addColorStop(0.35,'rgba(255,255,255,0.2)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gr; g.fillRect(0,0,S,S);
+        g.save(); g.translate(S*0.3,S*0.2); g.rotate(-0.5); g.fillStyle='rgba(255,255,255,0.8)'; g.beginPath(); g.ellipse(0,0,S*0.1,S*0.035,0,0,Math.PI*2); g.fill(); g.restore();
+        g.globalCompositeOperation='destination-in'; g.drawImage(im,0,0,S,S);
+        const tx = new THREE.CanvasTexture(cv); tx.encoding = THREE.sRGBEncoding;
+        const ov = new THREE.Mesh(new THREE.PlaneGeometry(1,1), new THREE.MeshBasicMaterial({ map:tx, transparent:true, depthWrite:false, toneMapped:false, side:THREE.DoubleSide }));
+        ov.position.copy(m.position); ov.position.z = m.name==='token-sprite' ? 0.003 : m.position.z + 0.0005; model.add(ov);
+      });
+      const hc = document.createElement('canvas'); hc.width=hc.height=S; const hg = hc.getContext('2d'), PAD=S*0.07, W=S*0.86;
+      hg.shadowColor='rgba(255,236,170,0.95)'; hg.shadowBlur=26; imgs.forEach(im=>hg.drawImage(im,PAD,PAD,W,W));
+      hg.shadowBlur=0; hg.globalCompositeOperation='destination-out'; imgs.forEach(im=>hg.drawImage(im,PAD,PAD,W,W));
+      const ht = new THREE.CanvasTexture(hc); ht.encoding = THREE.sRGBEncoding;
+      const halo = new THREE.Mesh(new THREE.PlaneGeometry(1/0.86,1/0.86), new THREE.MeshBasicMaterial({ map:ht, transparent:true, depthWrite:false, toneMapped:false, side:THREE.DoubleSide }));
+      halo.position.set(0, front[0].position.y, front[0].position.z - 0.24); _halo = halo;
+    }catch(e){ console.warn('brillo ficha', e); }
   }
   if(TOKEN_FRONT_FIX[id]) model.rotation.y = TOKEN_FRONT_FIX[id];
   const box = new THREE.Box3().setFromObject(model);
@@ -19726,6 +19747,7 @@ async function tokBuildModel(id, color){
   const c = new THREE.Vector3(); b2.getCenter(c);
   model.position.x -= c.x; model.position.z -= c.z; model.position.y -= b2.min.y;
   const pivot = new THREE.Group(); pivot.add(model);
+  if(_halo) model.add(_halo);   // el resplandor se agrega después de medir, para no cambiar el tamaño
   tokGL.models[key] = pivot;
   return pivot;
 }
