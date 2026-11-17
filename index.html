@@ -19733,7 +19733,7 @@ async function tokBuildModel(id, color){
       hg.shadowBlur=0; hg.globalCompositeOperation='destination-out'; imgs.forEach(im=>hg.drawImage(im,PAD,PAD,W,W));
       const ht = new THREE.CanvasTexture(hc); ht.encoding = THREE.sRGBEncoding;
       const halo = new THREE.Mesh(new THREE.PlaneGeometry(1/0.86,1/0.86), new THREE.MeshBasicMaterial({ map:ht, transparent:true, depthWrite:false, toneMapped:false, side:THREE.DoubleSide }));
-      halo.position.set(0, front[0].position.y, front[0].position.z - 0.24); _halo = halo;
+      /* resplandor dorado quitado a pedido */
     }catch(e){ console.warn('brillo ficha', e); }
   }
   if(TOKEN_FRONT_FIX[id]) model.rotation.y = TOKEN_FRONT_FIX[id];
