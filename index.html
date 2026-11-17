@@ -12052,7 +12052,7 @@ function walkerSetup(group, g, colorHex, slot, model){
 // Ajustes que se hacen una sola vez al cargar un modelo de Tripo (girarlo, darle material, añadirle piezas)
 const TOKEN_PREP = {
   // Moneda de oro de pie, sin base propia: se endereza (eje vertical = Y), se mira de frente a la cámara
-  // y se le pone un disco fino debajo que toma el color del jugador.
+  // sin base ni disco: solo la moneda de oro.
   moneda(scene){
     const rx = new THREE.Matrix4().makeRotationX(-Math.PI/2);
     const ry = new THREE.Matrix4().makeRotationY(46.4*Math.PI/180);
@@ -12070,13 +12070,6 @@ const TOKEN_PREP = {
       o.geometry.computeBoundingBox(); bb = o.geometry.boundingBox.clone();
       o.material = gold;
     });
-    if(bb){
-      const sz = new THREE.Vector3(); bb.getSize(sz); const c = new THREE.Vector3(); bb.getCenter(c);
-      const rad = Math.max(sz.x, sz.z)*0.42, th = sz.y*0.07;
-      const ring = new THREE.Mesh(new THREE.CylinderGeometry(rad*0.92, rad, th, 40), new THREE.MeshStandardMaterial({ color:0xffffff, roughness:0.45, metalness:0.05 }));
-      ring.position.set(c.x, bb.min.y - th/2, c.z); ring.name = 'token-ring';
-      scene.add(ring);
-    }
   },
 };
 function loadAnimalModelOnce(animalId){
