@@ -12135,15 +12135,23 @@ const TOKEN_TILT_DEG = 40; // cuánto se inclina la ficha hacia la cámara (0 = 
 // Animalito que usa cada jugador. En línea cada uno elige el suyo y lo manda por la mesa:
 // el mío es el que tengo puesto (en mi color, o si no, el que asigné a cualquier color);
 // el de los demás es el que ellos mandaron; las máquinas usan la ficha clásica.
+// La ficha principal de TODOS (jugadores, rivales y máquinas) es el Pingüino. Solo quien eligió el peón
+// a propósito lo guarda como 'clasico' y ese sí sale como peón.
+const DEFAULT_TOKEN = 'pinguino';
+function _skinResolve(v){
+  if(v==='clasico') return null;                       // peón clásico elegido a propósito
+  if(!v || !ANIMAL_NAMES[v]) return DEFAULT_TOKEN;     // sin elegir (o ficha desconocida): la principal
+  return v;
+}
 function mySkinForMatch(){
-  try{ return tokenSkins[MY_COLOR] || COLORS.map(c=>tokenSkins[c]).find(Boolean) || null; }catch(e){ return null; }
+  try{ return tokenSkins[MY_COLOR] || COLORS.map(c=>tokenSkins[c]).find(Boolean) || DEFAULT_TOKEN; }catch(e){ return DEFAULT_TOKEN; }
 }
 function tokenSkinForColor(color){
-  if(typeof multiplayerActive==='undefined' || !multiplayerActive) return (tokenSkins[color] && ANIMAL_NAMES[tokenSkins[color]]) ? tokenSkins[color] : null;
-  if(color===MY_COLOR) return mySkinForMatch();
+  if(typeof multiplayerActive==='undefined' || !multiplayerActive) return _skinResolve(tokenSkins[color]);
+  if(color===MY_COLOR) return _skinResolve(mySkinForMatch());
   const uid = colorUserId(color);
   const pr = uid ? mpProfiles[uid] : null;
-  return (pr && pr.tk) ? pr.tk : null;
+  return _skinResolve(pr && pr.tk);
 }
 function refreshTokenMesh(color){
   try{
@@ -18107,7 +18115,7 @@ function ensureDiceSkins(){
   }
   // Fichas nuevas (10 diseños propios): las de animalitos viejos ya no existen — se quitan de lo guardado.
   try{
-    const okTk = v => !v || !!ANIMAL_NAMES[v];
+    const okTk = v => !v || v==='clasico' || !!ANIMAL_NAMES[v];
     [tokenSkins, profileStats.tokenSkins].forEach(t=>{ if(t) Object.keys(t).forEach(k=>{ if(!okTk(t[k])) t[k] = null; }); });
     if(profileStats.unlockedTokens) profileStats.unlockedTokens = profileStats.unlockedTokens.filter(v=>v==='clasico' || ANIMAL_NAMES[v]);
     if(profileStats.tokenColors) Object.keys(profileStats.tokenColors).forEach(k=>{ if(!ANIMAL_NAMES[k]) delete profileStats.tokenColors[k]; });
@@ -19704,7 +19712,7 @@ async function rollTokenColorDrop(chestType){
 function renderSkinCatalog(){
   ensureDiceSkins();
   const box = document.getElementById('skinCatalog');
-  const current = tokenSkins[skinEditColor] || 'clasico';
+  const current = tokenSkins[skinEditColor] || DEFAULT_TOKEN;
   box.innerHTML = `<div class="dc-grid">
     ${tokenOptions().map(opt=>{
       const equipped = current===opt.id;
@@ -19743,7 +19751,7 @@ function renderTokenModal(id){
   if(!m || !opt) return;
   const owned = tokenOwned(id);
   const got = tokenColorsCollected(id);
-  const onThis = (tokenSkins[skinEditColor]||'clasico')===id;
+  const onThis = (tokenSkins[skinEditColor]||DEFAULT_TOKEN)===id;
   const hasEditColor = got.includes(skinEditColor);
   const main = onThis ? `<button class="dm-main on" disabled>✓ PUESTA EN ${NAMES[skinEditColor].toUpperCase()}</button>`
              : owned || hasEditColor ? `<button class="dm-main" onclick="useTokenFromModal('${id}')">USAR EN ${NAMES[skinEditColor].toUpperCase()}</button>`
@@ -19760,7 +19768,7 @@ function renderTokenModal(id){
     <div class="dm-toks">
       ${COLORS.map(c=>{
         const has = got.includes(c);
-        const on = has && (tokenSkins[c]||'clasico')===id;
+        const on = has && (tokenSkins[c]||DEFAULT_TOKEN)===id;
         return `<div class="dm-tok ${on?'on':''} ${has?'':'missing'}" onclick="assignSkinToColor('${id}','${c}')">
           <div class="dm-tkico scb-${c}">${tk3dHTML(id, c, opt.emoji, 112)}</div>
           <div class="dm-tok-name">${NAMES[c]}</div>
@@ -19786,7 +19794,7 @@ async function assignSkinToColor(id, color){
     lobbyToast(PASS_ONLY_TOKENS.includes(id) ? 'Esta ficha es exclusiva del Parche Pass: se gana subiendo de nivel.' : 'Te falta el color ' + NAMES[color] + ' de esta ficha: cae al romper ánforas, o cómprala completa por ' + PRICE_TOKEN + ' 💎.');
     return;
   }
-  tokenSkins[color] = id==='clasico' ? null : id;
+  tokenSkins[color] = id;   // 'clasico' = peón elegido a propósito
   profileStats.tokenSkins = tokenSkins;
   await saveProfile();
   renderSkinCatalog();
