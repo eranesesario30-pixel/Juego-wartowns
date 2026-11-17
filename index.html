@@ -19722,9 +19722,9 @@ async function tokBuildModel(id, color){
       front.forEach(m=>{
         const im = m.material.map && m.material.map.image; if(!im) return;
         const cv = document.createElement('canvas'); cv.width=cv.height=S; const g = cv.getContext('2d');
-        let gr = g.createLinearGradient(0,S*0.55,0,S); gr.addColorStop(0,'rgba(0,0,0,0)'); gr.addColorStop(1,'rgba(20,0,30,0.32)'); g.fillStyle=gr; g.fillRect(0,0,S,S);
-        gr = g.createRadialGradient(S*0.34,S*0.28,0,S*0.34,S*0.28,S*0.6); gr.addColorStop(0,'rgba(255,255,255,0.7)'); gr.addColorStop(0.35,'rgba(255,255,255,0.2)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gr; g.fillRect(0,0,S,S);
-        g.save(); g.translate(S*0.3,S*0.2); g.rotate(-0.5); g.fillStyle='rgba(255,255,255,0.8)'; g.beginPath(); g.ellipse(0,0,S*0.1,S*0.035,0,0,Math.PI*2); g.fill(); g.restore();
+        let gr = g.createLinearGradient(0,S*0.55,0,S); gr.addColorStop(0,'rgba(0,0,0,0)'); gr.addColorStop(1,'rgba(20,0,30,0.22)'); g.fillStyle=gr; g.fillRect(0,0,S,S);
+        gr = g.createRadialGradient(S*0.5,S*0.16,0,S*0.5,S*0.16,S*0.3); gr.addColorStop(0,'rgba(255,255,255,0.34)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gr; g.fillRect(0,0,S,S);
+        g.save(); g.translate(S*0.4,S*0.15); g.rotate(-0.35); g.fillStyle='rgba(255,255,255,0.5)'; g.beginPath(); g.ellipse(0,0,S*0.07,S*0.022,0,0,Math.PI*2); g.fill(); g.restore();
         g.globalCompositeOperation='destination-in'; g.drawImage(im,0,0,S,S);
         const tx = new THREE.CanvasTexture(cv); tx.encoding = THREE.sRGBEncoding;
         const ov = new THREE.Mesh(new THREE.PlaneGeometry(1,1), new THREE.MeshBasicMaterial({ map:tx, transparent:true, depthWrite:false, toneMapped:false, side:THREE.DoubleSide }));
