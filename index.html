@@ -12344,7 +12344,7 @@ function buildBoardOnce(){
     const mesh = create3DTokenMesh(p.color);
     const cell = path[p.position];
     const base = cellWorldPos3D(cell.row, cell.col);
-    const subX = (p.color==='blue'||p.color==='yellow') ? 0.16 : -0.16;
+    const subX = (p.color==='blue'||p.color==='yellow') ? 0.3 : -0.3;
     const subZ = (p.color==='green'||p.color==='yellow') ? 0.16 : -0.16;
     mesh.position.set(base.x+subX, 0, base.z+subZ);
     scene.add(mesh);
@@ -12515,7 +12515,7 @@ function updateTokenPosition(p){
   // Solo separamos las fichas por color cuando de verdad comparten la
   // misma casilla con otra ficha activa — si está sola, va centrada.
   const sharing = players.some(o=>o.active && o.color!==p.color && o.position===p.position);
-  const subX = sharing ? ((p.color==='blue'||p.color==='yellow') ? 0.16 : -0.16) : 0;
+  const subX = sharing ? ((p.color==='blue'||p.color==='yellow') ? 0.3 : -0.3) : 0;
   const subZ = sharing ? ((p.color==='green'||p.color==='yellow') ? 0.16 : -0.16) : 0;
   const target = { x: base.x+subX, y: 0, z: base.z+subZ };
   const from = { x: mesh.position.x, y: 0, z: mesh.position.z };
