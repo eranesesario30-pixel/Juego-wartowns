@@ -19714,7 +19714,7 @@ async function tokBuildModel(id, color){
   });
   if(TOKEN_SPRITE[id]){   // solo en el icono de la tienda/Colección: grosor para que no se vea plana
     const front = []; model.traverse(o=>{ if(o.isMesh) front.push(o); });
-    front.forEach(m=>{ const N=16; for(let i=1;i<=N;i++){ const t=i/N, cp = m.clone(); cp.material = m.material.clone(); cp.material.color.multiplyScalar(0.8 - 0.35*t); cp.position.z = m.position.z - i*0.0075; cp.scale.multiplyScalar(1 - 0.07*t*t); model.add(cp); } });
+    front.forEach(m=>{ const N=30; for(let i=1;i<=N;i++){ const t=i/N, cp = m.clone(); cp.material = m.material.clone(); cp.material.color.multiplyScalar(0.88 - 0.28*t); cp.position.z = m.position.z - i*0.0075; cp.scale.multiplyScalar(1 - 0.07*t*t); model.add(cp); } });
     model.rotation.x = -0.12;
   }
   if(TOKEN_FRONT_FIX[id]) model.rotation.y = TOKEN_FRONT_FIX[id];
