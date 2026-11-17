@@ -7040,7 +7040,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running' && !document.hidden){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1263';
+const BUILD_VERSION = '1264';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -19606,7 +19606,7 @@ function renderSkinCatalog(){
                  : owned    ? `<span class="dc-pill">Usar</span>`
                             : PASS_ONLY_TOKENS.includes(opt.id) ? `<span class="dc-pill price">🎫 Solo en el Pase</span>`
                             : tokenAnfora(opt.id) ? `<span class="dc-pill price">${n}/4</span>`
-                            : `<span class="dc-pill price">${n}/4 · 💎 ${tokenPrice(opt.id)}</span>`;
+                            : `<span class="dc-pill price">💎 ${tokenPrice(opt.id)}</span>`;
       return `<div class="dc-card ${equipped?'eq':''} ${owned?'own':''} ${owned?'':'locked'} ${(!owned && tokenAnfora(opt.id) && !tokenColorOwned(opt.id, skinEditColor))?'anf0':''}" onclick="openTokenModal('${opt.id}')">
         <div class="dc-name">${opt.name}</div>
         <div class="dc-tok">${tk3dHTML(opt.id, skinEditColor, opt.emoji, 144)}</div>
@@ -19644,8 +19644,8 @@ function renderTokenModal(id){
              : tokenAnfora(id) ? `<button class="dm-main" disabled>🔒 ${got.length}/4 COLORES</button>`
              : `<button class="dm-main buy" onclick="buyTokenSkin('${id}')">COMPRAR 💎 ${tokenPrice(id)}</button>`;
   const passOnly = PASS_ONLY_TOKENS.includes(id);
-  const sub  = owned ? 'Ficha de tu colección' : passOnly ? 'Ficha exclusiva del Parche Pass' : (got.length + '/4 colores · caen al romper ánforas');
-  const band = owned ? 'Todos los colores encontrados' : passOnly ? 'Se gana subiendo de nivel en el Pase' : tokenAnfora(id) ? 'Consigue los 4 colores en las ánforas' : 'Consigue los 4 colores o compra la ficha';
+  const sub  = owned ? 'Ficha de tu colección' : passOnly ? 'Ficha exclusiva del Parche Pass' : (tokenAnfora(id) ? got.length + '/4 colores · caen al romper ánforas' : 'Ficha de la tienda');
+  const band = owned ? 'Todos los colores encontrados' : passOnly ? 'Se gana subiendo de nivel en el Pase' : tokenAnfora(id) ? 'Consigue los 4 colores en las ánforas' : 'Cómprala y es tuya en los 4 colores';
   m.innerHTML = `<div class="dm-box">
     <button class="dm-close" onclick="closeDiceModal()">✕</button>
     <div class="dm-head"><div class="dm-title">${opt.name}</div><div class="dm-sub">${sub}</div></div>
@@ -19677,7 +19677,7 @@ async function assignSkinToColor(id, color){
   renderSkinColorRow();
   if(!tokenColorOwned(id, color)){
     renderSkinCatalog();
-    lobbyToast(PASS_ONLY_TOKENS.includes(id) ? 'Esta ficha es exclusiva del Parche Pass: se gana subiendo de nivel.' : 'Te falta el color ' + NAMES[color] + ' de esta ficha: cae al romper ánforas' + (tokenAnfora(id) ? '.' : ', o cómprala completa por ' + tokenPrice(id) + ' 💎.'));
+    lobbyToast(PASS_ONLY_TOKENS.includes(id) ? 'Esta ficha es exclusiva del Parche Pass: se gana subiendo de nivel.' : (tokenAnfora(id) ? 'Te falta el color ' + NAMES[color] + ' de esta ficha: cae al romper ánforas.' : 'Esta ficha se compra por ' + tokenPrice(id) + ' 💎.'));
     return;
   }
   tokenSkins[color] = id;   // 'clasico' = peón elegido a propósito
