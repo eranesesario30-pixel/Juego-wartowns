@@ -7264,7 +7264,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running' && !document.hidden){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1269';
+const BUILD_VERSION = '1270';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -17996,6 +17996,28 @@ function stepBoardModal(delta){
   boardModalId = list[(i + delta + list.length) % list.length].id;
   renderBoardModal(boardModalId);
 }
+/* Imagen completa (la del tablero en la partida) para la ventana grande de la tienda */
+let _bdFullMap = null;
+function boardFullImg(b){
+  if(!b) return '';
+  if(!_bdFullMap){
+    _bdFullMap = {};
+    const rootCS = getComputedStyle(document.documentElement);
+    const walk = rules => { for(const r of rules){
+      if(r.cssRules && !r.selectorText){ try{ walk(r.cssRules); }catch(e){} continue; }
+      const sel = r.selectorText; if(!sel || sel.indexOf('#boardOuter[data-mode=')<0) continue;
+      const css = r.style && r.style.cssText; if(!css || css.indexOf('border-image')<0) continue;
+      let src = '';
+      const u = css.match(/url\(["']?(data:[^"')]+|[^"')]+)["']?\)/);
+      if(u) src = u[1];
+      else { const v = css.match(/var\((--[\w-]+)\)/); if(v){ const vv = rootCS.getPropertyValue(v[1]).match(/url\(["']?([^"')]+)["']?\)/); if(vv) src = vv[1]; } }
+      if(!src) continue;
+      sel.replace(/data-mode="([^"]+)"/g, (_,md)=>{ if(!_bdFullMap[md]) _bdFullMap[md] = src; });
+    }};
+    for(const sh of document.styleSheets){ try{ walk(sh.cssRules); }catch(e){} }
+  }
+  return _bdFullMap[b.mode] || _bdFullMap[b.id] || '';
+}
 function renderBoardModal(id){
   stopDiceModalAnim();
   const m = document.getElementById('diceModal');
@@ -18016,6 +18038,12 @@ function renderBoardModal(id){
       <button class="dm-arrow" onclick="stepBoardModal(1)">›</button>
     </div>
   </div>`;
+  const full = boardFullImg(b);
+  if(full && full !== b.img){
+    const pre = new Image();
+    pre.onload = ()=>{ if(boardModalId!==id) return; const el = m.querySelector('.dm-bdstage img'); if(el) el.src = full; };
+    pre.src = full;
+  }
 }
 async function equipBoard(id){
   profileStats.equippedBoard = id;
