@@ -5978,6 +5978,27 @@ body.dice-shaking .dice-cube-wrap, body.dice-shaking .dice-sprite{ animation:dic
 /* La pantalla de partida ocupa siempre toda la altura del teléfono (sin franja oscura abajo) */
 #gameScreen{min-height:100vh;min-height:100dvh;box-sizing:border-box;}
 </style>
+<style id="nbBgFix">
+/* Fondo de partida en el color de cada tablero (sin el brillo azul que lo ensuciaba) */
+#gameScreen[data-mode="nb_selva"]{ background-image:radial-gradient(circle at 50% 0%, rgba(73,240,194,.26), transparent 55%), radial-gradient(circle at 50% 100%, rgba(73,240,194,.16), transparent 60%) !important; background-color:rgb(8,48,37) !important; }
+#gameScreen[data-mode="nb_desierto"]{ background-image:radial-gradient(circle at 50% 0%, rgba(240,197,118,.26), transparent 55%), radial-gradient(circle at 50% 100%, rgba(240,197,118,.16), transparent 60%) !important; background-color:rgb(102,80,40) !important; }
+#gameScreen[data-mode="nb_castillo"]{ background-image:radial-gradient(circle at 50% 0%, rgba(214,222,240,.26), transparent 55%), radial-gradient(circle at 50% 100%, rgba(214,222,240,.16), transparent 60%) !important; background-color:rgb(67,70,77) !important; }
+#gameScreen[data-mode="nb_samurai"]{ background-image:radial-gradient(circle at 50% 0%, rgba(240,74,98,.26), transparent 55%), radial-gradient(circle at 50% 100%, rgba(240,74,98,.16), transparent 60%) !important; background-color:rgb(93,16,27) !important; }
+#gameScreen[data-mode="nb_steampunk"]{ background-image:radial-gradient(circle at 50% 0%, rgba(240,158,117,.26), transparent 55%), radial-gradient(circle at 50% 100%, rgba(240,158,117,.16), transparent 60%) !important; background-color:rgb(39,23,15) !important; }
+#gameScreen[data-mode="nb_safari"]{ background-image:radial-gradient(circle at 50% 0%, rgba(240,158,76,.26), transparent 55%), radial-gradient(circle at 50% 100%, rgba(240,158,76,.16), transparent 60%) !important; background-color:rgb(95,56,17) !important; }
+#gameScreen[data-mode="nb_oeste"]{ background-image:radial-gradient(circle at 50% 0%, rgba(240,191,143,.26), transparent 55%), radial-gradient(circle at 50% 100%, rgba(240,191,143,.16), transparent 60%) !important; background-color:rgb(70,53,36) !important; }
+#gameScreen[data-mode="nb_biblioteca"]{ background-image:radial-gradient(circle at 50% 0%, rgba(140,240,187,.26), transparent 55%), radial-gradient(circle at 50% 100%, rgba(140,240,187,.16), transparent 60%) !important; background-color:rgb(21,42,31) !important; }
+#gameScreen[data-mode="nb_hockey"]{ background-image:radial-gradient(circle at 50% 0%, rgba(195,224,240,.26), transparent 55%), radial-gradient(circle at 50% 100%, rgba(195,224,240,.16), transparent 60%) !important; background-color:rgb(89,106,115) !important; }
+#gameScreen[data-mode="nb_romano"]{ background-image:radial-gradient(circle at 50% 0%, rgba(240,93,111,.26), transparent 55%), radial-gradient(circle at 50% 100%, rgba(240,93,111,.16), transparent 60%) !important; background-color:rgb(79,21,28) !important; }
+#gameScreen[data-mode="nb_ajedrez"]{ background-image:radial-gradient(circle at 50% 0%, rgba(240,167,118,.26), transparent 55%), radial-gradient(circle at 50% 100%, rgba(240,167,118,.16), transparent 60%) !important; background-color:rgb(41,26,16) !important; }
+#gameScreen[data-mode="nb_golf"]{ background-image:radial-gradient(circle at 50% 0%, rgba(148,240,128,.26), transparent 55%), radial-gradient(circle at 50% 100%, rgba(148,240,128,.16), transparent 60%) !important; background-color:rgb(55,102,45) !important; }
+#gameScreen[data-mode="nb_rally"]{ background-image:radial-gradient(circle at 50% 0%, rgba(240,184,140,.26), transparent 55%), radial-gradient(circle at 50% 100%, rgba(240,184,140,.16), transparent 60%) !important; background-color:rgb(54,39,27) !important; }
+#gameScreen[data-mode="nb_taller"]{ background-image:radial-gradient(circle at 50% 0%, rgba(213,226,240,.26), transparent 55%), radial-gradient(circle at 50% 100%, rgba(213,226,240,.16), transparent 60%) !important; background-color:rgb(38,41,44) !important; }
+#gameScreen[data-mode="nb_cafe"]{ background-image:radial-gradient(circle at 50% 0%, rgba(240,151,115,.26), transparent 55%), radial-gradient(circle at 50% 100%, rgba(240,151,115,.16), transparent 60%) !important; background-color:rgb(45,25,17) !important; }
+#gameScreen[data-mode="nb_otono"]{ background-image:radial-gradient(circle at 50% 0%, rgba(240,137,85,.26), transparent 55%), radial-gradient(circle at 50% 100%, rgba(240,137,85,.16), transparent 60%) !important; background-color:rgb(80,39,18) !important; }
+#gameScreen[data-mode="nb_maya"]{ background-image:radial-gradient(circle at 50% 0%, rgba(188,240,208,.26), transparent 55%), radial-gradient(circle at 50% 100%, rgba(188,240,208,.16), transparent 60%) !important; background-color:rgb(46,62,52) !important; }
+#gameScreen[data-mode="nb_tren"]{ background-image:radial-gradient(circle at 50% 0%, rgba(240,145,121,.26), transparent 55%), radial-gradient(circle at 50% 100%, rgba(240,145,121,.16), transparent 60%) !important; background-color:rgb(42,22,17) !important; }
+</style>
 </head>
 <body>
 <svg width="0" height="0" style="position:absolute;">
@@ -7264,7 +7285,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running' && !document.hidden){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1270';
+const BUILD_VERSION = '1271';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -10078,6 +10099,7 @@ function syncBodyEdgeColor(){
   // que tocar cada lugar del código que abre o cierra una pantalla.
   const gs = document.getElementById('gameScreen');
   const inMatch = gs && gs.style.display!=='none';
+  if(inMatch && !gs.dataset.placed){ gs.dataset.placed='1'; setTimeout(placeGameCard, 120); } else if(!inMatch && gs && gs.dataset.placed){ delete gs.dataset.placed; }
   document.body.style.background = inMatch ? (GAME_EDGE_COLORS[boardLook()] || '#0a1730') : '#12307f';
 }
 setInterval(syncBodyEdgeColor, 400);
@@ -12238,7 +12260,7 @@ function loadAnimalModelOnce(animalId){
 
 // Ficha elegida por cada color — null significa la ficha clásica (peón). Se
 // carga/guarda junto con el resto del perfil.
-let tokenSkins = {red:'mapachito2d', blue:'mapachito2d', yellow:'mapachito2d', green:'mapachito2d'};   // ficha por defecto: el peón clásico (quien ya eligió otra la conserva)
+let tokenSkins = {red:'zorrito2d', blue:'zorrito2d', yellow:'zorrito2d', green:'zorrito2d'};   // ficha por defecto: el peón clásico (quien ya eligió otra la conserva)
 
 const TEST_BLUE_FOX = false;     // PRUEBA: el jugador azul usa el zorro (poner false para quitarlo)
 const TOKEN_FLOOR_DISC = false;  // disco de color del jugador en el suelo
@@ -12250,7 +12272,7 @@ const TOKEN_TILT_DEG = 40; // cuánto se inclina la ficha hacia la cámara (0 = 
 // La ficha principal de TODOS (jugadores, rivales y máquinas) es el Pingüino. Solo quien eligió el peón
 // a propósito lo guarda como 'clasico' y ese sí sale como peón.
 const FREE_TOKENS = ['parche2d','mapachito2d','zorrito2d','conejito2d'];   // las 4 fichas gratis que tiene todo jugador
-const DEFAULT_TOKEN = 'mapachito2d';   // ficha principal de todos: Mapachito. El peón clásico queda guardado en el código, oculto.
+const DEFAULT_TOKEN = 'zorrito2d';   // ficha principal de todos: Zorrito. El peón clásico queda guardado en el código, oculto.
 function _skinResolve(v){
   if(!v || v==='clasico' || !ANIMAL_NAMES[v]) return DEFAULT_TOKEN;   // sin elegir, el peón viejo o una ficha que ya no existe: la ficha principal
   return v;
@@ -12531,6 +12553,18 @@ function boardTallFactor(){ try{
 }catch(e){ return 1; } }
 let _tallRz=0; window.addEventListener('resize', ()=>{ clearTimeout(_tallRz); _tallRz=setTimeout(()=>{ try{ const c=document.getElementById('board'); if(c && b3d){ c.style.aspectRatio=`10 / ${BOARD_ROWS*boardTallFactor()}`; on3DBoardResize(); } }catch(e){} },150); });
 try{ window.matchMedia('(min-height:780px) and (max-aspect-ratio:9/17)').addEventListener('change', ()=>{ try{ const c=document.getElementById('board'); if(c && b3d){ c.style.aspectRatio=`10 / ${BOARD_ROWS*boardTallFactor()}`; on3DBoardResize(); } }catch(e){} }); }catch(e){}
+
+/* El tablero y los jugadores bajan para ocupar el espacio libre de abajo (antes quedaba un hueco grande abajo) */
+function placeGameCard(){ try{
+  const gs=document.getElementById('gameScreen'); if(!gs || gs.style.display==='none') return;
+  const card=gs.querySelector(':scope > .card'); if(!card) return;
+  card.style.marginTop='';
+  const r=card.getBoundingClientRect();
+  if(r.height<200 || r.bottom<=0){ delete gs.dataset.placed; return; }   // todavía no se ve: se vuelve a intentar
+  const free=window.innerHeight - r.bottom - 56;   // deja sitio para el botón de abajo
+  if(free>8) card.style.marginTop=Math.round(free*0.75)+'px';
+}catch(e){} }
+let _pgcT=0; window.addEventListener('resize', ()=>{ clearTimeout(_pgcT); _pgcT=setTimeout(placeGameCard,200); });
 function buildBoardOnce(){
   const container = document.getElementById('board');
   disposeBoard3D();
@@ -12549,6 +12583,7 @@ function buildBoardOnce(){
   if(gsEl) gsEl.dataset.mode = boardLook();
   try{ const bt=document.getElementById('boardTilt'); if(bt){ bt.classList.toggle('tilt', true); } }catch(e){}
   fitBoardFrame(); void container.offsetHeight;
+  try{ delete document.getElementById('gameScreen').dataset.placed; }catch(e){}
   document.documentElement.style.setProperty('--row-c1', pal.rowC1);
   document.documentElement.style.setProperty('--row-c2', pal.rowC2);
 
@@ -14518,9 +14553,14 @@ async function loadProfile(){
         ['red','blue','yellow','green'].forEach(c=>{ if(!tokenSkins[c] || tokenSkins[c]==='clasico' || tokenSkins[c]==='parche2d') tokenSkins[c] = DEFAULT_TOKEN; });
         profileStats.tokenSkins = tokenSkins; profileStats.mapachitoDefault = true; needsResave = true;
       }
+      // Una sola vez: quien tenía Mapachito (la principal anterior) pasa a Zorrito, la nueva ficha principal
+      if(!profileStats.zorritoDefault){
+        ['red','blue','yellow','green'].forEach(c=>{ if(!tokenSkins[c] || tokenSkins[c]==='clasico' || tokenSkins[c]==='parche2d' || tokenSkins[c]==='mapachito2d') tokenSkins[c] = DEFAULT_TOKEN; });
+        profileStats.tokenSkins = tokenSkins; profileStats.zorritoDefault = true; needsResave = true;
+      }
     } else {
       profileStats.playerId = genPlayerId();
-      profileStats.pinguinoDefault = true;
+      profileStats.pinguinoDefault = true; profileStats.mapachitoDefault = true; profileStats.zorritoDefault = true;
       profileStats.diamonds = lobbyDiamonds;
       profileStats.gold = lobbyGold;
       await saveProfile();
@@ -14676,6 +14716,7 @@ function renderProfile(){
 
 function openProfile(){
   renderProfile();
+  ligaWeekRefresh();
   document.getElementById('profileOverlay').style.display = 'flex';
 }
 function closeProfile(){
@@ -15071,8 +15112,8 @@ function checkProgressAfterMatch(youWon, oldLevel){
   ensureLeagueData();
   const oldTier = leagueData.tierIdx;
   if(liveMatchCtx().online){
-    leagueData.points = (leagueData.points||0) + (youWon?25:8);
-    profileStats.weekPts = (profileStats.weekPts||0) + (youWon?25:8);
+    leagueData.points = (leagueData.points||0) + (youWon?25:0);      // regla: solo la victoria suma
+    profileStats.weekPts = (profileStats.weekPts||0) + (youWon?25:0);
   }
   const newTier = Math.min(LEAGUE_TIERS.length-1, Math.floor((leagueData.points||0)/300));
   if(newTier>oldTier) promos.push({type:'league', from:oldTier, to:newTier});
@@ -15889,6 +15930,8 @@ async function ligaReport(won, ctx){
   let nm = 'Jugador'; try{ nm = ensureDisplayName() || 'Jugador'; }catch(e){}
   let av = null; try{ av = myAvatarUrl(); }catch(e){}
   if(av && !(/^https?:\/\//.test(av) && av.length<=200)) av = null;
+  // avatar del juego elegido: se manda solo su nombre corto, así la liga lo muestra a todos
+  try{ if(!av && !profileStats.photoUrl && profileStats.avatarId && profileStats.avatarId!=='av0' && avatarOwned(profileStats.avatarId)) av = 'av:' + profileStats.avatarId; }catch(e){}
   try{ const r = await iapRpc('global_report', { won: !!won, name: nm, avatar: av, online: true, opps: ctx.opps, friends: myFriendIds() }); ligaApplyServer(r); }catch(e){}
 }
 let ligaClaimBusy = false;
@@ -15916,6 +15959,26 @@ async function ligaClaimAndApply(){
   }catch(e){}
   ligaClaimBusy = false;
 }
+/* Foto de cada fila de la liga: link de foto, avatar del juego (av:ID), la mía, o un avatar fijo según el nombre */
+function ligaRowAvatar(x){
+  try{
+    const a = x && x.av ? String(x.av) : '';
+    if(/^https?:\/\//.test(a)) return a;
+    if(a.indexOf('av:')===0){ const u = avatarURL(a.slice(3)); if(u) return u; }
+    if(x && (x.me || x.isMe)) return myAvatarUrl();
+    return defaultAvatarUrl(x && x.name);
+  }catch(e){ return null; }
+}
+/* "Esta semana" del perfil = los puntos de la semana que lleva el servidor (no un contador del teléfono) */
+function ligaSetWeekPts(r){
+  try{
+    if(!r || !r.ok) return;
+    profileStats.weekPts = (r.me && typeof r.me.points==='number') ? r.me.points : 0;
+    const el = document.getElementById('profileLgPts'); if(el) el.textContent = profileStats.weekPts;
+    saveProfile();
+  }catch(e){}
+}
+async function ligaWeekRefresh(){ if(!isOnlineAuthenticated) return; try{ ligaSetWeekPts(await iapRpc('global_top', {})); }catch(e){} }
 /* Tabla semanal de MI liga, directo del servidor */
 async function ligaTierLoad(){
   if(!isOnlineAuthenticated) return;
@@ -15928,7 +15991,7 @@ async function ligaTierLoad(){
     el.innerHTML = r.rows.map(x=>`
       <div class="lg-row ${x.me?'me':''} ${x.rank<=3?'top'+x.rank:''}">
         <div class="lg-rank">${x.rank}</div>
-        <div class="lg-av">${x.av?`<img src="${x.av}" alt="">`:iconImgHTML('avatarBot','🙂','icon-fill')}</div>
+        <div class="lg-av">${(()=>{ const u = ligaRowAvatar(x); return u ? `<img src="${String(u).replace(/"/g,'&quot;')}" alt="">` : iconImgHTML('avatarBot','🙂','icon-fill'); })()}</div>
         <div class="lg-name">${x.me?'Tú · ':''}${String(x.name).replace(/[<>&"]/g,'')}</div>
         <div class="lg-pts">${x.points}</div>
       </div>`).join('');
@@ -15946,9 +16009,10 @@ async function openLeagueGlobal(){
   let r = null;
   try{ r = await iapRpc('global_top', {}); }catch(e){}
   if(!r || !r.ok){ listEl.innerHTML = msg('No se pudo cargar la tabla. Revisa tu internet e inténtalo otra vez.'); return; }
+  ligaSetWeekPts(r);
   if(r.next_reset){ const ms = Math.max(0, r.next_reset*1000-Date.now()); document.getElementById('lgGlobalTimer').textContent = Math.floor(ms/86400000)+'d '+Math.floor((ms%86400000)/3600000)+'h'; }
   const esc = t => String(t==null?'':t).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const row = x => `<div class="lg-row ${x.me?'me':''} ${x.rank<=3?'top'+x.rank:''}"><div class="lg-rank">${x.rank}</div><div class="lg-av">${(()=>{ let u = (x.av&&/^https?:\/\//.test(x.av)) ? x.av : null; if(!u){ try{ u = x.me ? myAvatarUrl() : defaultAvatarUrl(x.name); }catch(e){} } return u ? `<img src="${esc(u)}" alt="">` : iconImgHTML('avatarBot','🙂','icon-fill'); })()}</div><div class="lg-name">${x.me?'Tú · ':''}${esc(x.name)}</div><div class="lg-pts">${x.points}</div></div>`;
+  const row = x => `<div class="lg-row ${x.me?'me':''} ${x.rank<=3?'top'+x.rank:''}"><div class="lg-rank">${x.rank}</div><div class="lg-av">${(()=>{ const u = ligaRowAvatar(x); return u ? `<img src="${esc(u)}" alt="">` : iconImgHTML('avatarBot','🙂','icon-fill'); })()}</div><div class="lg-name">${x.me?'Tú · ':''}${esc(x.name)}</div><div class="lg-pts">${x.points}</div></div>`;
   // El servidor manda una tabla vacía como {} (no como []): se normaliza para que no se rompa cuando nadie ha sumado puntos
   const rowsArr = Array.isArray(r.rows) ? r.rows : (r.rows && typeof r.rows==='object' ? Object.values(r.rows) : []);
   let html = rowsArr.map(row).join('');
