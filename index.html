@@ -7335,7 +7335,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running' && !document.hidden){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1274';
+const BUILD_VERSION = '1275';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -21462,19 +21462,6 @@ function boardFxStep(now){
 function victoryShow(color){
   try{
     if(!b3d) return;
-    const mesh=b3d.tokenMeshes[color];
-    if(mesh){
-      const s0=mesh.scale.x||1, t0=performance.now();
-      (function f(){
-        const k=(performance.now()-t0)/2600;
-        if(k>=1){ mesh.scale.setScalar(s0); mesh.rotation.y=0; return; }
-        const up=k<0.2?(k/0.2):(k>0.8?(1-(k-0.8)/0.2):1);
-        const bounce=1+0.12*Math.sin(k*Math.PI*8)*up;
-        mesh.scale.setScalar(s0*(1+0.9*up)*bounce);
-        mesh.rotation.y=k*Math.PI*4*up;
-        requestAnimationFrame(f);
-      })();
-    }
     const pal=[[0xffd24a,0xfff1a8,0xffffff],[0x3c80ff,0xa8c6ff,0xffffff],[0xff6aa8,0xffd24a,0xffffff],[0x6fffa8,0xffffff,0xfff1a8]];
     const cx=b3d.boardCenter.x, cz=b3d.boardCenter.z, rows=(typeof BOARD_ROWS!=='undefined'?BOARD_ROWS:10);
     for(let i=0;i<9;i++){
