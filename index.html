@@ -6052,6 +6052,8 @@ body.dice-shaking .dice-cube-wrap, body.dice-shaking .dice-sprite{ animation:dic
 
 /* La pantalla de partida ocupa siempre toda la altura del teléfono (sin franja oscura abajo) */
 #gameScreen{min-height:100vh;min-height:100dvh;box-sizing:border-box;}
+/* iPhone: la franja de arriba (☰ y diamantes) no debe quedar bajo la hora, la batería y la isla */
+#gameScreen header{padding-top:env(safe-area-inset-top,0px) !important;box-sizing:border-box;}
 </style>
 <style id="nbBgFix">
 /* Fondo de partida en el color de cada tablero (sin el brillo azul que lo ensuciaba) */
@@ -7369,7 +7371,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running' && !document.hidden){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1280';
+const BUILD_VERSION = '1281';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
