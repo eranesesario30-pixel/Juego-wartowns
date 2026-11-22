@@ -7369,7 +7369,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running' && !document.hidden){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1278';
+const BUILD_VERSION = '1279';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -8574,6 +8574,7 @@ function onTermsCheckChange(){
   document.getElementById('loginBtnGuest').disabled = !checked;
   const _fb = document.getElementById('loginBtnFacebook'); if(_fb) _fb.disabled = !checked;
   const _gg = document.getElementById('loginBtnGoogle'); if(_gg) _gg.disabled = !checked || !GOOGLE_CLIENT_ID;
+  const _ap = document.getElementById('loginBtnApple'); if(_ap) _ap.disabled = !checked || !appleNativeAvailable();
 }
 
 function termsAccepted(){
@@ -8709,8 +8710,40 @@ async function ggNativeLogin(){
     showLoginError('No se completó el inicio con Google.');
   }finally{ ggNativeBusy = false; }
 }
+/* Apple dentro de la app de iPhone: ventana de Apple del propio teléfono. Solo iOS nativo. */
+let APPLE_TOKEN = null, appleNativeBusy = false, appleNativeInit = false;
+function appleNativeAvailable(){
+  try{ return !!(window.Capacitor && Capacitor.isNativePlatform && Capacitor.isNativePlatform() && Capacitor.getPlatform()==='ios' && ggNativePlugin()); }catch(e){ return false; }
+}
+async function appleNativeLogin(){
+  if(appleNativeBusy) return; appleNativeBusy = true;
+  try{
+    const pl = ggNativePlugin();
+    if(!appleNativeInit){ await pl.initialize({ apple: {} }); appleNativeInit = true; }
+    const res = await pl.login({ provider: 'apple', options: { scopes: ['email','name'] } });
+    const r = res && res.result;
+    if(!r || !r.idToken){ showLoginError('No se pudo verificar el inicio con Apple. Inténtalo de nuevo.'); return; }
+    APPLE_TOKEN = r.idToken;
+    const c = document.getElementById('loginTermsCheck'); if(c){ c.checked = true; onTermsCheckChange(); }
+    loginAsGuest();
+  }catch(e){
+    const code = e && (e.code || e.message) ? String(e.code || e.message) : '';
+    mpLog('APPLE NATIVO ' + code);
+    if(/cancel|1001/i.test(code)) return;
+    showLoginError('No se completó el inicio con Apple.');
+  }finally{ appleNativeBusy = false; }
+}
+async function appleAttach(sessionObj){
+  const tk = APPLE_TOKEN; APPLE_TOKEN = null;
+  let result = sessionObj, switched = false;
+  try{ const rr = await socialResolveAccount('apple', tk, sessionObj); result = rr.session; switched = rr.switched; }
+  catch(e){ mpLog('APPLE ERROR ' + formatNakamaError(e)); }
+  await socialRememberDevice(result, switched, 'APPLE', sessionObj.user_id);
+  return result;
+}
 function loginWithSocial(provider){
   if(!termsAccepted()){ warnTermsNotAccepted(); return; }
+  if(provider==='apple' && appleNativeAvailable()){ appleNativeLogin(); return; }
   if(provider==='google' && GOOGLE_CLIENT_ID && ggNativeAvailable()){ ggNativeLogin(); return; }
   if(provider==='google' && GOOGLE_CLIENT_ID){
     if(IN_SANDBOX_PREVIEW){ showLoginError('Google funciona en el juego publicado, no en esta vista previa.'); return; }
@@ -8834,7 +8867,7 @@ async function socialResolveAccount(provider, tk, sessionObj){
   const basic = { 'Authorization':'Basic ' + btoa(NAKAMA_SERVER_KEY + ':'), 'Content-Type':'application/json' };
   const auth = (create)=> fetchT(base + 'authenticate/' + provider + '?create=' + create + '&sync=false', { method:'POST', headers:basic, body: JSON.stringify({ token: tk }) });
   const take = async (r)=>{ const d = await r.json(); return nakamajs.Session.restore(d.token, d.refresh_token || ''); };
-  const tag = provider==='google' ? 'GG' : 'FB';
+  const tag = provider==='google' ? 'GG' : (provider==='apple' ? 'APPLE' : 'FB');
   let r0 = await auth(false);
   if(r0.ok) return { session: await take(r0), switched: true };
   if(r0.status !== 404){ mpLog(tag + ' AUTH HTTP ' + r0.status + ' ' + await r0.text()); try{ lobbyToast('El servidor no aceptó el inicio (' + r0.status + ')'); }catch(e){} return { session: sessionObj, switched: false }; }
@@ -8842,7 +8875,7 @@ async function socialResolveAccount(provider, tk, sessionObj){
   let libre = false;
   try{
     const ac = await fetchT(SERVER_URL + '/v2/account', { headers:{ 'Authorization':'Bearer ' + sessionObj.token } });
-    if(ac.ok){ const j = await ac.json(); libre = !!(j && j.user && !j.user.google_id && !j.user.facebook_id); }
+    if(ac.ok){ const j = await ac.json(); libre = !!(j && j.user && !j.user.google_id && !j.user.facebook_id && !j.user.apple_id); }
   }catch(e){}
   if(libre){
     const lr = await fetchT(base + 'link/' + provider + '?sync=false', { method:'POST', headers:{ 'Authorization':'Bearer ' + sessionObj.token, 'Content-Type':'application/json' }, body: JSON.stringify({ token: tk }) });
@@ -8983,7 +9016,7 @@ function hideAutoLoginOverlay(){
 // Si ya entraste una vez en este dispositivo (invitado, Google o Facebook), entra directo al lobby sin pedir nada.
 (function autoLoginIfRemembered(){
   try{
-    if(FB_TOKEN || GG_TOKEN) return;
+    if(FB_TOKEN || GG_TOKEN || APPLE_TOKEN) return;
     if(window.self !== window.top && !/github\.io$/.test(location.hostname)) return;
     if(/[?&]dev=1/.test(location.search)) return;
     if(!localStorage.getItem('pachisAcctKey') && !localStorage.getItem('pachisAutoLogin')) return;
@@ -9040,6 +9073,7 @@ async function loginAsGuest(){
     nakamaSessionLocal = nakamajs.Session.restore(authData.token, authData.refresh_token || '');
     if(FB_TOKEN) nakamaSessionLocal = await fbAttach(nakamaSessionLocal);
     if(GG_TOKEN) nakamaSessionLocal = await ggAttach(nakamaSessionLocal);
+    if(APPLE_TOKEN) nakamaSessionLocal = await appleAttach(nakamaSessionLocal);
     nakamaSession = nakamaSessionLocal;
   }catch(e){
     // Fallo en AUTENTICAR (fetch/HTTP/el SDK no cargó) — esta es la etapa
