@@ -6068,6 +6068,8 @@ body.dice-shaking .dice-cube-wrap, body.dice-shaking .dice-sprite{ animation:dic
 body.tab-open #storeOverlay, body.tab-open #friendsOverlay, body.tab-open #eventsOverlay, body.tab-open #collectionsOverlay{top:calc(56px + env(safe-area-inset-top,0px)) !important;}
 #gameNotifContainer{top:calc(env(safe-area-inset-top,0px) + 8px) !important;}
 #topBannerSlot{top:calc(env(safe-area-inset-top,0px) + 10px) !important;}
+/* iPhone: pantallas "Elige el tablero" y "Elige tu apuesta": el botón de volver queda debajo de la hora y la isla */
+#betScreen, #boardChoiceScreen{padding-top:calc(10px + env(safe-area-inset-top,0px)) !important;box-sizing:border-box;}
 </style>
 <style id="nbBgFix">
 /* Fondo de partida en el color de cada tablero (sin el brillo azul que lo ensuciaba) */
@@ -7385,7 +7387,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running' && !document.hidden){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1287';
+const BUILD_VERSION = '1288';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
