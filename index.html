@@ -4723,6 +4723,29 @@ window.__threeReadyPromise = (async ()=>{
   }
   .settings-link-btn.danger{border-color:#c4453d;color:#ff9a8a;}
 
+
+  /* ---- Ajustes: tarjetas por sección ---- */
+  #settingsOverlay .set-card{width:100%;box-sizing:border-box;align-self:stretch;background:linear-gradient(#18296a,#0f1b47);border:2px solid #c9a24a;border-radius:16px;padding:4px 10px 8px;margin:12px 0 0;box-shadow:inset 0 0 0 1px rgba(255,226,122,.18),0 4px 10px rgba(0,0,0,.35);}
+  #settingsOverlay .set-head{font-family:'Archivo Black',sans-serif;font-size:13px;letter-spacing:.8px;text-transform:uppercase;color:#ffe27a;text-align:left;padding:9px 4px 8px;margin-bottom:2px;border-bottom:2px solid rgba(201,162,74,.45);text-shadow:0 2px 0 #0a1430;}
+  #settingsOverlay .set-ic{flex:0 0 32px;width:32px;height:32px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:16px;background:radial-gradient(circle at 35% 30%,#3a52a8,#16245a);border:2px solid #e0bf6b;box-shadow:0 2px 4px rgba(0,0,0,.4);}
+  #settingsOverlay .set-tx{flex:1;min-width:0;text-align:left;}
+  #settingsOverlay .set-ar{color:#ffe27a;font-size:22px;font-weight:900;line-height:1;}
+  #settingsOverlay .set-st{color:#ffe27a;font-weight:900;text-transform:uppercase;font-size:12px;background:rgba(0,0,0,.35);border-radius:999px;padding:4px 12px;border:1.5px solid #c9a24a;}
+  #settingsOverlay .settings-row{display:flex;align-items:center;gap:10px;padding:9px 2px;font-size:13.5px;font-weight:800;color:#fff4d6;border-bottom:1px solid rgba(255,255,255,.08);}
+  #settingsOverlay .settings-row:last-child{border-bottom:0;}
+  #settingsOverlay .switch{width:54px;height:30px;}
+  #settingsOverlay .switch-slider{background:#2a3566;border:2px solid #0a1430;box-shadow:inset 0 2px 4px rgba(0,0,0,.5);}
+  #settingsOverlay .switch-slider::before{height:22px;width:22px;left:2px;top:2px;background:linear-gradient(#fff,#d8dcea);box-shadow:0 2px 3px rgba(0,0,0,.45);}
+  #settingsOverlay .switch input:checked + .switch-slider{background:linear-gradient(#5be08a,#12a34f);}
+  #settingsOverlay .switch input:checked + .switch-slider::before{transform:translateX(24px);}
+  #settingsOverlay .settings-link-btn{display:flex;align-items:center;gap:10px;width:100%;min-height:46px;margin:8px 0 0;padding:7px 10px;border-radius:14px;font-size:13.5px;font-weight:800;color:#fff4d6;background:linear-gradient(#25397f,#172562);border:2px solid #5a709a;box-shadow:0 3px 0 #0a1430;}
+  #settingsOverlay .settings-link-btn:active{transform:translateY(2px);box-shadow:0 1px 0 #0a1430;}
+  #settingsOverlay .settings-link-btn.danger{background:linear-gradient(#6b1f2a,#45101a);border-color:#d8584f;color:#ffc2b8;}
+  #settingsOverlay .settings-link-btn.danger .set-ar{color:#ff9a8a;}
+  #settingsOverlay .settings-account-box .settings-link-account-row{background:rgba(0,0,0,.25);border:2px solid #5a709a;border-radius:14px;padding:9px 12px;margin:8px 0 0;}
+  #settingsOverlay .settings-account-box .settings-link-account-row span{font-size:12px;word-break:break-all;}
+  #settingsOverlay .settings-tour-btn{margin:10px 0 0;padding:12px;font-size:15px;background:linear-gradient(#f6d46a,#c9962a);color:#3a2300;border:2px solid #fff1b8;box-shadow:0 4px 0 #6a4300;}
+
   #bottomRow{position:relative;z-index:15;}
   /* Como una app: sin selección de texto ni menú de copiar al mantener apretado (los campos de escribir siguen normales) */
   html,body,body *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;}
@@ -6956,43 +6979,51 @@ body.dice-shaking .dice-cube-wrap, body.dice-shaking .dice-sprite{ animation:dic
       <div class="profile-title">⚙️ Ajustes</div>
 
       <button class="settings-tour-btn" onclick="closeSettings();setTimeout(()=>runLobbyTour(true),250)">🎓 Ver tutorial del lobby</button>
-      <div class="store-section-title">Sonido y sensaciones</div>
-      <div class="settings-row">
-        <span>🔊 Efectos de sonido</span>
-        <label class="switch"><input type="checkbox" id="setSound" onchange="onSettingToggle('sound', this.checked)"><span class="switch-slider"></span></label>
-      </div>
-      <div class="settings-row">
-        <span>🎵 Música / Ambiente</span>
-        <label class="switch"><input type="checkbox" id="setMusic" onchange="onSettingToggle('music', this.checked)"><span class="switch-slider"></span></label>
-      </div>
-      <div class="settings-row">
-        <span>📳 Vibración</span>
-        <label class="switch"><input type="checkbox" id="setVibration" onchange="onSettingToggle('vibration', this.checked)"><span class="switch-slider"></span></label>
+
+      <div class="set-card">
+        <div class="set-head">Sonido y sensaciones</div>
+        <div class="settings-row">
+          <span class="set-ic">🔊</span><span class="set-tx">Efectos de sonido</span>
+          <label class="switch"><input type="checkbox" id="setSound" onchange="onSettingToggle('sound', this.checked)"><span class="switch-slider"></span></label>
+        </div>
+        <div class="settings-row">
+          <span class="set-ic">🎵</span><span class="set-tx">Música / Ambiente</span>
+          <label class="switch"><input type="checkbox" id="setMusic" onchange="onSettingToggle('music', this.checked)"><span class="switch-slider"></span></label>
+        </div>
+        <div class="settings-row">
+          <span class="set-ic">📳</span><span class="set-tx">Vibración</span>
+          <label class="switch"><input type="checkbox" id="setVibration" onchange="onSettingToggle('vibration', this.checked)"><span class="switch-slider"></span></label>
+        </div>
+        <button class="settings-link-btn" id="camFxToggleBtn" onclick="camFxToggle()"><span class="set-ic">🎥</span><span class="set-tx">Cámara con efectos</span><span class="set-st">sí</span></button>
       </div>
 
-      <div class="store-section-title">Partida y comunidad</div>
-      <div class="settings-row">
-        <span>🔔 Notificaciones push</span>
-        <label class="switch"><input type="checkbox" id="setPush" onchange="onSettingToggle('push', this.checked)"><span class="switch-slider"></span></label>
+      <div class="set-card">
+        <div class="set-head">Partida y comunidad</div>
+        <div class="settings-row">
+          <span class="set-ic">🔔</span><span class="set-tx">Notificaciones push</span>
+          <label class="switch"><input type="checkbox" id="setPush" onchange="onSettingToggle('push', this.checked)"><span class="switch-slider"></span></label>
+        </div>
+        <div class="settings-row">
+          <span class="set-ic">💬</span><span class="set-tx">Chat y emojis en partida</span>
+          <label class="switch"><input type="checkbox" id="setChat" onchange="onSettingToggle('chat', this.checked)"><span class="switch-slider"></span></label>
+        </div>
       </div>
-      <div class="settings-row">
-        <span>💬 Chat y emojis en partida</span>
-        <label class="switch"><input type="checkbox" id="setChat" onchange="onSettingToggle('chat', this.checked)"><span class="switch-slider"></span></label>
+
+      <div class="set-card">
+        <div class="set-head">Cuenta</div>
+        <div class="settings-account-box" id="settingsAccountBox"></div>
+        <button class="settings-link-btn " onclick="openSupportRequest()"><span class="set-ic">🆘</span><span class="set-tx">Soporte / Reportar un problema</span><span class="set-ar">›</span></button>
+        <button class="settings-link-btn " onclick="confirmLogout()"><span class="set-ic">🚪</span><span class="set-tx">Cerrar sesión</span><span class="set-ar">›</span></button>
       </div>
 
-      <div class="store-section-title">Cuenta</div>
-      <div class="settings-account-box" id="settingsAccountBox"></div>
-
-      <button class="settings-link-btn" onclick="openSupportRequest()">🆘 Soporte / Reportar un problema</button>
-      <button class="settings-link-btn" onclick="confirmLogout()">🚪 Cerrar sesión</button>
-
-      <div class="store-section-title">Legal</div>
-      <button class="settings-link-btn" onclick="openLegalModal('terms')">📄 Términos de Servicio</button>
-      <button class="settings-link-btn" onclick="openLegalModal('privacy')">🔒 Política de Privacidad</button>
-      <button class="settings-link-btn" onclick="window.open('?pagina=eliminar-datos','_blank')">🗑️ Eliminar mis datos</button>
-      <button class="settings-link-btn danger" onclick="confirmDeleteAccount()">🗑️ Eliminar mi cuenta y mis datos</button>
-      <button class="settings-link-btn" id="camFxToggleBtn" onclick="camFxToggle()">🎥 Cámara con efectos: sí</button>
-      <div id="settingsVersion" style="text-align:center;font:900 17px/1.2 'Archivo Black',system-ui,sans-serif;color:#ffe27a;text-shadow:0 2px 0 #6a4300;margin:18px 0 8px;padding:10px;border-radius:12px;background:rgba(0,0,0,.35);border:2px solid #ffe27a;"></div>
+      <div class="set-card">
+        <div class="set-head">Legal y datos</div>
+        <button class="settings-link-btn " onclick="openLegalModal('terms')"><span class="set-ic">📄</span><span class="set-tx">Términos de Servicio</span><span class="set-ar">›</span></button>
+        <button class="settings-link-btn " onclick="openLegalModal('privacy')"><span class="set-ic">🔒</span><span class="set-tx">Política de Privacidad</span><span class="set-ar">›</span></button>
+        <button class="settings-link-btn " onclick="window.open('?pagina=eliminar-datos','_blank')"><span class="set-ic">🗑️</span><span class="set-tx">Eliminar mis datos</span><span class="set-ar">›</span></button>
+        <button class="settings-link-btn danger" onclick="confirmDeleteAccount()"><span class="set-ic">⚠️</span><span class="set-tx">Eliminar mi cuenta y mis datos</span><span class="set-ar">›</span></button>
+      </div>
+      <div id="settingsVersion" style="text-align:center;font:900 13px/1.2 'Archivo Black',system-ui,sans-serif;color:#ffe27a;margin:6px auto 6px;padding:7px 18px;border-radius:999px;background:rgba(0,0,0,.35);border:2px solid #c9a24a;width:max-content;max-width:100%;"></div>
     </div>
   </div>
 
@@ -7335,7 +7366,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running' && !document.hidden){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1276';
+const BUILD_VERSION = '1277';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -10313,7 +10344,7 @@ function renderAccountBox(){
       <div class="settings-link-account-row"><span>Apple</span><button class="settings-link-btn-sm" onclick="loginWithSocial('apple')">Vincular</button></div>
     `;
   } else {
-    box.innerHTML = `<div class="settings-link-account-row"><span>✅ Cuenta vinculada (${currentUser.email||currentUser.playerId})</span></div>`;
+    box.innerHTML = `<div class="settings-link-account-row"><span>✅ Cuenta vinculada${currentUser.email?' · '+currentUser.email:''}</span></div>`;
   }
 }
 
@@ -21282,7 +21313,7 @@ function camFxToggle(){
   try{ localStorage.setItem('parche_camfx', camFxEnabled()?'off':'on'); }catch(e){}
   camFxLabel();
 }
-function camFxLabel(){ const b=document.getElementById('camFxToggleBtn'); if(b) b.textContent='🎥 Cámara con efectos: '+(camFxEnabled()?'sí':'no'); }
+function camFxLabel(){ const b=document.getElementById('camFxToggleBtn'); if(!b) return; const st=b.querySelector('.set-st'); if(st) st.textContent=camFxEnabled()?'sí':'no'; else b.textContent='🎥 Cámara con efectos: '+(camFxEnabled()?'sí':'no'); }
 document.addEventListener('DOMContentLoaded', camFxLabel);
 /* kind: 'hit' (comer), 'trap', 'treasure', 'win' */
 function camFxTrigger(kind, color){
