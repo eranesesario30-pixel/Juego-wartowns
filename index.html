@@ -7335,7 +7335,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running' && !document.hidden){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1275';
+const BUILD_VERSION = '1276';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -13479,52 +13479,8 @@ async function executeMove(idx){
   }
 
   let effectMsg='', turnLossNow=false;
-  if(armHit){
-    const _r = await armaHazardHit(p, armHit); effectMsg = _r.msg; if(_r.loseTurn) turnLossNow = true;
-  }
-  else if(wallHit){
-    effectMsg = ' 🧱 Chocó contra un muro y se detuvo ahí.';
-    sfxPenalty(); vibrate(30);
-  }
-  else if(teamBlocked){
-    effectMsg = ' 🚧 Bloqueado por dos fichas rivales juntas, se detiene ahí.';
-    sfxPenalty(); vibrate(30);
-  }
-  else if(overshotGoal){
-    effectMsg = ` 🎯 Necesita el número exacto para llegar a la Meta (le faltan ${META_INDEX-start}) — no se mueve.`;
-    sfxPenalty();
-  }
-  else if(target===META_INDEX && (podiumRule() || firstFinisher || players.some(x=>x!==p && x.finished))){
-    // 4 jugadores: el 1.º cobra en cuanto llega y la partida sigue hasta que llegue el 2.º
-    p.finished = true; p.position = META_INDEX;
-    sfxWin(); vibrate([40,60,40,60,120]);
-    fireConfetti(); celebrateCell('meta', p.color);
-    turnLossNow = true;   // ya llegó: no usa el otro dado ni vuelve a tirar
-    const _first = firstFinisher || players.find(x=>x!==p && x.finished) || null;
-    if(!_first){
-      firstFinisher = p;
-      effectMsg = ` 🏁 ¡${NAMES[p.color]} llegó primero a la Meta! La partida sigue por el 2.º lugar.`;
-      if(multiplayerActive) sendMatchData(OPCODE_GAME_WON, {color: p.color, reason:'meta', position: p.position, place:1, final:false});
-      if(p.color===MY_COLOR){
-        paidEarly = true;
-        await recordMatchResult(true, 1, true);
-        try{ const sm = lastMatchSummary; if(sm && sm.betPayout>0) lobbyToast('¡Llegaste primero! Cobraste ' + sm.betPayout.toLocaleString('es') + ' 🪙', 4200); else lobbyToast('¡Llegaste primero! Ganaste la partida.', 3600); }catch(e){}
-      }
-    } else {
-      firstFinisher = _first; secondFinisher = p; winner = _first;
-      if(multiplayerActive) sendMatchData(OPCODE_GAME_WON, {color: _first.color, reason:'meta', position: META_INDEX, place:2, second: p.color, final:true});
-      await finishPodium();
-    }
-  }
-  else if(target===META_INDEX){
-    winner=p;
-    sfxWin(); vibrate([40,60,40,60,120]);
-    fireConfetti(); celebrateCell('meta', p.color);
-    // En línea: avisarle a los demás celulares que la partida terminó —
-    // antes solo lo sabía el celular del ganador y el rival seguía "jugando".
-    if(multiplayerActive) sendMatchData(OPCODE_GAME_WON, {color: p.color, reason:'meta', position: p.position});
-    await recordMatchResult(winner.color===MY_COLOR);
-  } else {
+  // Efecto de la casilla donde cae la ficha. Se usa al caer con el dado y tambien al caer con el premio de +6 por comer.
+  async function landEffects(target, idx){
     const cell = path[target];
     const otherIdx = idx===0 ? 1 : 0;
     const hasMoreSteps = dice[otherIdx]!==null && !usedDie[otherIdx];
@@ -13746,6 +13702,54 @@ async function executeMove(idx){
       effectMsg = ` ⚡ ¡Electrocutado! Retrocede ${back} casillas.`;
     }
   }
+  if(armHit){
+    const _r = await armaHazardHit(p, armHit); effectMsg = _r.msg; if(_r.loseTurn) turnLossNow = true;
+  }
+  else if(wallHit){
+    effectMsg = ' 🧱 Chocó contra un muro y se detuvo ahí.';
+    sfxPenalty(); vibrate(30);
+  }
+  else if(teamBlocked){
+    effectMsg = ' 🚧 Bloqueado por dos fichas rivales juntas, se detiene ahí.';
+    sfxPenalty(); vibrate(30);
+  }
+  else if(overshotGoal){
+    effectMsg = ` 🎯 Necesita el número exacto para llegar a la Meta (le faltan ${META_INDEX-start}) — no se mueve.`;
+    sfxPenalty();
+  }
+  else if(target===META_INDEX && (podiumRule() || firstFinisher || players.some(x=>x!==p && x.finished))){
+    // 4 jugadores: el 1.º cobra en cuanto llega y la partida sigue hasta que llegue el 2.º
+    p.finished = true; p.position = META_INDEX;
+    sfxWin(); vibrate([40,60,40,60,120]);
+    fireConfetti(); celebrateCell('meta', p.color);
+    turnLossNow = true;   // ya llegó: no usa el otro dado ni vuelve a tirar
+    const _first = firstFinisher || players.find(x=>x!==p && x.finished) || null;
+    if(!_first){
+      firstFinisher = p;
+      effectMsg = ` 🏁 ¡${NAMES[p.color]} llegó primero a la Meta! La partida sigue por el 2.º lugar.`;
+      if(multiplayerActive) sendMatchData(OPCODE_GAME_WON, {color: p.color, reason:'meta', position: p.position, place:1, final:false});
+      if(p.color===MY_COLOR){
+        paidEarly = true;
+        await recordMatchResult(true, 1, true);
+        try{ const sm = lastMatchSummary; if(sm && sm.betPayout>0) lobbyToast('¡Llegaste primero! Cobraste ' + sm.betPayout.toLocaleString('es') + ' 🪙', 4200); else lobbyToast('¡Llegaste primero! Ganaste la partida.', 3600); }catch(e){}
+      }
+    } else {
+      firstFinisher = _first; secondFinisher = p; winner = _first;
+      if(multiplayerActive) sendMatchData(OPCODE_GAME_WON, {color: _first.color, reason:'meta', position: META_INDEX, place:2, second: p.color, final:true});
+      await finishPodium();
+    }
+  }
+  else if(target===META_INDEX){
+    winner=p;
+    sfxWin(); vibrate([40,60,40,60,120]);
+    fireConfetti(); celebrateCell('meta', p.color);
+    // En línea: avisarle a los demás celulares que la partida terminó —
+    // antes solo lo sabía el celular del ganador y el rival seguía "jugando".
+    if(multiplayerActive) sendMatchData(OPCODE_GAME_WON, {color: p.color, reason:'meta', position: p.position});
+    await recordMatchResult(winner.color===MY_COLOR);
+  } else {
+    await landEffects(target, idx);
+  }
 
   if(!winner && typeof treasure!=='undefined' && treasure && p.position===treasure.pos){
     try{ effectMsg += treasureGrant(p); }catch(e){ console.warn('tesoro',e); }
@@ -13800,6 +13804,17 @@ async function executeMove(idx){
           effectMsg += ` 🎁 Premio: avanza ${advanced} casillas por la captura.`;
           sfxBonus();
         }
+        // La casilla donde cae con el premio se activa igual que si hubiera caído con el dado
+        const _landBonus = async ()=>{
+          if(winner || p.finished) return;
+          const _keep = effectMsg; effectMsg = '';
+          try{ await landEffects(p.position, idx); }catch(e){ console.warn('efecto tras premio', e); }
+          effectMsg = _keep + effectMsg;
+          if(!winner && typeof treasure!=='undefined' && treasure && p.position===treasure.pos){
+            try{ effectMsg += treasureGrant(p); }catch(e){ console.warn('tesoro',e); }
+          }
+        };
+        await _landBonus();
         // Cadena: si el premio lo deja encima de OTRA ficha, también se la come y gana 6 pasos más
         for(let _ch=0; _ch<4; _ch++){
           const v2 = players.find(x=>x.active && x!==p && x.position===p.position && x.position>=5 && x.position<META_INDEX-8 && !(p.team && x.team===p.team));
@@ -13830,6 +13845,7 @@ async function executeMove(idx){
               await wait(tokStepMs(p));
             }
             sfxBonus();
+            await _landBonus();
           }
         }
         matchStats.capturesTotal++;
