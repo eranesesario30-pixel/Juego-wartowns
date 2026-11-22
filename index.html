@@ -4746,6 +4746,8 @@ window.__threeReadyPromise = (async ()=>{
   #settingsOverlay .settings-account-box .settings-link-account-row span{font-size:12px;word-break:break-all;}
   #settingsOverlay .settings-tour-btn{margin:10px 0 0;padding:12px;font-size:15px;background:linear-gradient(#f6d46a,#c9962a);color:#3a2300;border:2px solid #fff1b8;box-shadow:0 4px 0 #6a4300;}
 
+
+  .pi-block{display:block;width:100%;margin:10px 0 0;padding:10px;border-radius:14px;border:2px solid #d8584f;background:linear-gradient(#6b1f2a,#45101a);color:#ffc2b8;font-weight:800;font-size:13px;cursor:pointer;}
   #bottomRow{position:relative;z-index:15;}
   /* Como una app: sin selección de texto ni menú de copiar al mantener apretado (los campos de escribir siguen normales) */
   html,body,body *{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent;}
@@ -7012,6 +7014,7 @@ body.dice-shaking .dice-cube-wrap, body.dice-shaking .dice-sprite{ animation:dic
       <div class="set-card">
         <div class="set-head">Cuenta</div>
         <div class="settings-account-box" id="settingsAccountBox"></div>
+        <button class="settings-link-btn " onclick="openBlockedList()"><span class="set-ic">🚫</span><span class="set-tx">Jugadores bloqueados</span><span class="set-ar">›</span></button>
         <button class="settings-link-btn " onclick="openSupportRequest()"><span class="set-ic">🆘</span><span class="set-tx">Soporte / Reportar un problema</span><span class="set-ar">›</span></button>
         <button class="settings-link-btn " onclick="confirmLogout()"><span class="set-ic">🚪</span><span class="set-tx">Cerrar sesión</span><span class="set-ar">›</span></button>
       </div>
@@ -7366,7 +7369,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running' && !document.hidden){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1277';
+const BUILD_VERSION = '1278';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -7720,7 +7723,7 @@ async function connectToServerOnce(){
       try{
         const c = payload && payload.c;
         const uid = matchData.presence && matchData.presence.user_id;
-        if(c && c!==MY_COLOR && COLORS.includes(c) && uid && colorUserId(c)===uid && !mutedPlayers[c] && typeof payload.v==='string' && payload.v.length<=100){
+        if(c && c!==MY_COLOR && COLORS.includes(c) && uid && colorUserId(c)===uid && !isMutedColor(c) && typeof payload.v==='string' && payload.v.length<=100){
           const raw = payload.v.replace(/[\u0000-\u001f]/g,'');
           const shown = maskBad(raw);
           noteChatFrom(c, raw);
@@ -7734,7 +7737,7 @@ async function connectToServerOnce(){
         const c = payload && payload.c;
         const uid = matchData.presence && matchData.presence.user_id;
         // Solo se acepta si el color corresponde de verdad a quien lo mandó (nadie puede hablar "por" otro jugador).
-        if(c && c!==MY_COLOR && COLORS.includes(c) && uid && colorUserId(c)===uid && !mutedPlayers[c]
+        if(c && c!==MY_COLOR && COLORS.includes(c) && uid && colorUserId(c)===uid && !isMutedColor(c)
            && (payload.t==='emoji' || payload.t==='text') && typeof payload.v==='string' && payload.v.length<=40){
           spawnFloatingReaction(c, payload.t, payload.v.replace(/[\u0000-\u001f<>]/g,''));
         }
@@ -11460,6 +11463,10 @@ function showPlayerCard(name, url, d, kind, uid){
     _fr = isF ? `<div class="profile-note" style="margin-top:10px;">✅ Ya es tu amigo</div>`
               : `<button class="pi-addfriend" onclick="addFriendFromTable('${uid}')">➕ Agregar amigo</button>`;
   }
+  if(uid && kind!=='loading' && kind!=='bot' && uid!==(nakamaSession&&nakamaSession.user_id)){
+    _piBlockName = name||'Jugador';
+    _fr += `<button class="pi-block" onclick="blockTap(this,'${String(uid).replace(/[^A-Za-z0-9_\-]/g,'')}',_piBlockName)">${blockBtnLabel(uid)}</button>`;
+  }
   const _bn = (typeof ICON_IMAGES!=='undefined' && ICON_IMAGES.profileBanner) ? ` style="background-image:url('${ICON_IMAGES.profileBanner}')"` : '';
   card.innerHTML = `<div class="pi-banner"${_bn}></div><button class="profile-close" onclick="closePlayerInfo()">✕</button>
     <div class="profile-title">Perfil</div>
@@ -11476,6 +11483,7 @@ let _piToken = 0;
 async function addFriendFromTable(uid){
   try{
     if(!uid || (nakamaSession && uid===nakamaSession.user_id)) return;
+    if(isBlocked(uid)){ lobbyToast('Desbloquea a este jugador para agregarlo.'); return; }
     if(!profileStats.friends) profileStats.friends = [];
     if(!profileStats.friends.some(f=>f.id===uid)){ profileStats.friends.push({id:uid, addedAt:Date.now()}); await saveProfile(); }
     lobbyToast('¡Amigo agregado!');
@@ -14096,10 +14104,12 @@ function openReport(color){
     <div class="report-reasons">${REPORT_REASONS.map(r=>`<button class="phrase-pill report-reason" data-r="${r[0]}" onclick="pickReportReason('${r[0]}')">${r[1]}</button>`).join('')}</div>
     <textarea id="reportNote" maxlength="140" placeholder="Cuéntanos más (opcional)…"></textarea>
     <button class="am-btn" id="reportSendBtn" onclick="submitReport()">🚩 Enviar reporte</button>
+    <button class="pi-block" onclick="blockTap(this,'${String(uid).replace(/[^A-Za-z0-9_\-]/g,'')}',reportTargetName())">${blockBtnLabel(uid)}</button>
     <div class="am-hint">Revisaremos el reporte. Además, ya no verás los mensajes de este jugador.</div>
   </div>`;
   ov.style.display = 'flex';
 }
+function reportTargetName(){ try{ return profileOfColor(reportTarget).n; }catch(e){ return 'Jugador'; } }
 function closeReport(){ const ov=document.getElementById('reportOverlay'); if(ov) ov.style.display='none'; reportTarget=null; }
 function pickReportReason(r){
   reportReason = r;
@@ -14185,6 +14195,49 @@ function togglePlayerMute(color){
   try{ voiceApplyMute(color); }catch(e){}
   lobbyToast(mutedPlayers[color] ? `${NAMES[color]} silenciado para ti` : `Volviste a escuchar a ${NAMES[color]}`);
   renderPlayerCards();
+}
+/* ---- Bloquear jugadores (se guarda en este teléfono) ---- */
+const BLOCK_KEY = 'parche_blocked_v1';
+function blockedMap(){ try{ return JSON.parse(localStorage.getItem(BLOCK_KEY)||'{}') || {}; }catch(e){ return {}; } }
+function isBlocked(uid){ return !!(uid && blockedMap()[uid]); }
+function isMutedColor(c){ return !!mutedPlayers[c] || isBlocked(colorUserId(c)); }
+function _refreshBlockEffects(){
+  try{ COLORS.forEach(c=>{ try{ voiceApplyMute(c); }catch(e){} }); }catch(e){}
+  try{ renderPlayerCards(); }catch(e){}
+}
+function blockPlayer(uid, name){
+  if(!uid) return; const m = blockedMap(); m[uid] = { n:String(name||'Jugador').slice(0,30), t:Date.now() };
+  try{ localStorage.setItem(BLOCK_KEY, JSON.stringify(m)); }catch(e){}
+  _refreshBlockEffects();
+  lobbyToast('🚫 Jugador bloqueado. Ya no verás sus mensajes ni escucharás su voz.');
+}
+function unblockPlayer(uid){
+  const m = blockedMap(); delete m[uid];
+  try{ localStorage.setItem(BLOCK_KEY, JSON.stringify(m)); }catch(e){}
+  _refreshBlockEffects();
+}
+let _blkArm = {};
+function blockTap(btn, uid, name, after){
+  if(isBlocked(uid)){ unblockPlayer(uid); btn.textContent = '🚫 Bloquear jugador'; lobbyToast('Jugador desbloqueado.'); return; }
+  if(_blkArm[uid]){ clearTimeout(_blkArm[uid]); _blkArm[uid]=0; blockPlayer(uid, name); btn.textContent = '✅ Bloqueado · tocar para desbloquear'; if(after) after(); return; }
+  btn.textContent = 'Toca otra vez para confirmar';
+  _blkArm[uid] = setTimeout(()=>{ _blkArm[uid]=0; if(btn.isConnected) btn.textContent = isBlocked(uid) ? '✅ Bloqueado · tocar para desbloquear' : '🚫 Bloquear jugador'; }, 3500);
+}
+function blockBtnLabel(uid){ return isBlocked(uid) ? '✅ Bloqueado · tocar para desbloquear' : '🚫 Bloquear jugador'; }
+let _piBlockName = '';
+function openBlockedList(){
+  let ov = document.getElementById('blockedOverlay');
+  if(!ov){
+    ov = document.createElement('div'); ov.id='blockedOverlay'; ov.className='chat-overlay'; ov.style.zIndex='270';
+    ov.onclick = (e)=>{ if(e.target===ov) ov.style.display='none'; };
+    document.body.appendChild(ov);
+  }
+  const m = blockedMap(); const ids = Object.keys(m);
+  ov.innerHTML = `<div class="chat-card report-card">
+    <div class="chat-head"><div class="chat-title"><span class="chat-title-ic">🚫</span> Jugadores bloqueados</div><button class="profile-close" onclick="document.getElementById('blockedOverlay').style.display='none'">✕</button></div>
+    ${ids.length ? ids.map(id=>`<div class="settings-row"><span class="set-tx" style="flex:1">${escapeHtml(m[id].n||'Jugador')}</span><button class="settings-link-btn-sm" onclick="unblockPlayer('${id.replace(/[^A-Za-z0-9_\-]/g,'')}');openBlockedList()">Desbloquear</button></div>`).join('') : '<div class="profile-note" style="margin:18px 0;">No has bloqueado a nadie.</div>'}
+  </div>`;
+  ov.style.display='flex';
 }
 /* ================= CHAT DE VOZ REAL (WebRTC) =================
    El audio viaja directo entre los celulares. Nakama solo sirve para
@@ -14280,7 +14333,7 @@ function voiceEnsurePeer(id){
   if(micStream && !micMuted){ const t = micStream.getAudioTracks()[0]; if(t) v.sender.replaceTrack(t).catch(()=>{}); }
   pc.ontrack = (e)=>{
     audio.srcObject = e.streams[0] || new MediaStream([e.track]);
-    audio.muted = !!(v.color && mutedPlayers[v.color]);
+    audio.muted = !!(v.color && isMutedColor(v.color));
     audio.play().catch(()=>{});
   };
   pc.onicecandidate = (e)=>{ if(e.candidate) voiceSend({t:'ice', to:id, c:e.candidate}); };
@@ -14340,7 +14393,7 @@ async function voiceOnSignal(m){
   }
 }
 function voiceApplyMute(color){
-  Object.values(voicePeers).forEach(v=>{ if(v.color===color) v.audio.muted = !!mutedPlayers[color]; });
+  Object.values(voicePeers).forEach(v=>{ if(v.color===color) v.audio.muted = !!isMutedColor(color); });
 }
 function voiceSetMyTrack(track){
   Object.values(voicePeers).forEach(v=>{ try{ v.sender.replaceTrack(track); }catch(e){} });
