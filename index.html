@@ -7378,7 +7378,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running' && !document.hidden){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1285';
+const BUILD_VERSION = '1286';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -11692,6 +11692,7 @@ function stopSearchRotation(){
   mpSearching = false;
   if(mpSearchTimer){ clearInterval(mpSearchTimer); mpSearchTimer = null; }
 }
+let _pcAsk = {};
 function colorUserId(color){
   for(const uid in multiplayerRoster){ if(multiplayerRoster[uid]===color) return uid; }
   return null;
@@ -11706,8 +11707,19 @@ function profileOfColor(color){
   const uid = colorUserId(color);
   if(uid){
     const pr = mpProfiles[uid];
-    if(pr) return { n: pr.n, url: pr.p || (pr.a ? avatarURL(pr.a) : defaultAvatarUrl(uid)) };
-    return { n: 'Jugador', url: defaultAvatarUrl(uid) };
+    if(pr && (pr.p || pr.a)) return { n: pr.n, url: pr.p || avatarURL(pr.a) };
+    // la tarjeta por la mesa no trajo foto: se usa la tarjeta pública del servidor (la misma que se ve en Amigos)
+    const pc = pubCache[uid] && pubCache[uid].card;
+    if(pc && (pc.p || pc.a)) return { n: (pr && pr.n) || pc.n, url: cardAvatarUrl(pc, uid) };
+    try{
+      _pcAsk = _pcAsk || {};
+      if(!_pcAsk[uid] || Date.now()-_pcAsk[uid] > 20000){
+        _pcAsk[uid] = Date.now();
+        fetchPublicCard(uid, true).then(c=>{ if(c && (c.p || c.a)){ try{ renderPlayerCards(); }catch(e){} } });
+      }
+    }catch(e){}
+    if(pr) return { n: pr.n, url: defaultAvatarUrl(uid) };
+    return { n: (pc && pc.n) || 'Jugador', url: defaultAvatarUrl(uid) };
   }
   let bp = botProfiles[color];
   if(!bp){
@@ -14533,7 +14545,8 @@ async function micEnsureAlive(force){
 async function toggleMic(){
   if(!micStream || micTrackDead()){
     if(!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)){
-      lobbyToast('Este navegador no permite usar el micrófono aquí. Abre el juego en Safari o Chrome.', 6000);
+      const _inApp = !!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform());
+      lobbyToast(_inApp ? 'El micrófono no está disponible en este dispositivo.' : 'Este navegador no permite usar el micrófono aquí. Abre el juego en Safari o Chrome.', 6000);
       return;
     }
     try{
