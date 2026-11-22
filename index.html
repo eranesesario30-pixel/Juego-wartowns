@@ -7378,7 +7378,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running' && !document.hidden){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1284';
+const BUILD_VERSION = '1285';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -7552,13 +7552,14 @@ function parseServerUrl(url){
 // vea en pantalla en vez de desaparecer en silencio — así la próxima vez
 // que algo se trabe, vamos a saber exactamente qué pasó.
 window.addEventListener('error', (ev)=>{
-  try{ lobbyToast('[error] ' + (ev.message || ev.error) + ' — línea ' + ev.lineno); }catch(e){}
+  // A los jugadores no se les muestra: solo se guarda en el registro interno (se ve en pantalla únicamente con ?dev=1)
+  try{ const m = '[error] ' + (ev.message || ev.error) + ' — línea ' + ev.lineno; mpLog(m); if(/[?&]dev=1/.test(location.search)) lobbyToast(m); }catch(e){}
 });
 window.addEventListener('unhandledrejection', (ev)=>{
   // Los fallos de sonido (iPhone en silencio, audio ocupado por otra app o por un video) no se avisan: solo no suena
   try{ const m = ev.reason && typeof ev.reason==='object' ? String(ev.reason.name||'')+' '+String(ev.reason.message||'') : String(ev.reason||'');
        if(/audio|NotAllowedError|AbortError|NotSupportedError|play\(\)|media/i.test(m)){ ev.preventDefault(); return; } }catch(e){}
-  try{ lobbyToast('[promesa sin atrapar] ' + (ev.reason && ev.reason.message ? ev.reason.message : ev.reason)); }catch(e){}
+  try{ const m = '[promesa sin atrapar] ' + (ev.reason && ev.reason.message ? ev.reason.message : ev.reason); mpLog(m); if(/[?&]dev=1/.test(location.search)) lobbyToast(m); }catch(e){}
 });
 
 async function connectToServerOnce(){
