@@ -7371,7 +7371,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running' && !document.hidden){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1281';
+const BUILD_VERSION = '1282';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -10687,8 +10687,21 @@ function iosHaptic(times){
     tap(); if(times>1) setTimeout(tap,110); if(times>2) setTimeout(tap,220);
   }catch(e){}
 }
+/* iPhone (app nativa): vibración real con el componente Haptics de Capacitor; funciona aunque nadie esté tocando la pantalla. */
+function nativeHaptics(pattern){
+  try{
+    const C = window.Capacitor;
+    if(!(C && C.isNativePlatform && C.isNativePlatform() && C.getPlatform && C.getPlatform()==='ios')) return false;
+    const H = C.Plugins && C.Plugins.Haptics; if(!H) return false;
+    const arr = Array.isArray(pattern) ? pattern : [pattern];
+    let t = 0;
+    arr.forEach((ms,i)=>{ if(i%2===0){ setTimeout(()=>{ try{ H.impact({ style: ms>=60 ? 'HEAVY' : (ms>=30 ? 'MEDIUM' : 'LIGHT') }); }catch(e){} }, t); } t += ms; });
+    return true;
+  }catch(e){ return false; }
+}
 function vibrate(pattern){
   if(!vibrationEnabled) return;
+  if(nativeHaptics(pattern)) return;
   if(navigator.vibrate){ try{ navigator.vibrate(pattern); }catch(e){} return; }
   try{ const n = Array.isArray(pattern) ? pattern.filter((x,i)=>i%2===0).length : 1; iosHaptic(Math.min(3,Math.max(1,n))); }catch(e){}
 }
