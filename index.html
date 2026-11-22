@@ -6056,6 +6056,11 @@ body.dice-shaking .dice-cube-wrap, body.dice-shaking .dice-sprite{ animation:dic
 #gameScreen header{padding-top:env(safe-area-inset-top,0px) !important;box-sizing:border-box;}
 /* iPhone: el panel de arriba del lobby (nivel, monedas, diamantes, ajustes) queda debajo de la hora y la isla */
 .lobby-header-panel{padding-top:calc(env(safe-area-inset-top,0px) + 10px) !important;}
+/* iPhone: barra de monedas de las pestañas, avisos y banners libres de la hora y la isla */
+#tabHud{padding-top:calc(9px + env(safe-area-inset-top,0px)) !important;}
+body.tab-open #storeOverlay, body.tab-open #friendsOverlay, body.tab-open #eventsOverlay, body.tab-open #collectionsOverlay{top:calc(56px + env(safe-area-inset-top,0px)) !important;}
+#gameNotifContainer{top:calc(env(safe-area-inset-top,0px) + 8px) !important;}
+#topBannerSlot{top:calc(env(safe-area-inset-top,0px) + 10px) !important;}
 </style>
 <style id="nbBgFix">
 /* Fondo de partida en el color de cada tablero (sin el brillo azul que lo ensuciaba) */
@@ -7373,7 +7378,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running' && !document.hidden){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1283';
+const BUILD_VERSION = '1284';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
