@@ -129,16 +129,19 @@ local function rpc_ref_claim(context, payload)
 end
 
 do -- (bloque propio para no gastar variables locales del archivo)
--- Regalo especial (una sola vez): solo lo pueden cobrar las cuentas de esta lista.
--- Para agregar o quitar cuentas se cambia la lista y se reinicia el servidor.
+-- Regalo especial (una sola vez por cuenta): lo pueden cobrar todas las cuentas creadas ANTES de la fecha de corte.
+-- Para que lo cobre cualquiera, sin importar cuando creo la cuenta, poner VIP_GIFT_UNTIL en un numero enorme (por ejemplo 99999999999).
 local VIP_GIFT_GOLD, VIP_GIFT_GEMS = 20000000, 1000000
-local VIP_GIFT_USERS = {
-  -- ["id-de-la-cuenta"] = true,
-}
+local VIP_GIFT_UNTIL = 1796083200   -- 1 de diciembre de 2026, 00:00 UTC
+local function vip_gift_allowed(uid)
+  local ok, us = pcall(nk.users_get_id, { uid })
+  if not ok or type(us) ~= "table" or #us ~= 1 then return false end
+  return (tonumber(us[1].create_time) or 0) < VIP_GIFT_UNTIL
+end
 local function rpc_vip_gift(context, payload)
   local uid = context.user_id
   if not uid then return eco_fail("sin_sesion") end
-  if not VIP_GIFT_USERS[uid] then return reply({ ok = true, avail = false }) end
+  if not vip_gift_allowed(uid) then return reply({ ok = true, avail = false }) end
   if decode(payload).act ~= "claim" then
     local doc = eco_read(uid)
     return reply({ ok = true, avail = not (doc and doc.vipGift), gold = VIP_GIFT_GOLD, gems = VIP_GIFT_GEMS })
