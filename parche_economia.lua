@@ -1920,9 +1920,9 @@ local function rpc_xmas_open(context, payload)
   return eco_ok(doc, { reward = res })
 end
 
--- Regalos entre amigos: quien manda el regalo no pierde nada; el amigo lo cobra (100 de oro, maximo 5 al dia).
+-- Regalos entre amigos: quien manda el regalo no pierde nada; el amigo lo cobra (100 de oro, un regalo por amigo al dia).
 -- Solo se puede cobrar un regalo que el amigo de verdad mando.
-local GIFT_GOLD, GIFT_DAY_MAX = 100, 5
+local GIFT_GOLD, GIFT_DAY_MAX = 100, 100
 local function rpc_gift_claim(context, payload)
   local uid = context.user_id
   if not uid then return eco_fail("sin_sesion") end
@@ -1945,7 +1945,7 @@ local function rpc_gift_claim(context, payload)
 end
 
 do -- (bloque propio para no gastar variables locales del archivo)
-  local SEND_DAY_MAX, IN_MAX = 20, 100
+  local SEND_DAY_MAX, IN_MAX = 100, 100
   -- Mandar un regalo a un amigo (uno por amigo al dia, hasta 20 al dia)
   local function rpc_gift_send(context, payload)
     local uid = context.user_id
