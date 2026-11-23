@@ -7394,7 +7394,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running' && !document.hidden){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1291';
+const BUILD_VERSION = '1292';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -9199,6 +9199,7 @@ async function completeLogin(data, online){
         return;
       } }
     MY_COLOR = 'red';
+    try{ giftInboxRefresh(); }catch(e){}
   } else {
     // Parche es solo en línea. Única excepción: la vista de diseño dentro del
     // chat (recuadro aislado sin internet) — ahí se puede probar sin servidor.
@@ -16423,7 +16424,7 @@ const ECO = (function(){
     sin_completar:'Todavía no lo completas.', no_es_de_hoy:'Ese desafío ya no es de hoy.', muy_rapido:'Más despacio, inténtalo en unos segundos.', tope_diario:'Llegaste al tope de hoy.',
     no_hay_anfora:'No hay ánfora ahí.', no_esta_lista:'El ánfora todavía no está lista.', ya_iniciada:'Esa ánfora ya empezó.', ya_hay_una:'Ya tienes una ánfora desbloqueándose.',
     no_esta_abriendo:'Esa ánfora no se está abriendo.', todavia_no:'Todavía no es ese día.', ya_abierta:'Esa puerta ya está abierta.', ocupado:'El servidor está ocupado, inténtalo de nuevo.',
-    red:'Sin conexión con el servidor. No se cobró nada.', sin_sesion:'Tu sesión expiró. Cierra y abre el juego.', pedido_invalido:'Pedido no válido.'
+    red:'Sin conexión con el servidor. No se cobró nada.', no_hay_regalo:'Ese regalo ya no está.', ya_enviado:'Ya le mandaste un regalo hoy.', sin_sesion:'Tu sesión expiró. Cierra y abre el juego.', pedido_invalido:'Pedido no válido.'
   };
   E.errMsg = code => ERR[code] || 'No se pudo completar. Inténtalo de nuevo.';
   /* Hora del servidor (para que cambiar la hora del teléfono no sirva de nada) */
@@ -20172,36 +20173,48 @@ function updateFriendsBadge(){
   if(badge) badge.textContent = pending;
 }
 
+let _giftInbox = null;   // ids de quienes me mandaron un regalo sin cobrar (lo dice el servidor)
+let _giftInboxTimer = null;
+async function giftInboxRefresh(){
+  try{
+    if(PREVIEW_OFFLINE) return;
+    const r = await ECO.call('eco_gift_inbox', {});
+    if(!(r && r.ok)) return;
+    const arr = Array.isArray(r.inbox) ? r.inbox : [];
+    _giftInbox = new Set(arr.map(x=>String(x).toLowerCase()));
+    (profileStats.friends||[]).forEach(f=>{ f.pendingGift = _giftInbox.has(String(f.id).toLowerCase()); });
+    try{ updateFriendsBadge(); }catch(e){}
+    try{ const fo = document.getElementById('friendsList'); if(fo && fo.offsetParent) renderFriendsList(); }catch(e){}
+  }catch(e){}
+  if(!_giftInboxTimer) _giftInboxTimer = setInterval(giftInboxRefresh, 45000);
+}
+
 async function sendGiftToFriend(idx){
   const friends = profileStats.friends || [];
   const f = friends[idx];
   if(!f) return;
   const now = Date.now();
   if(f.lastSentAt && (now-f.lastSentAt)<86400000) return;
+  const r = await ECO.act('eco_gift_send', {to:f.id});   // el servidor le entrega el regalo a tu amigo
+  if(!r) return;
   f.lastSentAt = now;
   await saveProfile();
-  lobbyToast(`¡Enviaste 100 de oro a ${friendName(f.id)}! (bono del juego, no te descuenta nada)`);
+  lobbyToast(`🎁 ¡Le mandaste un regalo a ${friendName(f.id)}!`);
   renderFriendsList();
-  setTimeout(async ()=>{
-    f.pendingGift = true;
-    await saveProfile();
-    renderFriendsList();
-    lobbyToast(`${friendName(f.id)} te devolvió el gesto: ¡tienes un regalo esperando! 🎁`);
-  }, 4000);
 }
 
 async function claimAndReturnGift(idx){
   const friends = profileStats.friends || [];
   const f = friends[idx];
   if(!f || !f.pendingGift) return;
-  const rg = await ECO.act('eco_gift_claim', {id:f.id});   // el servidor da los 100 con tope diario
-  if(!rg) return;
+  const rg = await ECO.act('eco_gift_claim', {id:f.id});   // el servidor revisa que el regalo exista y da los 100 con tope diario
+  if(!rg){ giftInboxRefresh(); return; }
   profileStats.goldEarned += 100;
   f.pendingGift = false;
-  f.lastSentAt = Date.now();
+  try{ if(_giftInbox) _giftInbox.delete(String(f.id).toLowerCase()); }catch(e){}
   await saveProfile();
   sfxCoin();
-  lobbyToast(`¡Reclamaste 100 de oro y le devolviste el regalo a ${f.id}!`);
+  lobbyToast(`🎁 ¡Cobraste 100 de oro del regalo de ${friendName(f.id)}!`);
   renderFriendsList();
 }
 

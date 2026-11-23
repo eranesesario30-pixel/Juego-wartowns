@@ -1920,22 +1920,23 @@ local function rpc_xmas_open(context, payload)
   return eco_ok(doc, { reward = res })
 end
 
--- Regalo de un amigo: 100 de oro, maximo 5 al dia y uno por amigo al dia
+-- Regalos entre amigos: quien manda el regalo no pierde nada; el amigo lo cobra (100 de oro, maximo 5 al dia).
+-- Solo se puede cobrar un regalo que el amigo de verdad mando.
 local GIFT_GOLD, GIFT_DAY_MAX = 100, 5
 local function rpc_gift_claim(context, payload)
   local uid = context.user_id
   if not uid then return eco_fail("sin_sesion") end
   local fid = decode(payload).id
   if type(fid) ~= "string" or #fid == 0 or #fid > 64 or fid == uid then return eco_fail("pedido_invalido") end
-  local okf, us = pcall(nk.users_get_id, { fid })
-  if not okf or type(us) ~= "table" or #us ~= 1 then return eco_fail("no_existe") end
   local ok, res, doc = eco_update(uid, function(d)
     local today = eco_day()
     d.gifts = d.gifts or {}
     if d.gifts.day ~= today then d.gifts = { day = today, n = 0, ids = {} } end
-    if d.gifts.ids[fid] then return false, "ya_reclamado" end
+    d.giftIn = d.giftIn or {}
+    if not d.giftIn[fid] then return false, "no_hay_regalo" end
     if d.gifts.n >= GIFT_DAY_MAX then return false, "tope_diario" end
-    d.gifts.ids[fid] = true; d.gifts.n = d.gifts.n + 1
+    d.giftIn[fid] = nil
+    d.gifts.n = d.gifts.n + 1
     d.gold = d.gold + GIFT_GOLD
     return true, GIFT_GOLD
   end)
@@ -1943,6 +1944,51 @@ local function rpc_gift_claim(context, payload)
   return eco_ok(doc, { gold = res })
 end
 
+do -- (bloque propio para no gastar variables locales del archivo)
+  local SEND_DAY_MAX, IN_MAX = 20, 100
+  -- Mandar un regalo a un amigo (uno por amigo al dia, hasta 20 al dia)
+  local function rpc_gift_send(context, payload)
+    local uid = context.user_id
+    if not uid then return eco_fail("sin_sesion") end
+    local to = decode(payload).to
+    if type(to) ~= "string" or #to == 0 or #to > 64 or to == uid then return eco_fail("pedido_invalido") end
+    local okf, us = pcall(nk.users_get_id, { to })
+    if not okf or type(us) ~= "table" or #us ~= 1 then return eco_fail("no_existe") end
+    local ok, res, doc = eco_update(uid, function(d)
+      local today = eco_day()
+      d.giftOut = d.giftOut or {}
+      if d.giftOut.day ~= today then d.giftOut = { day = today, n = 0, ids = {} } end
+      if d.giftOut.ids[to] then return false, "ya_enviado" end
+      if d.giftOut.n >= SEND_DAY_MAX then return false, "tope_diario" end
+      d.giftOut.ids[to] = true
+      d.giftOut.n = d.giftOut.n + 1
+      return true, "ok"
+    end)
+    if not ok then return eco_fail(res) end
+    eco_update(to, function(d)
+      d.giftIn = d.giftIn or {}
+      local n = 0
+      for _ in pairs(d.giftIn) do n = n + 1 end
+      if n >= IN_MAX and not d.giftIn[uid] then return true, "lleno" end
+      d.giftIn[uid] = eco_day()
+      return true, "ok"
+    end)
+    return eco_ok(doc, { sent = true })
+  end
+  -- Quienes me mandaron un regalo que todavia no cobro
+  local function rpc_gift_inbox(context, payload)
+    local uid = context.user_id
+    if not uid then return eco_fail("sin_sesion") end
+    local doc = eco_read(uid)
+    local list = {}
+    if doc and type(doc.giftIn) == "table" then
+      for k in pairs(doc.giftIn) do list[#list + 1] = k end
+    end
+    return reply({ ok = true, inbox = list })
+  end
+  nk.register_rpc(rpc_gift_send, "eco_gift_send")
+  nk.register_rpc(rpc_gift_inbox, "eco_gift_inbox")
+end
 
 -- Invita y gana: quien entra con el enlace de un amigo lo anota; cuando juega su primera partida de verdad,
 -- el que lo invito recibe 100 diamantes (tope: 10 por dia y 100 en total, una sola vez por invitado)
