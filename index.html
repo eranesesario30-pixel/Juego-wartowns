@@ -6070,6 +6070,13 @@ body.tab-open #storeOverlay, body.tab-open #friendsOverlay, body.tab-open #event
 #topBannerSlot{top:calc(env(safe-area-inset-top,0px) + 10px) !important;}
 /* iPhone: pantallas "Elige el tablero" y "Elige tu apuesta": el botón de volver queda debajo de la hora y la isla */
 #betScreen, #boardChoiceScreen{padding-top:calc(10px + env(safe-area-inset-top,0px)) !important;box-sizing:border-box;}
+
+/* Punto de estado de la voz sobre el botón del micrófono */
+#micBtn, .p-mic-btn{position:relative;}
+#micBtn[data-vs]:not([data-vs="none"])::after, .p-mic-btn[data-vs]:not([data-vs="none"])::after{content:'';position:absolute;right:-1px;bottom:-1px;width:11px;height:11px;border-radius:50%;border:2px solid #1a1206;box-shadow:0 1px 3px rgba(0,0,0,.6);}
+#micBtn[data-vs="ok"]::after, .p-mic-btn[data-vs="ok"]::after{background:#2fe06b;}
+#micBtn[data-vs="wait"]::after, .p-mic-btn[data-vs="wait"]::after{background:#ffc83a;}
+#micBtn[data-vs="bad"]::after, .p-mic-btn[data-vs="bad"]::after{background:#ff4a3d;}
 </style>
 <style id="nbBgFix">
 /* Fondo de partida en el color de cada tablero (sin el brillo azul que lo ensuciaba) */
@@ -7387,7 +7394,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running' && !document.hidden){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1288';
+const BUILD_VERSION = '1289';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -14383,6 +14390,7 @@ function voiceWatchdog(){
     voiceNewSession();
   }
   try{ micEnsureAlive(); }catch(e){}
+  try{ micUpdateBtn(); }catch(e){}
 }
 // Al volver a la app: reanuda el audio y la voz
 function voiceKick(){
@@ -14417,6 +14425,7 @@ function voiceEnsurePeer(id){
   pc.onicecandidate = (e)=>{ if(e.candidate) voiceSend({t:'ice', to:id, c:e.candidate}); };
   pc.onconnectionstatechange = ()=>{
     v.connected = pc.connectionState==='connected';
+    try{ micUpdateBtn(); }catch(e){}
     if(v.connected){ v.everConnected = true; v.badSince = 0; v.restarted = false; }
     if(pc.connectionState==='failed'){ try{ pc.restartIce(); }catch(e){} }
   };
@@ -14488,13 +14497,25 @@ function micErrorMessage(err){
   return 'No se pudo activar el micrófono: ' + ((err && err.message) || 'error desconocido');
 }
 function micUpdateBtn(){
+  const vs = voiceStateDot();
   // hay dos botones con el mismo id (el del chat y el de la mesa): se actualizan todos
   const btns = Array.from(document.querySelectorAll('#micBtn, .p-mic-btn[title^="Micr"]'));
   btns.forEach(btn=>{
     btn.textContent = micMuted ? '🔇' : '🎤';
     btn.classList.toggle('muted', micMuted);
     btn.title = micMuted ? 'Micrófono apagado — toca para activar' : 'Micrófono activado — toca para apagar';
+    btn.setAttribute('data-vs', vs);
   });
+}
+// Estado de la voz con los otros jugadores: ok = conectada, wait = conectando, bad = sin conexión, none = sin otros jugadores
+function voiceStateDot(){
+  try{
+    const ps = Object.values(voicePeers||{});
+    if(!ps.length) return 'none';
+    if(ps.some(v=>v.pc && v.pc.connectionState==='connected')) return 'ok';
+    if(ps.every(v=>v.pc && (v.pc.connectionState==='failed' || v.pc.connectionState==='disconnected' || v.pc.connectionState==='closed'))) return 'bad';
+    return 'wait';
+  }catch(e){ return 'none'; }
 }
 function micTrackDead(){
   const t = micStream && micStream.getAudioTracks()[0];
