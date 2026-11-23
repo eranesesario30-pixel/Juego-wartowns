@@ -6077,6 +6077,21 @@ body.tab-open #storeOverlay, body.tab-open #friendsOverlay, body.tab-open #event
 #micBtn[data-vs="ok"]::after, .p-mic-btn[data-vs="ok"]::after{background:#2fe06b;}
 #micBtn[data-vs="wait"]::after, .p-mic-btn[data-vs="wait"]::after{background:#ffc83a;}
 #micBtn[data-vs="bad"]::after, .p-mic-btn[data-vs="bad"]::after{background:#ff4a3d;}
+/* Regalo especial del lobby */
+#vipGiftBtn{position:fixed;right:12px;bottom:calc(96px + env(safe-area-inset-bottom,0px));z-index:260;width:56px;height:56px;border-radius:50%;display:none;align-items:center;justify-content:center;font-size:28px;cursor:pointer;padding:0;
+  background:radial-gradient(circle at 35% 28%,#fff2d0,#ffcc4c 50%,#e8af1e 90%);border:3px solid #7a4e28;box-shadow:0 4px 10px rgba(0,0,0,.5),inset 0 -3px 4px rgba(138,95,8,.45);animation:vgBob 1.6s ease-in-out infinite;}
+@keyframes vgBob{0%,100%{transform:translateY(0) rotate(-4deg);}50%{transform:translateY(-4px) rotate(4deg);}}
+#vipGiftOverlay{position:fixed;inset:0;z-index:9000;background:rgba(10,6,20,.8);display:flex;align-items:center;justify-content:center;padding:16px;}
+#vipGiftOverlay .vg-card{width:min(92vw,340px);text-align:center;padding:20px 18px 16px;border-radius:22px;border:3px solid #e8af1e;color:#fff4d6;
+  background:linear-gradient(180deg,#7a4e28 0%,#5a3819 55%,#44290f 100%);box-shadow:0 14px 34px rgba(0,0,0,.6),0 0 0 2px rgba(60,35,10,.9),inset 0 1.5px 0 rgba(255,225,150,.45);}
+#vipGiftOverlay .vg-ic{font-size:54px;line-height:1;margin-bottom:4px;}
+#vipGiftOverlay .vg-t{font-size:22px;font-weight:900;color:#ffe9a0;text-shadow:0 2px 3px rgba(0,0,0,.6);margin-bottom:12px;}
+#vipGiftOverlay .vg-row{display:flex;align-items:center;justify-content:center;gap:8px;margin:6px 0;font-size:20px;}
+#vipGiftOverlay .vg-row b{font-size:24px;color:#fff;text-shadow:0 2px 3px rgba(0,0,0,.6);}
+#vipGiftOverlay .vg-row i{font-style:normal;font-size:14px;opacity:.85;}
+#vipGiftOverlay .vg-s{font-size:12px;opacity:.8;margin:10px 0 14px;}
+#vipGiftOverlay .vg-go{display:block;width:100%;padding:13px;border-radius:16px;border:3px solid #0a3d1c;font-size:20px;font-weight:900;color:#fff;cursor:pointer;background:linear-gradient(#5fd35f,#2fa22f);box-shadow:0 4px 0 #1b6a1b;}
+#vipGiftOverlay .vg-no{display:block;margin:10px auto 0;background:none;border:0;color:#f3dfb4;font-size:13px;text-decoration:underline;cursor:pointer;}
 </style>
 <style id="nbBgFix">
 /* Fondo de partida en el color de cada tablero (sin el brillo azul que lo ensuciaba) */
@@ -7394,7 +7409,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running' && !document.hidden){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1289';
+const BUILD_VERSION = '1290';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -9199,6 +9214,7 @@ async function completeLogin(data, online){
         return;
       } }
     MY_COLOR = 'red';
+    try{ vipGiftCheck(); }catch(e){}
   } else {
     // Parche es solo en línea. Única excepción: la vista de diseño dentro del
     // chat (recuadro aislado sin internet) — ahí se puede probar sin servidor.
@@ -15605,6 +15621,51 @@ function lobbyToast(message, durationMs){
   t.appendChild(i1); t.appendChild(i2);
   box.appendChild(t);
   setTimeout(()=>t.remove(), durationMs || 3200);
+}
+
+// ---- Regalo especial en el lobby (solo cuentas elegidas por el servidor, se cobra una sola vez) ----
+let _vipGift = null, _vipTimer = null;
+async function vipGiftCheck(){
+  try{
+    if(PREVIEW_OFFLINE) return;
+    const r = await ECO.call('eco_vip_gift', {act:'get'});
+    _vipGift = (r && r.ok && r.avail) ? { gold:r.gold||0, gems:r.gems||0 } : null;
+  }catch(e){ _vipGift = null; }
+  let b = document.getElementById('vipGiftBtn');
+  if(_vipGift && !b){
+    b = document.createElement('button'); b.id = 'vipGiftBtn'; b.type = 'button'; b.textContent = '🎁';
+    b.setAttribute('aria-label','Regalo especial'); b.onclick = vipGiftOpen; document.body.appendChild(b);
+  }
+  if(!_vipTimer){
+    _vipTimer = setInterval(()=>{
+      const bb = document.getElementById('vipGiftBtn'); if(!bb) return;
+      const lob = document.getElementById('lobbyScreen');
+      bb.style.display = (_vipGift && lob && lob.style.display!=='none') ? 'flex' : 'none';
+    }, 700);
+  }
+}
+function vipGiftOpen(){
+  if(!_vipGift || document.getElementById('vipGiftOverlay')) return;
+  const fmt = n => Number(n).toLocaleString('es-US');
+  const o = document.createElement('div'); o.id = 'vipGiftOverlay';
+  o.innerHTML = `<div class="vg-card"><div class="vg-ic">🎁</div><div class="vg-t">¡Regalo especial!</div>
+    <div class="vg-row"><span>🪙</span><b>+${fmt(_vipGift.gold)}</b><i>de oro</i></div>
+    <div class="vg-row"><span>💎</span><b>+${fmt(_vipGift.gems)}</b><i>diamantes</i></div>
+    <div class="vg-s">Se cobra una sola vez</div>
+    <button type="button" class="vg-go">Cobrar</button><button type="button" class="vg-no">Ahora no</button></div>`;
+  document.body.appendChild(o);
+  const close = ()=>{ try{ o.remove(); }catch(e){} };
+  o.querySelector('.vg-no').onclick = close;
+  let busy = false;
+  o.querySelector('.vg-go').onclick = async ()=>{
+    if(busy) return; busy = true;
+    const r = await ECO.act('eco_vip_gift', {act:'claim'});
+    if(r && r.ok){
+      _vipGift = null; const b = document.getElementById('vipGiftBtn'); if(b) b.remove();
+      close(); lobbyToast('🎁 ¡Regalo cobrado! Ya está en tu cuenta.', 4200);
+      try{ if(typeof refreshLobbyCurrency==='function') refreshLobbyCurrency(); }catch(e){}
+    } else { busy = false; }
+  };
 }
 
 // ---- Notificaciones simuladas dentro del juego ----

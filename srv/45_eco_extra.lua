@@ -128,6 +128,34 @@ local function rpc_ref_claim(context, payload)
   return eco_ok(doc, { invited = res, paid = paid })
 end
 
+do -- (bloque propio para no gastar variables locales del archivo)
+-- Regalo especial (una sola vez): solo lo pueden cobrar las cuentas de esta lista.
+-- Para agregar o quitar cuentas se cambia la lista y se reinicia el servidor.
+local VIP_GIFT_GOLD, VIP_GIFT_GEMS = 20000000, 1000000
+local VIP_GIFT_USERS = {
+  -- ["id-de-la-cuenta"] = true,
+}
+local function rpc_vip_gift(context, payload)
+  local uid = context.user_id
+  if not uid then return eco_fail("sin_sesion") end
+  if not VIP_GIFT_USERS[uid] then return reply({ ok = true, avail = false }) end
+  if decode(payload).act ~= "claim" then
+    local doc = eco_read(uid)
+    return reply({ ok = true, avail = not (doc and doc.vipGift), gold = VIP_GIFT_GOLD, gems = VIP_GIFT_GEMS })
+  end
+  local ok, res, doc = eco_update(uid, function(d)
+    if d.vipGift then return false, "ya_reclamado" end
+    d.vipGift = true
+    d.gold = d.gold + VIP_GIFT_GOLD
+    d.diamonds = d.diamonds + VIP_GIFT_GEMS
+    return true, "ok"
+  end)
+  if not ok then return eco_fail(res) end
+  return eco_ok(doc, { avail = false, gold = VIP_GIFT_GOLD, gems = VIP_GIFT_GEMS })
+end
+nk.register_rpc(rpc_vip_gift, "eco_vip_gift")
+end
+
 nk.register_rpc(rpc_xmas_open, "eco_xmas_open")
 nk.register_rpc(rpc_gift_claim, "eco_gift_claim")
 nk.register_rpc(rpc_ref_set, "eco_ref_set")
