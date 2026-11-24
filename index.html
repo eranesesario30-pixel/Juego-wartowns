@@ -7394,7 +7394,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running' && !document.hidden){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1293';
+const BUILD_VERSION = '1294';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -12760,6 +12760,10 @@ function fitBoardFrame(){
     const el = document.getElementById('boardOuter'); if(!el) return;
     el.style.borderWidth = ''; el.style.borderImageWidth = ''; el.style.padding = '';
     if(el.dataset.mode!=='rd' && parseFloat(getComputedStyle(el).paddingLeft) > 7) el.style.padding = '6px';   // los tableros con relleno grande dejaban un hueco oscuro entre el marco y los números
+    if(el.dataset.mode==='rd'){   // el marco RD es una imagen cuadrada: el relleno de arriba/abajo debe ser el mismo 17.4% pero del ALTO del marco (el CSS solo da % del ancho y en tableros largos los números quedaban montados sobre el marco)
+      const bd = document.getElementById('board'); const bh = bd ? bd.offsetHeight : 0;
+      if(bh){ const pv = Math.round(0.174/0.652*bh); el.style.paddingTop = pv+'px'; el.style.paddingBottom = pv+'px'; }
+    }
     const cs = getComputedStyle(el);
     const m = /url\(["']?([^"')]+)/.exec(cs.borderImageSource || ''); if(!m) return;
     const src = m[1]; const sl = String(cs.borderImageSlice || '').split(' ')[0];
