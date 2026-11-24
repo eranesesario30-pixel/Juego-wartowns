@@ -3,7 +3,7 @@ from playwright.sync_api import sync_playwright
 import cap
 from cap import *
 scn=sys.argv[1]; secs=float(sys.argv[2]); mult=float(sys.argv[3]); mode=sys.argv[4] if len(sys.argv)>4 else 'rd'
-out=f'/tmp/promo/sc_{scn}'; os.makedirs(out,exist_ok=True)
+out=f'/tmp/promo/sc_{scn}'+(sys.argv[5] if len(sys.argv)>5 else ''); os.makedirs(out,exist_ok=True)
 SC={
  'baja':dict(kind='baja',head='TRAMPA: BAJA',sub='Si caes aquí, retrocedes a un número más bajo',end='¿Cuál es la trampa que más odias?'),
  'sube':dict(kind='sube',head='VENTAJA: SUBE',sub='Si caes aquí, subes a un número más alto',end='¿Cuál es tu ventaja favorita?'),
@@ -13,7 +13,7 @@ SET="""(async()=>{
  profileStats.equippedBoard='%(mode)s'; window.boardOwned=()=>true;
  const T=['parche2d','mapachito2d','zorrito2d','conejito2d']; ['red','blue','yellow','green'].forEach((c,i)=>{tokenSkins[c]=T[i];});
  startGame('ffa'); players.forEach(p=>{p.isBot=false;p.active=true;});
- const N=[['Carlos','av3',3200],['María','av2',1850],['José','av7',2400],['Ana','av4',990]];
+ const N=[['Carlos','spx4',3200],['María','spx1',1850],['José','spy13',2400],['Ana','spy5',990]];
  players.forEach((p,i)=>{ botProfiles[p.color]={n:N[i][0],a:N[i][1]}; p._d=N[i][2]; });
  lobbyDiamonds=3200; window.ensureDisplayName=()=>'Carlos'; window.myAvatarUrl=()=>avatarURL('av3');
  try{updateGameHudDiamonds();renderPlayerCards();}catch(e){}
