@@ -1,0 +1,70 @@
+import sys, os, json
+from playwright.sync_api import sync_playwright
+import cap
+from cap import *
+scn=sys.argv[1]; secs=float(sys.argv[2]); mult=float(sys.argv[3]); mode=sys.argv[4] if len(sys.argv)>4 else 'rd'
+out=f'/tmp/promo/sc_{scn}'+(sys.argv[5] if len(sys.argv)>5 else ''); os.makedirs(out,exist_ok=True)
+SC={
+ 'turno':dict(kind='sube',head='EL RELOJ DE TU TURNO ⏱️',sub='',end='¿Eres de tirar rápido o de pensarlo mucho?'),
+}[scn]
+SET="""(async()=>{
+ ['loginScreen','lobbyScreen','betScreen','boardChoiceScreen'].forEach(i=>{const e=document.getElementById(i); if(e) e.style.display='none';});
+ profileStats.equippedBoard='%(mode)s'; window.boardOwned=()=>true;
+ const T=['parche2d','mapachito2d','zorrito2d','conejito2d']; ['red','blue','yellow','green'].forEach((c,i)=>{tokenSkins[c]=T[i];});
+ startGame('ffa'); players.forEach(p=>{p.isBot=false;p.active=true;});
+ const N=[['Carlos','spx4',3200],['María','spx1',1850],['José','spy13',2400],['Ana','spy5',990]];
+ players.forEach((p,i)=>{ botProfiles[p.color]={n:N[i][0],a:N[i][1]}; p._d=N[i][2]; });
+ lobbyDiamonds=3200; window.ensureDisplayName=()=>'Carlos'; window.myAvatarUrl=()=>avatarURL('av3');
+ try{updateGameHudDiamonds();renderPlayerCards();}catch(e){}
+ const k='%(kind)s'; let bi=-1; for(let i=14;i<path.length-12;i++){ if(path[i].type===k){bi=i;break;} }
+ window.__bi=bi; window.__target=path[bi]&&path[bi].target;
+ current=0; players[0].position=bi-9; updateTokenPosition(players[0]); updateActiveCellGlow(); players[0].diceChangeCount=1; players[0].turnDiaUses=0; ECO.act=async()=>({change:{count:2}}); window.__rnd=Math.random;
+ dice=[null,null]; usedDie=[false,false]; render();
+ const mk=(id,css,html)=>{const o=document.createElement('div'); o.id=id; o.style.cssText=css; o.innerHTML=html; document.body.appendChild(o); return o;};
+ mk('pHead','position:fixed;left:10px;right:10px;top:136px;z-index:99999;text-align:center;font:900 27px system-ui,sans-serif;color:#fff;text-shadow:0 3px 8px #000,0 0 14px #000;pointer-events:none;transition:opacity .4s','%(head)s');
+ mk('pSub','position:fixed;left:14px;right:14px;bottom:12px;z-index:99999;text-align:center;font:800 21px system-ui,sans-serif;color:#fff;background:rgba(0,0,0,.65);border:2px solid #ffd45a;border-radius:16px;padding:12px 10px;pointer-events:none;transition:opacity .4s','%(sub)s');
+ mk('pEnd','position:fixed;left:12px;right:12px;bottom:10px;z-index:99999;text-align:center;font:900 24px system-ui,sans-serif;color:#fff;background:rgba(0,0,0,.65);border:2px solid #ffd45a;border-radius:18px;padding:12px 8px;opacity:0;transition:opacity .4s;pointer-events:none','%(end)s<br><span style="font-size:18px;font-weight:700">Cuéntanos en comentarios</span>');
+})()"""%dict(mode=mode,kind=SC['kind'],head=SC['head'],sub=SC['sub'],end=SC['end'])
+AUD="""
+(()=>{ const AC=window.AudioContext||window.webkitAudioContext;
+ window.AudioContext=window.webkitAudioContext=function(){ const oc=new OfflineAudioContext(2,44100*60,44100);
+   Object.defineProperty(oc,'currentTime',{get:()=>performance.now()/1000});
+   Object.defineProperty(oc,'state',{get:()=>'running'}); oc.resume=()=>Promise.resolve(); window.__oc=oc; return oc; };
+ window.__renderAudio=async(t0,t1)=>{ const buf=await window.__oc.startRendering(); const sr=buf.sampleRate; const a=Math.floor(t0*sr), b=Math.floor(t1*sr);
+   const L=buf.getChannelData(0), R=buf.getChannelData(1); const n=b-a; const out=new Int16Array(n*2);
+   for(let i=0;i<n;i++){ out[2*i]=Math.max(-1,Math.min(1,L[a+i]))*32767; out[2*i+1]=Math.max(-1,Math.min(1,R[a+i]))*32767; }
+   let s=''; const u=new Uint8Array(out.buffer); for(let i=0;i<u.length;i+=8192) s+=String.fromCharCode.apply(null,u.subarray(i,i+8192)); return btoa(s); };
+})();
+"""
+fps=30
+with sync_playwright() as p:
+    b=p.chromium.launch(args=['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist'])
+    pg=b.new_page(viewport={'width':430,'height':764},device_scale_factor=2.5116)
+    pg.route('**/*',route); pg.add_init_script(AUD); pg.add_init_script(INIT); pg.goto('file:///home/claude/juego-wartowns/index.html?dev=1&lang=es')
+    for _ in range(90): pg.evaluate("__advance(33.333)")
+    pg.evaluate(SET)
+    for _ in range(20): pg.evaluate("__advance(33.333)")
+    T0=pg.evaluate('performance.now()/1000')
+    print('bi',pg.evaluate("[window.__bi,window.__target]"))
+    pg.evaluate("document.getElementById('pSub').style.display='none'; startTurnTimer(); 0")
+    for _ in range(180): pg.evaluate("__advance(33.333)")
+    T0=pg.evaluate('performance.now()/1000')
+    n=int(secs*fps); st=0
+    for i in range(n):
+        t=i/fps
+        if t>=3.2 and st==0:
+            st=1; pg.evaluate("(()=>{const h=document.getElementById('pHead'); h.style.fontSize='23px'; h.textContent='SI SE ACABA, PIERDES EL TURNO';})()")
+        if t>=5.4 and st==1:
+            st=2; pg.evaluate("""(()=>{const f=document.getElementById('turnFill'); const hh=f.getBoundingClientRect().height/f.parentElement.getBoundingClientRect().height; const secs=18; const el=(1-hh)*secs;
+ startTurnTimer=function(){}; const H=document.getElementById('pHead'); H.style.fontSize='27px'; H.textContent='¡TIRA A TIEMPO! 🎲'; dice=[4,3]; usedDie=[false,false]; rolling=false; render();
+ const g=document.getElementById('turnFill'); if(g){ g.style.transition='none'; g.style.animation='none'; g.style.height=(hh*100)+'%'; void g.getBoundingClientRect(); g.style.transition='height '+(secs*hh)+'s linear'; g.style.animation='turnFillColor '+secs+'s linear forwards'; g.style.animationDelay='-'+el+'s'; g.style.height='0%'; } })()""")
+        if t>=6.6 and st==2:
+            st=3; pg.evaluate("rolling=false; executeMove(0); 0")
+        if t>=secs-3.0: pg.evaluate("document.getElementById('pEnd').style.opacity=1;document.getElementById('pHead').style.opacity=0")
+        pg.evaluate("__advance(%f)"%(1000/fps*mult))
+        pg.screenshot(path='%s/f%04d.jpg'%(out,i),type='jpeg',quality=92)
+    T1=pg.evaluate('performance.now()/1000')
+    import base64
+    data=pg.evaluate('([t0,t1])=>__renderAudio(t0,t1)',[T0,T1])
+    open(out+'.pcm','wb').write(base64.b64decode(data))
+    b.close()

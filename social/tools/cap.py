@@ -37,7 +37,7 @@ def session(p,w=430,h=764,dsf=3.2):
     b=p.chromium.launch(args=['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader','--ignore-gpu-blocklist'])
     pg=b.new_page(viewport={'width':w,'height':h},device_scale_factor=dsf)
     pg.route('**/*',route); pg.add_init_script(INIT)
-    pg.goto('file:///home/claude/juego-wartowns/index.html?dev=1')
+    pg.goto('file:///home/claude/juego-wartowns/index.html?dev=1&lang=es')
     return b,pg
 def run(setup_js,outdir,seconds,fps=30,warm=3.0,step_mult=1.0,hook=None):
     os.makedirs(outdir,exist_ok=True)
