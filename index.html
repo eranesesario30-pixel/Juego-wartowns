@@ -5854,6 +5854,7 @@ body.dice-shaking .dice-cube-wrap, body.dice-shaking .dice-sprite{ animation:dic
   .p-card-mirrored .p-dice::before{left:auto;right:-11px;border-right:none;border-left:10px solid var(--pf2);}
   .p-card .p-dice{gap:3px;padding:4px 5px 3px;}
   .p-card .p-dice .mini-die{width:32px;height:32px;border-radius:9px;font-size:15px;}
+  .p-card .p-dice{min-height:51px;box-sizing:border-box;align-items:center;}   /* los dados bajan de 32 a 58 px al tirar: sin alto fijo la tarjeta del rival crecía 10 px y empujaba el tablero arriba y abajo */
   .p-card .p-dice .dia-btn-wrap{width:40px;height:40px;}
   .p-card .p-dice .dia-ring{width:40px;height:40px;}
   .p-card .p-dice .dia-mini-btn{width:33px;height:33px;}
@@ -7432,7 +7433,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running' && !document.hidden){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1295';
+const BUILD_VERSION = '1296';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
