@@ -5532,6 +5532,13 @@ body.tab-open #collectionsOverlay .skin-catalog{max-height:none !important;overf
 .inv-btn.wa{background:linear-gradient(#3fd36b,#1fa84a);} .inv-btn.sms{background:linear-gradient(#4aa3ff,#2670d6);} .inv-btn.cp{background:linear-gradient(#f2b63c,#d08a12);color:#2a1a00;} .inv-btn.x{background:rgba(255,255,255,.12);box-shadow:none;}
 
 .fr2-myid{display:none !important;}
+
+/* Amigos: fondo limpio y filas más visibles */
+html body #friendsOverlay, html body.xmas-on #friendsOverlay{background:linear-gradient(180deg,#1b3f94 0%,#14307a 45%,#0d2158 100%) !important;}
+html body #friendsOverlay .fr2-row{background:linear-gradient(180deg,rgba(14,26,70,.96),rgba(10,20,56,.96)) !important;border:2px solid rgba(255,214,110,.55) !important;padding:14px 14px !important;}
+html body #friendsOverlay .fr2-list{gap:12px !important;}
+html body #friendsOverlay .fr2-screen{background:none !important;}
+html body #friendsOverlay .fr2-toolbar,html body #friendsOverlay .fr2-add{background:rgba(7,15,45,.8) !important;}
 /* ===== Mascota ===== */
 .celeb-mascot{display:block;width:118px;height:118px;background-size:contain;background-repeat:no-repeat;background-position:center;filter:drop-shadow(0 6px 4px rgba(0,0,0,.4));animation:celebBounce .55s ease-out both;}
 .offer-mascot{position:absolute;right:-18px;top:92px;bottom:auto;width:92px;height:92px;background:var(--mascot-wave) center/contain no-repeat;filter:drop-shadow(0 5px 4px rgba(0,0,0,.45));animation:mascotBob 2.4s ease-in-out infinite;pointer-events:none;z-index:3;}
@@ -6724,8 +6731,7 @@ body.tab-open #storeOverlay, body.tab-open #friendsOverlay, body.tab-open #event
         <div class="fr2-body">
           <div id="fTab-list" class="fr2-pane">
             <div class="fr2-toolbar">
-              <div class="fr2-search"><input id="friendSearchInput" placeholder="Buscar por nombre" oninput="renderFriendsList()"><span>🔍</span></div>
-              <div class="fr2-invite-lbl">Invitar a amigos</div>
+              <div class="fr2-invite-lbl" style="flex:1;text-align:left;font-size:15px;">Invitar a amigos</div>
               <button class="fr2-sq wa" onclick="shareViaWhatsApp()">💬</button>
               <button class="fr2-sq fb" onclick="shareViaFacebook()">f</button>
             </div>
@@ -7462,7 +7468,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running' && !document.hidden){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1306';
+const BUILD_VERSION = '1307';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
