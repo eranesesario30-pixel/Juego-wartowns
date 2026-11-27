@@ -7433,7 +7433,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running' && !document.hidden){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1298';
+const BUILD_VERSION = '1299';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -10080,11 +10080,10 @@ function twinAskPrize(p){
     if(!p.tkp) return res(p.sel||0);
     const best = ()=>{ const a=twinBotScore(p,0,6), b=twinBotScore(p,1,6); return b>a?1:0; };
     if(p.isBot || p.color!==MY_COLOR) return res(best());
-    // sin cartel: el jugador toca la ficha que quiere avanzar (las dos rebotan para avisar)
+    // sin cartel ni saltos: el jugador toca la ficha que quiere avanzar
     log('🎁 Premio de 6 pasos: toca la ficha que quieres avanzar.');
     let done=false; const fin=k=>{ if(done) return; done=true; clearTimeout(tm); twinPrizeWait=null; res(k); };
     twinPrizeWait = fin;
-    try{ bounceToken(p.color); const _s=p.sel; p.sel=1-_s; bounceToken(p.color); p.sel=_s; }catch(e){}
     const tm=setTimeout(()=>fin(best()),12000);
   });
 }
