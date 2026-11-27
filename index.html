@@ -7433,7 +7433,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running' && !document.hidden){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1297';
+const BUILD_VERSION = '1298';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -10017,6 +10017,7 @@ let diaWindowTimeoutHandle = null;
    p.tkp = [posición ficha A, posición ficha B]; p.sel = cuál de las dos está "seleccionada".
    p.position sigue existiendo y siempre es la de la ficha seleccionada, así toda la lógica vieja
    (dados, trampas, capturas) funciona sobre la ficha que el jugador tocó. */
+let twinPrizeWait = null;
 function twinOn(){ return activeBoardMode==='mode3'; }
 function twinInit(pl){
   const cur = pl.position||0;
@@ -10079,13 +10080,12 @@ function twinAskPrize(p){
     if(!p.tkp) return res(p.sel||0);
     const best = ()=>{ const a=twinBotScore(p,0,6), b=twinBotScore(p,1,6); return b>a?1:0; };
     if(p.isBot || p.color!==MY_COLOR) return res(best());
-    const el=document.createElement('div'); el.id='twinPrize';
-    el.style.cssText='position:fixed;left:50%;top:38%;transform:translateX(-50%);z-index:99990;background:rgba(10,16,40,.94);border:2px solid #ffd45a;border-radius:18px;padding:12px 14px;text-align:center;color:#fff;font:800 15px system-ui,sans-serif;box-shadow:0 8px 30px rgba(0,0,0,.6);max-width:92vw';
-    el.innerHTML='<div style="margin-bottom:8px">🎁 ¿Con cuál ficha avanzas los 6 pasos?</div><div style="display:flex;gap:10px;justify-content:center"></div>';
-    let done=false; const fin=k=>{ if(done) return; done=true; clearTimeout(tm); el.remove(); res(k); };
-    [0,1].forEach(k=>{ const b=document.createElement('button'); b.innerHTML='Ficha '+(k?'B':'A')+'<br><span style="font-weight:700;font-size:12px">'+(p.tkp[k])+'</span>'; b.style.cssText='background:linear-gradient(#ffd45a,#e0a21a);color:#2a1a00;border:0;border-radius:12px;padding:10px 12px;font:900 14px system-ui,sans-serif;white-space:nowrap'; b.onclick=()=>fin(k); el.lastChild.appendChild(b); });
-    document.body.appendChild(el);
-    const tm=setTimeout(()=>fin(best()),7000);
+    // sin cartel: el jugador toca la ficha que quiere avanzar (las dos rebotan para avisar)
+    log('🎁 Premio de 6 pasos: toca la ficha que quieres avanzar.');
+    let done=false; const fin=k=>{ if(done) return; done=true; clearTimeout(tm); twinPrizeWait=null; res(k); };
+    twinPrizeWait = fin;
+    try{ bounceToken(p.color); const _s=p.sel; p.sel=1-_s; bounceToken(p.color); p.sel=_s; }catch(e){}
+    const tm=setTimeout(()=>fin(best()),12000);
   });
 }
 
@@ -13388,6 +13388,7 @@ function on3DBoardTap(event){
       while(obj.parent && !String(obj.name).startsWith('token3d-')) obj = obj.parent;
       const color = obj.name.replace('token3d-','');
       const _is2 = !!(b3d.tokenMeshes2 && b3d.tokenMeshes2[color] && obj===b3d.tokenMeshes2[color]);
+      if(twinPrizeWait && players[current] && players[current].color===color && players[current].tkp){ twinPrizeWait(_is2?1:0); return; }
       const _m = _is2 ? b3d.tokenMeshes2[color] : b3d.tokenMeshes[color];
       if(color && _m && _m.userData.clickable){
         const _pl = players[current]; if(_pl && _pl.color===color && _pl.tkp) _pl.sel = _is2 ? 1 : 0;
