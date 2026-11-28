@@ -7486,7 +7486,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running' && !document.hidden){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1314';
+const BUILD_VERSION = '1315';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -11264,7 +11264,7 @@ function diceFaceTex(img, n){
   g.font = '900 ' + Math.round(S*0.62) + 'px "Archivo Black","Arial Black",Arial,sans-serif';
   g.textAlign = 'center'; g.textBaseline = 'middle';
   if(img && img.naturalWidth){
-    g.lineWidth = S*0.095; g.strokeStyle = '#000'; g.lineJoin = 'round'; g.strokeText(String(n), S/2, S/2+S*0.03);
+    g.lineWidth = S*0.04; g.strokeStyle = 'rgba(8,12,34,.88)'; g.lineJoin = 'round'; g.strokeText(String(n), S/2, S/2+S*0.03);
     g.fillStyle = '#fff'; g.fillText(String(n), S/2, S/2+S*0.03);
   } else {
     g.fillStyle = '#1b2347'; g.fillText(String(n), S/2, S/2+S*0.03);
@@ -11354,10 +11354,9 @@ function diceFaceTexBadge(img, n){
     g.font = '900 ' + Math.round(S*0.5) + 'px "Archivo Black","Arial Black",Arial,sans-serif';
     g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
     const ty = S/2 + S*0.025;
-    g.shadowColor = 'rgba(0,0,0,.55)'; g.shadowOffsetY = S*0.02; g.shadowBlur = S*0.05;
-    g.lineWidth = S*0.06; g.strokeStyle = '#0b0f24'; g.strokeText(String(n), S/2, ty);
+    g.shadowColor = 'rgba(0,0,0,.30)'; g.shadowOffsetY = S*0.012; g.shadowBlur = S*0.025;
+    g.lineWidth = S*0.026; g.strokeStyle = 'rgba(8,12,34,.88)'; g.strokeText(String(n), S/2, ty);
     g.shadowColor = 'transparent'; g.shadowBlur = 0; g.shadowOffsetY = 0;
-    g.lineWidth = S*0.06; g.strokeStyle = '#0b0f24'; g.strokeText(String(n), S/2, ty);
     const gr = g.createLinearGradient(0, ty-S*0.25, 0, ty+S*0.25); gr.addColorStop(0,'#ffffff'); gr.addColorStop(1,'#dfe6ff');
     g.fillStyle = gr; g.fillText(String(n), S/2, ty);
   } else {
