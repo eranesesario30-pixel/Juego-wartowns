@@ -7486,7 +7486,7 @@ function stopAllGameAudio(){
   try{ if(typeof diceRollAudioEl!=='undefined' && diceRollAudioEl){ diceRollAudioEl.pause(); diceRollAudioEl.currentTime = 0; } }catch(e){}
   try{ if(audioCtx && audioCtx.state==='running' && !document.hidden){ audioCtx.suspend().then(()=>audioCtx.resume()).catch(()=>{}); } }catch(e){}
 }
-const BUILD_VERSION = '1315';
+const BUILD_VERSION = '1316';
 (function(){ const set=()=>{ const el=document.getElementById('buildVersionLabel'); if(el) el.textContent='v'+BUILD_VERSION; const sv=document.getElementById('settingsVersion'); if(sv) sv.textContent='Versión '+BUILD_VERSION; }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',set); else set(); })();
 
 // Qué color te toca jugar a VOS en esta partida — en modo local
@@ -21290,7 +21290,8 @@ function _statusTick(){
       if(o.kind==='armor'){ o.mesh.rotation.y+=0.02; o.mesh.material.opacity=0.55+0.15*Math.sin(t*2.6); }
       if(o.kind==='shield'||o.kind==='rb'){ o.mesh.material.opacity=0.2+0.12*Math.sin(t*3+(o.kind==='rb'?1:0)); o.mesh.rotation.y+=0.01; }
       if(o.kind==='emb'){ o.mesh.rotation.z+=0.04; }
-      if(o.kind==='ice'){ o.mesh.material.opacity=0.46+0.06*Math.sin(t*2); }
+      if(o.kind==='ice'){ o.mesh.material.opacity=0.58+0.06*Math.sin(t*2); }
+      if(o.icon){ o.icon.position.y=o.iconY+0.06*Math.sin(t*3); }
       if(o.born!==undefined){ const k=Math.min(1,(performance.now()-o.born)/260); const s=0.2+0.8*(1-Math.pow(1-k,3)); o.mesh.scale.setScalar(s); if(k>=1) o.born=undefined; }
     });
   });
@@ -21302,7 +21303,7 @@ function _statusAdd(mesh,key,kind){
   if(kind==='ice'){
     const g=new THREE.Group();
     const box=new THREE.Mesh(new THREE.BoxGeometry(r*2.5,h*1.1,r*2.5),
-      new THREE.MeshPhongMaterial({color:0x9be8ff,emissive:0x2a8bd0,emissiveIntensity:0.5,shininess:120,transparent:true,opacity:0.5,depthWrite:false}));
+      new THREE.MeshPhongMaterial({color:0x8fe3ff,emissive:0x2a8bd0,emissiveIntensity:0.55,shininess:120,transparent:true,opacity:0.62,depthWrite:false}));
     const edges=new THREE.LineSegments(new THREE.EdgesGeometry(box.geometry),new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:0.9}));
     box.add(edges); g.add(box); g.position.y=h*0.5; mesh.add(g);
     o={kind:'ice',mesh:box,group:g,born:performance.now()}; box.material.userData={}; o.mesh=box; 
@@ -21318,10 +21319,22 @@ function _statusAdd(mesh,key,kind){
     const t=new THREE.Mesh(new THREE.TorusGeometry(r*1.5,r*0.22,6,10),new THREE.MeshPhongMaterial({color:0xb04040,emissive:0x501010,flatShading:true}));
     t.rotation.x=Math.PI/2; t.position.y=h*0.55; mesh.add(t); o={kind:'emb',mesh:t,born:performance.now()};
   }
+  try{
+    const EMO={ice:'\u2744\ufe0f',shield:'\ud83d\udee1\ufe0f',rb:'\ud83e\ude9e',emb:'\ud83d\udeab',armor:'\ud83e\ude96'};
+    const cv=document.createElement('canvas'); cv.width=cv.height=128; const cg=cv.getContext('2d');
+    cg.font='96px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif'; cg.textAlign='center'; cg.textBaseline='middle';
+    cg.shadowColor='rgba(0,0,0,.45)'; cg.shadowBlur=8; cg.fillText(EMO[kind]||'\u2728',64,70);
+    const tx=new THREE.CanvasTexture(cv);
+    const ic=new THREE.Sprite(new THREE.SpriteMaterial({map:tx,transparent:true,depthTest:false,depthWrite:false}));
+    const isz=Math.max(r*3.0,h*0.8); ic.scale.set(isz,isz,1); o.iconY=h*2.25; ic.position.y=o.iconY; ic.renderOrder=20;
+    mesh.add(ic); o.icon=ic;
+    if(kind==='emb'||kind==='armor'){ o.mesh.visible=false; }
+  }catch(e){}
   mesh.userData.fx=mesh.userData.fx||{}; mesh.userData.fx[key]=o; _statusStart();
 }
 function _statusRemove(mesh,key,burst){
   const fx=mesh.userData.fx; if(!fx||!fx[key]) return; const o=fx[key];
+  try{ if(o.icon){ mesh.remove(o.icon); if(o.icon.material.map) o.icon.material.map.dispose(); o.icon.material.dispose(); } }catch(e){}
   const target=o.group||o.mesh; try{ mesh.remove(target); target.traverse&&target.traverse(n=>{ if(n.geometry) n.geometry.dispose(); if(n.material) n.material.dispose(); }); }catch(e){}
   delete fx[key];
   if(burst==='shatter'){ fxBurst(mesh,[0xbff4ff,0xffffff,0x7fd8ff],{count:50,spread:1.6,upward:2.8,size:0.1}); fxSound('shatter'); }
